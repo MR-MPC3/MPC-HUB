@@ -6584,7 +6584,7 @@ end)
 Tabs.Misc:AddButton({Title = "Teleport [Job ID]", Description = "",Callback = function()
   replicated['__ServerBrowser']:InvokeServer("teleport",_G.JobId)
 end})
-Tabs.Misc:AddButton({Title = "Copy JobID", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Copy JobID Server", Description = "",Callback = function()
   setclipboard(tostring(game.JobId))
 end})
 
