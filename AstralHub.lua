@@ -510,14 +510,22 @@ getInfinity_Ability = function(Method, Var)
    end
 end
 Hop = function()
-  pcall(function()
-    for count = math.random(1, math.random(40, 75)), 100 do
-      local remote = replicated.__ServerBrowser:InvokeServer(count)
-	  for _, v in next, remote do
-	  if tonumber(v['Count']) < 12 then TeleportService:TeleportToPlaceInstance(game.PlaceId, _) end
-	  end    
-    end
-  end)
+    pcall(function()
+        -- Lấy trang ngẫu nhiên (từ 1->75 đến 100) để tìm server không bị trùng lặp
+        for count = math.random(1, math.random(40, 75)), 100 do
+            local remote = replicated.__ServerBrowser:InvokeServer(count)
+            for jobId, v in next, remote do
+                -- Điều kiện: dữ liệu hợp lệ VÀ server có ít hơn 12 người
+                if type(v) == "table" and tonumber(v.Count) and tonumber(v.Count) < 12 then
+                    -- Chỉ chọn server KHÁC với server hiện tại đang đứng
+                    if tostring(jobId) ~= tostring(game.JobId) then
+                        replicated.__ServerBrowser:InvokeServer("teleport", tostring(jobId))
+                        return -- Dừng ngay khi tìm thấy để tiến hành chuyển server
+                    end
+                end
+            end
+        end
+    end)
 end
 local block = Instance.new("Part", workspace)
 block.Size = Vector3.new(1, 1, 1)
@@ -6491,15 +6499,18 @@ Tabs.Shop:AddButton({Title = "Buy Reroll Race", Description = "",Callback = func
   replicated.Remotes.CommF_:InvokeServer("BlackbeardReward","Reroll","2")
 end})   
 Tabs.Shop:AddButton({Title = "Buy Ghoul Race (2.5k)", Description = "",Callback = function()
-  replicated.Remotes.CommF_:InvokeServer("Ectoplasm"," Change", 4)
+  replicated.Remotes.CommF_:InvokeServer("Ectoplasm","Change", 4)
 end})	
 Tabs.Shop:AddButton({Title = "Buy Cyborg Race (2.5k)", Description = "",Callback = function()
-  replicated.Remotes.CommF_:InvokeServer("CyborgTrainer"," Buy")
+  replicated.Remotes.CommF_:InvokeServer("CyborgTrainer","Buy")
 end})
 
 Tabs.Misc:AddSection("Server - Function")
-Tabs.Misc:AddButton({Title = "Rejoin Server", Description = "",Callback = function()
-  game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+Tabs.Misc:AddButton({Title = "Rejoin Server", Description = "", Callback = function()
+    pcall(function()
+        -- Vào lại đúng Server cũ qua Remote game (tránh lỗi 773)
+        replicated.__ServerBrowser:InvokeServer("teleport", tostring(game.JobId))
+    end)
 end})
 Tabs.Misc:AddButton({Title = "Hop Server", Description = "",Callback = function()
   Hop()
@@ -6519,7 +6530,7 @@ Tabs.Misc:AddButton({Title = "Hop to Lowest Players", Description = "",Callback 
    Server = Servers.data[1]
    Next = Servers.nextPageCursor
   until Server
-  TPS:TeleportToPlaceInstance(_place,Server.id,plr)
+TPS:TeleportToPlaceInstance(_place,Server.id,plr)
 end})
 
 Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "",Callback = function()
