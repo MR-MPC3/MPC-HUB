@@ -507,7 +507,7 @@ getInfinity_Ability = function(Method, Var)
   elseif Method == "Observation" and Var then
     local VisionRadius = plr.VisionRadius
     VisionRadius.Value = math.huge
-  end
+   end
 end
 Hop = function()
   pcall(function()
