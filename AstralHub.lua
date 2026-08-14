@@ -29,12 +29,17 @@ do
   ClickState = 0
   Num_self = 25
 end
-
 repeat local start = plr.PlayerGui:WaitForChild("Main"):WaitForChild("Loading") and game:IsLoaded() wait() until start
-World1 = game.PlaceId == 2753915549
-World2 = game.PlaceId == 4442272183
-World3 = game.PlaceId == 7449423635
-Sea = World1 or World2 or World3 or plr:Kick("❌ Error : A[12]Blox Fruits ❌")
+local pid = tonumber(game.PlaceId) or game.PlaceId
+-- Khai báo ID các Sea
+World1 = (pid == 2753915549 or pid == 85211729168715)
+World2 = (pid == 4442272183)
+World3 = (pid == 7449423635)
+-- Kiểm tra: Nếu không khớp với bất kỳ World nào thì mới KICK
+Sea = World1 or World2 or World3
+if not Sea then
+    plr:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(pid) .. ")")
+end
 Marines = function() replicated.Remotes.CommF_:InvokeServer("SetTeam","Marines") end
 Pirates = function() replicated.Remotes.CommF_:InvokeServer("SetTeam","Pirates") end
 if World1 then Boss = {"The Gorilla King","Bobby","The Saw","Yeti","Mob Leader","Vice Admiral","Saber Expert","Warden","Chief Warden","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg","Ice Admiral","Greybeard"}
