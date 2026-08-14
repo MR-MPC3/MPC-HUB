@@ -679,7 +679,43 @@ QuestNeta = function()
 end
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local Window = Fluent:CreateWindow({Title = "Astral hub [Freemium] ",SubTitle = "by xxxxx",TabWidth = 155,Size = UDim2.fromOffset(555, 320),Acrylic = false,Theme = "Dark",MinimizeKey = Enum.KeyCode.End})
+local Window = Fluent:CreateWindow({
+    Title = "Astral hub [Freemium] ",
+    SubTitle = "by xxxxx",
+    TabWidth = 155,
+    Size = UDim2.fromOffset(555, 320),
+    Acrylic = false,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.End
+})
+
+-- Nút hiện/ẩn menu cho Mobile
+local MobileGui = Instance.new("ScreenGui")
+MobileGui.Name = "AstralMobileToggle"
+MobileGui.ResetOnSpawn = false
+MobileGui.Parent = game:GetService("CoreGui")
+
+local Btn = Instance.new("TextButton")
+Btn.Size = UDim2.new(0, 50, 0, 50)
+Btn.Position = UDim2.new(0, 15, 0.4, 0)
+Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Btn.Text = "MENU"
+Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Btn.Font = Enum.Font.GothamBold
+Btn.TextSize = 12
+Btn.Parent = MobileGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Btn
+
+Btn.MouseButton1Click:Connect(function()
+    pcall(function()
+        if Window and Window.Minimize then
+            Window:Minimize()
+        end
+    end)
+end)
 
 local Tabs = {
   Main = Window:AddTab({Title = "Farm", Icon = ""}),
@@ -697,7 +733,6 @@ local Tabs = {
   Shop = Window:AddTab({Title = "Shop", Icon = ""}),
   Misc = Window:AddTab({Title = "Misc", Icon = ""})
 }
- 
 local FarmLevel = Tabs.Main:AddToggle("FarmLevel", {Title = "Auto Farm Level", Description = "", Default = false})
 FarmLevel:OnChanged(function(Value)
   _G.Level = Value
