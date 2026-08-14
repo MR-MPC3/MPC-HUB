@@ -530,7 +530,7 @@ _tp = function(target)
   if not character or not character:FindFirstChild("HumanoidRootPart") then return end
   local rootPart = character.HumanoidRootPart
   local distance = (target.Position - rootPart.Position).Magnitude
-  local tweenInfo = TweenInfo.new(distance / 300, Enum.EasingStyle.Linear)
+  local tweenInfo = TweenInfo.new(distance / 200, Enum.EasingStyle.Linear)
   local tween = game:GetService("TweenService"):Create(block, tweenInfo, {CFrame = target})    
   if plr.Character.Humanoid.Sit == true then
     block.CFrame = CFrame.new(block.Position.X, target.Y, block.Position.Z)
