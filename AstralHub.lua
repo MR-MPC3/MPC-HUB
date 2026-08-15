@@ -29,6 +29,7 @@ do
   ClickState = 0
   Num_self = 25
 end
+
 repeat local start = plr.PlayerGui:WaitForChild("Main"):WaitForChild("Loading") and game:IsLoaded() wait() until start
 local pid = tonumber(game.PlaceId) or game.PlaceId
 -- Khai báo ID các Sea
@@ -697,7 +698,7 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 })
 
--- Nút hiện/ẩn menu (Draggable + Image Ready, không chữ)
+-- Nút hiện/ẩn menu (Draggable + Image Ready)
 local MobileGui = Instance.new("ScreenGui")
 MobileGui.Name = "AstralMobileToggle"
 MobileGui.ResetOnSpawn = false
@@ -6512,61 +6513,67 @@ Tabs.Misc:AddButton({Title = "Rejoin Server", Description = "", Callback = funct
         replicated.__ServerBrowser:InvokeServer("teleport", tostring(game.JobId))
     end)
 end})
+
 Tabs.Misc:AddButton({Title = "Hop Server", Description = "",Callback = function()
   Hop()
 end})
-Tabs.Misc:AddButton({Title = "Hop to Lowest Players", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Hop to Lowest Players", Description = "", Callback = function()
   local Http = game:GetService("HttpService")
-  local TPS = game:GetService("TeleportService")
   local Api = "https://games.roblox.com/v1/games/"
   local _place = game.PlaceId
-  local _servers = Api.._place.."/servers/Public?sortOrder=Asc&limit=100"
-   function ListServers(cursor)
-     local Raw = game:HttpGet(_servers .. ((cursor and "&cursor="..cursor) or ""))
-     return Http:JSONDecode(Raw)
-   end
-   local Server, Next; repeat
-   local Servers = ListServers(Next)
-   Server = Servers.data[1]
-   Next = Servers.nextPageCursor
+  local _servers = Api .. _place .. "/servers/Public?sortOrder=Asc&limit=100"
+  local function ListServers(cursor)
+    local Raw = game:HttpGet(_servers .. ((cursor and "&cursor=" .. cursor) or ""))
+    return Http:JSONDecode(Raw)
+  end
+  local Server, Next
+  repeat
+    local Servers = ListServers(Next)
+    if Servers and Servers.data and #Servers.data > 0 then
+      Server = Servers.data[1]
+    end
+    Next = Servers and Servers.nextPageCursor
   until Server
-TPS:TeleportToPlaceInstance(_place,Server.id,plr)
+  if Server and Server.id then
+    pcall(function()
+      replicated.__ServerBrowser:InvokeServer("teleport", tostring(Server.id))
+    end)
+  end
 end})
+Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "", Callback = function()
+  local HTTPService = game:GetService("HttpService")
+  local StatsService = game:GetService("Stats")
 
-Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "",Callback = function()
-local HTTPService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local StatsService = game:GetService("Stats")
-local function fetchServersData(placeId, limit)
+  local function fetchServersData(placeId, limit)
     local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?limit=%d", placeId, limit)
     local success, response = pcall(function()
-        return HTTPService:JSONDecode(game:HttpGet(url))
+      return HTTPService:JSONDecode(game:HttpGet(url))
     end)
-  if success and response and response.data then
-	return response.data
-  end
+    if success and response and response.data then
+      return response.data
+    end
     return nil
   end
+
   local placeId = game.PlaceId
-  local serverLimit = 100
-  local servers = fetchServersData(placeId, serverLimit)
-  if not servers then return end
+  local servers = fetchServersData(placeId, 100)
+  if not servers or #servers == 0 then return end
+
   local lowestPingServer = servers[1]
   for _, server in pairs(servers) do
-    if server["ping"] < lowestPingServer["ping"] and server.maxPlayers > server.playing then
+    if server.ping and lowestPingServer.ping
+      and server.ping < lowestPingServer.ping
+      and server.maxPlayers > server.playing then
       lowestPingServer = server
     end
   end
-  local commonLoadTime = 0.5
-  task.wait(commonLoadTime)
-  local pingThreshold = 100
-  local serverStats = StatsService.Network.ServerStatsItem
-  local dataPing = serverStats["Data Ping"]:GetValueString()
-  local pingValue = tonumber(dataPing:match("(%d+)"))
-  if pingValue >= pingThreshold then
-    TeleportService:TeleportToPlaceInstance(placeId, lowestPingServer.id)
-  else
-    --pings
+
+  task.wait(0.5)
+
+  if lowestPingServer and lowestPingServer.id then
+    pcall(function()
+      replicated.__ServerBrowser:InvokeServer("teleport", tostring(lowestPingServer.id))
+    end)
   end
 end})
 
