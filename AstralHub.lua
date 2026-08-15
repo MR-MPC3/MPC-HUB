@@ -150,6 +150,7 @@ Attack.Kill = function(model, Succes)
     end
     PosMon = model:GetAttribute("Locked").Position
     BringEnemy()
+    
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
@@ -164,22 +165,22 @@ Attack.Kill = function(model, Succes)
     if not Equipped then return end
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
-        _tp(hrp.CFrame * CFrame.new(0, 25, 0) * CFrame.Angles(math.rad(-90), 0, 0))
+        _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
-        _tp(hrp.CFrame * CFrame.new(0, 25, 0) * CFrame.Angles(math.rad(-90), 0, 0))
+        _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
     if RandomCFrame then
         task.spawn(function()
-            local offsets = {
-                CFrame.new(0, 25, 15),
-                CFrame.new(15, 25, 0),
-                CFrame.new(-15, 25, 0),
-                CFrame.new(0, 25, -15)
-            }
-            for _, offset in ipairs(offsets) do
-                _tp(hrp.CFrame * offset * CFrame.Angles(math.rad(-90), 0, 0))
-                task.wait(0.25)
-            end
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(0, 30, 25))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(25, 30, 0))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(-25, 30, 0))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(0, 30, 25))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(-25, 30, 0))
         end)
     end
     if vim2 then
