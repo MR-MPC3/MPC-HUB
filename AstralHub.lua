@@ -6543,7 +6543,6 @@ end})
 Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "", Callback = function()
   local HTTPService = game:GetService("HttpService")
   local StatsService = game:GetService("Stats")
-
   local function fetchServersData(placeId, limit)
     local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?limit=%d", placeId, limit)
     local success, response = pcall(function()
@@ -6554,11 +6553,9 @@ Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "", Cal
     end
     return nil
   end
-
   local placeId = game.PlaceId
   local servers = fetchServersData(placeId, 100)
   if not servers or #servers == 0 then return end
-
   local lowestPingServer = servers[1]
   for _, server in pairs(servers) do
     if server.ping and lowestPingServer.ping
@@ -6567,44 +6564,53 @@ Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "", Cal
       lowestPingServer = server
     end
   end
-
   task.wait(0.5)
-
   if lowestPingServer and lowestPingServer.id then
     pcall(function()
       replicated.__ServerBrowser:InvokeServer("teleport", tostring(lowestPingServer.id))
     end)
   end
 end})
-
-local JobID = Tabs.Misc:AddInput("JobID", {Title = "JobID",Default = "",Placeholder = "",
-Numeric = false, -- Only allows numbers
-Finished = false, -- Only calls callback when you press enter
-Callback = function(Value)
-  _G.JobId = Value
-end})
-spawn(function()
-  while wait(Sec) do
-    if _G.JobId then
-      pcall(function()
-        local Connection
-        Connection = plr.OnTeleport:Connect(function(br)
-          if br == Enum.TeleportState.Failed then
-          Connection:Disconnect()
-          if workspace:FindFirstChild("Message") then workspace.Message:Destroy() end
-          end
-        end)
-      end)
+local jobId = ""
+Tabs.Misc:AddInput("JobID", {
+    Title = "Enter Job ID",
+    Default = "",
+    Placeholder = "Dán JobID vào đây...",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        jobId = Value
     end
-  end
-end)
-
-Tabs.Misc:AddButton({Title = "Teleport [Job ID]", Description = "",Callback = function()
-  replicated['__ServerBrowser']:InvokeServer("teleport",_G.JobId)
-end})
-Tabs.Misc:AddButton({Title = "Copy JobID Server", Description = "",Callback = function()
-  setclipboard(tostring(game.JobId))
-end})
+})
+Tabs.Misc:AddButton({
+    Title = "Teleport [Job ID]",
+    Description = "",
+    Callback = function()
+        if jobId and jobId ~= "" then
+            local conn
+            conn = game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(state)
+                if state == Enum.TeleportState.Failed then
+                    if conn then conn:Disconnect() end
+                    if workspace:FindFirstChild("Message") then
+                        workspace.Message:Destroy()
+                    end
+                end
+            end)
+            pcall(function()
+                replicated.__ServerBrowser:InvokeServer("teleport", tostring(jobId))
+            end)
+        end
+    end
+})
+Tabs.Misc:AddButton({
+    Title = "Copy JobID Server",
+    Description = "Sao chép JobID của server này",
+    Callback = function()
+        if setclipboard then
+            setclipboard(tostring(game.JobId))
+        end
+    end
+})
 
 Tabs.Misc:AddSection("Player Gui / Others")
 
