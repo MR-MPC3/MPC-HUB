@@ -1,19 +1,21 @@
 do
   ply = game.Players
   plr = ply.LocalPlayer
-  Root = plr.Character.HumanoidRootPart
+  Root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
   replicated = game:GetService("ReplicatedStorage")
-  Lv = game.Players.LocalPlayer.Data.Level.Value
+  -- Lấy Level an toàn
+  Lv = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Level")) and plr.Data.Level.Value or 1
   TeleportService = game:GetService("TeleportService")
   TW = game:GetService("TweenService")
   Lighting = game:GetService("Lighting")  
-  Enemies = workspace.Enemies
+  Enemies = workspace:FindFirstChild("Enemies")
   vim1 = game:GetService("VirtualInputManager")
   vim2 = game:GetService("VirtualUser")
   TeamSelf = plr.Team
   RunSer = game:GetService("RunService")
   Stats = game:GetService("Stats")  
-  Energy = plr.Character.Energy.Value
+  -- Năng lượng mặc định
+  Energy = (plr.Character and plr.Character:FindFirstChild("Energy")) and plr.Character.Energy.Value or 0
   Boss = {}
   BringConnections = {}
   MaterialList = {}
@@ -29,8 +31,29 @@ do
   ClickState = 0
   Num_self = 25
 end
-
-repeat local start = plr.PlayerGui:WaitForChild("Main"):WaitForChild("Loading") and game:IsLoaded() wait() until start
+-- Cập nhật Root và Energy khi nhân vật xuất hiện / hồi sinh
+local function UpdateCharacterData(char)
+    if not char then return end
+    local hrp = char:WaitForChild("HumanoidRootPart", 5)
+    if hrp then Root = hrp end
+    local en = char:WaitForChild("Energy", 5)
+    if en then Energy = en.Value end
+end
+if plr.Character then
+    UpdateCharacterData(plr.Character)
+end
+plr.CharacterAdded:Connect(UpdateCharacterData)
+-- Vòng lặp chờ game load an toàn có Timeout
+local t0 = tick()
+repeat 
+  local main = plr.PlayerGui:FindFirstChild("Main")
+  local loading = main and main:FindFirstChild("Loading")
+  -- Thoát vòng lặp khi đã vào game hoàn toàn hoặc quá 15 giây
+  if main and game:IsLoaded() and (not loading or tick() - t0 > 8) then
+    break
+  end
+  task.wait(0.2)
+until tick() - t0 > 15
 local pid = tonumber(game.PlaceId) or game.PlaceId
 -- Khai báo ID các Sea
 World1 = (pid == 2753915549 or pid == 85211729168715)
@@ -110,7 +133,11 @@ end)()
 local Attack = {}
 Attack.__index = Attack
 Attack.Alive = function(model) if not model then return end local Humanoid = model:FindFirstChild("Humanoid") return Humanoid and Humanoid.Health > 0 end
-Attack.Pos = function(model,dist) return (Root.Position - mode.Position).Magnitude <= dist end
+Attack.Pos = function(model, dist)
+  if not (model and Root) then return false end
+  local hrp = model:FindFirstChild("HumanoidRootPart")
+  return hrp and (Root.Position - hrp.Position).Magnitude <= dist or false
+end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 Attack.Kill = function(model, Succes)
@@ -2245,6 +2272,7 @@ local Weapon_Config = Tabs.Settings:AddDropdown("Weapon_Config",{Title = "Select
 Weapon_Config:OnChanged(function(Value)
   _G.ChooseWP = Value
 end)
+_G.ChooseWP = _G.ChooseWP or "Melee"
 spawn(function()
   while wait(Sec) do
     pcall(function()
@@ -2285,13 +2313,24 @@ spawn(function()
   end
 end)
 
-local Initialize = Tabs.Settings:AddToggle("Initialize", {Title = "Initialize Attack [M1/Melee/Sword]", Description = "[ Not Supported Gas M1 ]", Default = true})
+local Initialize = Tabs.Settings:AddToggle("Initialize", {
+    Title = "Initialize Attack [M1/Melee/Sword]",
+    Description = "[ Not Supported Gas M1 ]",
+    Default = true
+})
+_G.Seriality = Initialize.Value ~= nil and Initialize.Value or true
 Initialize:OnChanged(function(Value)
-  _G.Seriality = Value
+    _G.Seriality = Value
 end)
-local Bringmob = Tabs.Settings:AddToggle("Bringmob", {Title = "Bring Mobs", Description = "", Default = true})
+
+local Bringmob = Tabs.Settings:AddToggle("Bringmob", {
+    Title = "Bring Mobs",
+    Description = "",
+    Default = true
+})
+_B = Bringmob.Value ~= nil and Bringmob.Value or true
 Bringmob:OnChanged(function(Value)
-  _B = Value
+    _B = Value
 end)
 local BusuAura = Tabs.Settings:AddToggle("BusuAura", {Title = "Auto Turn on Buso", Description = "", Default = true})
 BusuAura:OnChanged(function(Value)
