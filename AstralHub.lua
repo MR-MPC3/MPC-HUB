@@ -150,7 +150,6 @@ Attack.Kill = function(model, Succes)
     end
     PosMon = model:GetAttribute("Locked").Position
     BringEnemy()
-    
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
@@ -189,6 +188,14 @@ Attack.Kill = function(model, Succes)
             vim2:ClickButton1(Vector2.new(851, 158))
         end)
     end
+    -- Phóng hitbox + đánh (kiểu Min Gaming)
+    pcall(function()
+        if hrp then
+            hrp.Size = Vector3.new(60, 60, 60)
+            hrp.Transparency = 1
+        end
+    end)
+    AttackNoCoolDown()
 end
 Attack.Kill2 = function(model,Succes)
   if model and Succes then
@@ -6968,62 +6975,7 @@ local function GetEnemiesInRange(character, range)
     end
     return targets
 end
-function AttackNoCoolDown()
-    local player = game:GetService("Players").LocalPlayer
-    local character = player.Character
-    if not character then return end
-    local equippedWeapon = nil
-    for _, item in ipairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            equippedWeapon = item
-            break
-        end
-    end
-    if not equippedWeapon then return end
-    local enemiesInRange = GetEnemiesInRange(character, 60)
-    if #enemiesInRange == 0 then return end
-    local storage = game:GetService("ReplicatedStorage")
-    local modules = storage:FindFirstChild("Modules")
-    if not modules then return end
-    local attackEvent = storage:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack")
-    local hitEvent = storage:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit")
-    if not attackEvent or not hitEvent then return end
-    local targets, mainTarget = {}, nil
-    for _, enemy in ipairs(enemiesInRange) do
-        if not enemy:GetAttribute("IsBoat") then
-            local HitboxLimbs = {"RightLowerArm", "RightUpperArm", "LeftLowerArm", "LeftUpperArm", "RightHand", "LeftHand"}
-            local head = enemy:FindFirstChild(HitboxLimbs[math.random(#HitboxLimbs)]) or enemy.PrimaryPart
-            if head then
-                table.insert(targets, { enemy, head })
-                mainTarget = head
-            end
-        end
-    end
-    if not mainTarget then return end
-    attackEvent:FireServer(0)
-    local playerScripts = player:FindFirstChild("PlayerScripts")
-    if not playerScripts then return end
-    local localScript = playerScripts:FindFirstChildOfClass("LocalScript")
-    while not localScript do
-        playerScripts.ChildAdded:Wait()
-        localScript = playerScripts:FindFirstChildOfClass("LocalScript")
-    end
-    local hitFunction
-    if getsenv then
-        local success, scriptEnv = pcall(getsenv, localScript)
-        if success and scriptEnv then
-            hitFunction = scriptEnv._G.SendHitsToServer
-        end
-    end
-    local successFlags, combatRemoteThread = pcall(function()
-        return require(modules.Flags).COMBAT_REMOTE_THREAD or false
-    end)
-    if successFlags and combatRemoteThread and hitFunction then
-        hitFunction(mainTarget, targets)
-    elseif successFlags and not combatRemoteThread then
-        hitEvent:FireServer(mainTarget, targets)
-    end
-end
+
 CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
 CameraShakerR:Stop()
 get_Monster=function()for a,b in pairs(workspace.Enemies:GetChildren())do local c=b:FindFirstChild("UpperTorso")or b:FindFirstChild("Head")if b:FindFirstChild("HumanoidRootPart",true)and c then if(b.Head.Position-plr.Character.HumanoidRootPart.Position).Magnitude<=50 then return true,c.Position end end end;for a,d in pairs(workspace.SeaBeasts:GetChildren())do if d:FindFirstChild("HumanoidRootPart")and d:FindFirstChild("Health")and d.Health.Value>0 then return true,d.HumanoidRootPart.Position end end;for a,d in pairs(workspace.Enemies:GetChildren())do if d:FindFirstChild("Health")and d.Health.Value>0 and d:FindFirstChild("VehicleSeat")then return true,d.Engine.Position end end end
