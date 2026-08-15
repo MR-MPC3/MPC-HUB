@@ -87,32 +87,30 @@ local mastery2 = {"Reborn Skeleton"}
 local PosMsList = {["Pirate Millionaire"] = CFrame.new(-712.8272705078125, 98.5770492553711, 5711.9541015625),["Pistol Billionaire"] = CFrame.new(-723.4331665039062, 147.42906188964844, 5931.9931640625),["Dragon Crew Warrior"] = CFrame.new(7021.50439453125, 55.76270294189453, -730.1290893554688),["Dragon Crew Archer"] = CFrame.new(6625, 378, 244),["Female Islander"] = CFrame.new(4692.7939453125, 797.9766845703125, 858.8480224609375),["Venomous Assailant"] = CFrame.new(4902, 670, 39), ["Marine Commodore"] = CFrame.new(2401, 123, -7589),["Marine Rear Admiral"] = CFrame.new(3588, 229, -7085),["Fishman Raider"] = CFrame.new(-10941, 332, -8760),["Fishman Captain"] = CFrame.new(-11035, 332, -9087),["Forest Pirate"] = CFrame.new(-13446, 413, -7760),["Mythological Pirate"] = CFrame.new(-13510, 584, -6987),["Jungle Pirate"] = CFrame.new(-11778, 426, -10592),["Musketeer Pirate"] = CFrame.new(-13282, 496, -9565),["Reborn Skeleton"] = CFrame.new(-8764, 142, 5963),["Living Zombie"] = CFrame.new(-10227, 421, 6161),["Demonic Soul"] = CFrame.new(-9579, 6, 6194),["Posessed Mummy"] = CFrame.new(-9579, 6, 6194),["Peanut Scout"] = CFrame.new(-1993, 187, -10103),["Peanut President"] = CFrame.new(-2215, 159, -10474),["Ice Cream Chef"] = CFrame.new(-877, 118, -11032),["Ice Cream Commander"] = CFrame.new(-877, 118, -11032),["Cookie Crafter"] = CFrame.new(-2021, 38, -12028),["Cake Guard"] = CFrame.new(-2024, 38, -12026),["Baking Staff"] = CFrame.new(-1932, 38, -12848),["Head Baker"] = CFrame.new(-1932, 38, -12848),["Cocoa Warrior"] = CFrame.new(95, 73, -12309),["Chocolate Bar Battler"] = CFrame.new(647, 42, -12401),["Sweet Thief"] = CFrame.new(116, 36, -12478),["Candy Rebel"] = CFrame.new(47, 61, -12889),["Ghost"] = CFrame.new(5251, 5, 1111)}
 
 EquipWeapon = function(text)
-  if not text then return end
-  local char = plr.Character
-  local hum = char and char:FindFirstChildOfClass("Humanoid")
-  if not hum or char:FindFirstChild(text) then return end
-  local tool = plr.Backpack:FindFirstChild(text)
-  if tool then
-    hum:EquipTool(tool)
-  end
+    if not text then return end
+    local char = plr.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum or char:FindFirstChild(text) then return end
+    local tool = plr.Backpack:FindFirstChild(text)
+    if tool then
+        hum:EquipTool(tool)
+    end
 end
 
 weaponSc = function(weapon)
-  if not weapon then return end
-  local char = plr.Character
-  if char then
-    for _, v in pairs(char:GetChildren()) do
-      if v:IsA("Tool") and v.ToolTip == weapon then
-        return
-      end
+    if not weapon then return end
+    local char = plr.Character
+    if char then
+        for _, v in ipairs(char:GetChildren()) do
+            if v:IsA("Tool") and v.ToolTip == weapon then return end
+        end
     end
-  end
-  for _, v in pairs(plr.Backpack:GetChildren()) do
-    if v:IsA("Tool") and v.ToolTip == weapon then
-      EquipWeapon(v.Name)
-      return
+    for _, v in ipairs(plr.Backpack:GetChildren()) do
+        if v:IsA("Tool") and v.ToolTip == weapon then
+            EquipWeapon(v.Name)
+            return
+        end
     end
-  end
 end
 hookfunction(require(game:GetService("ReplicatedStorage").Effect.Container.Death),function() end)
 hookfunction(require(game:GetService("ReplicatedStorage"):WaitForChild("GuideModule")).ChangeDisplayedNPC,function()end)
@@ -134,46 +132,62 @@ local Attack = {}
 Attack.__index = Attack
 Attack.Alive = function(model) if not model then return end local Humanoid = model:FindFirstChild("Humanoid") return Humanoid and Humanoid.Health > 0 end
 Attack.Pos = function(model, dist)
-  if not (model and Root) then return false end
-  local hrp = model:FindFirstChild("HumanoidRootPart")
-  return hrp and (Root.Position - hrp.Position).Magnitude <= dist or false
+    if not model or not Root then return false end
+    local pos = model:IsA("Model") and model:GetPivot().Position
+        or (model:FindFirstChild("HumanoidRootPart") and model.HumanoidRootPart.Position)
+        or model.Position
+    if not pos then return false end
+    return (Root.Position - pos).Magnitude <= dist
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 Attack.Kill = function(model, Succes)
-  if not (model and Succes) then return end
-  local hrp = model:FindFirstChild("HumanoidRootPart")
-  if not hrp then return end
-  if not model:GetAttribute("Locked") then
-    model:SetAttribute("Locked", hrp.CFrame)
-  end
-  PosMon = model:GetAttribute("Locked").Position
-  BringEnemy()
-  if _G.SelectWeapon then
-    EquipWeapon(_G.SelectWeapon)
-  else
-    weaponSc(_G.ChooseWP or "Melee")
-  end
-  local char = plr.Character
-  local Equipped = char and char:FindFirstChildOfClass("Tool")
-  if not Equipped then
-    weaponSc("Melee")
-    Equipped = char and char:FindFirstChildOfClass("Tool")
-  end
-  if not Equipped then return end
-  local ToolTip = Equipped.ToolTip
-  if ToolTip == "Blox Fruit" then
-    _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
-  else
-    _tp(hrp.CFrame * CFrame.new(0, 25, 0) * CFrame.Angles(0, math.rad(180), 0))
-  end
-  if RandomCFrame then
-    task.wait(0.5) _tp(hrp.CFrame * CFrame.new(0, 25, 15))
-    task.wait(0.5) _tp(hrp.CFrame * CFrame.new(15, 25, 0))
-    task.wait(0.5) _tp(hrp.CFrame * CFrame.new(-15, 25, 0))
-    task.wait(0.5) _tp(hrp.CFrame * CFrame.new(0, 25, 15))
-    task.wait(0.5) _tp(hrp.CFrame * CFrame.new(-15, 25, 0))
-  end
+    if not (model and Succes) then return end
+    local hrp = model:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if not model:GetAttribute("Locked") then
+        model:SetAttribute("Locked", hrp.CFrame)
+    end
+    PosMon = model:GetAttribute("Locked").Position
+    BringEnemy()
+    if _G.SelectWeapon then
+        EquipWeapon(_G.SelectWeapon)
+    else
+        weaponSc(_G.ChooseWP or "Melee")
+    end
+    local char = plr.Character
+    local Equipped = char and char:FindFirstChildOfClass("Tool")
+    if not Equipped then
+        weaponSc("Melee")
+        Equipped = char and char:FindFirstChildOfClass("Tool")
+    end
+    if not Equipped then return end
+    local ToolTip = Equipped.ToolTip
+    if ToolTip == "Blox Fruit" then
+        _tp(hrp.CFrame * CFrame.new(0, 25, 0) * CFrame.Angles(math.rad(-90), 0, 0))
+    else
+        _tp(hrp.CFrame * CFrame.new(0, 25, 0) * CFrame.Angles(math.rad(-90), 0, 0))
+    end
+    if RandomCFrame then
+        task.spawn(function()
+            local offsets = {
+                CFrame.new(0, 25, 15),
+                CFrame.new(15, 25, 0),
+                CFrame.new(-15, 25, 0),
+                CFrame.new(0, 25, -15)
+            }
+            for _, offset in ipairs(offsets) do
+                _tp(hrp.CFrame * offset * CFrame.Angles(math.rad(-90), 0, 0))
+                task.wait(0.25)
+            end
+        end)
+    end
+    if vim2 then
+        pcall(function()
+            vim2:CaptureController()
+            vim2:ClickButton1(Vector2.new(851, 158))
+        end)
+    end
 end
 Attack.Kill2 = function(model,Succes)
   if model and Succes then
