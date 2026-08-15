@@ -145,6 +145,7 @@ Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
@@ -188,14 +189,6 @@ Attack.Kill = function(model, Succes)
             vim2:ClickButton1(Vector2.new(851, 158))
         end)
     end
-    -- Phóng hitbox + đánh (kiểu Min Gaming)
-    pcall(function()
-        if hrp then
-            hrp.Size = Vector3.new(60, 60, 60)
-            hrp.Transparency = 1
-        end
-    end)
-    AttackNoCoolDown()
 end
 Attack.Kill2 = function(model,Succes)
   if model and Succes then
