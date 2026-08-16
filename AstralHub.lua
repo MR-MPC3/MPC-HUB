@@ -2372,7 +2372,7 @@ _G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Giới Hạn Tốc Độ Đánh",
-    Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Nhập Bên Dưới",
+    Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Ở Dưới",
     Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
