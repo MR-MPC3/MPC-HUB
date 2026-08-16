@@ -6459,16 +6459,41 @@ end
 Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
-RandomFF = Tabs.Fruit:AddToggle("RandomFF", {Title = "Auto Random Fruit", Description = "Automatic random devil fruit", Default = false})
+RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
+    Title = "Auto Random Fruit",
+    Description = "Automatic random devil fruit",
+    Default = false
+})
 RandomFF:OnChanged(function(Value)
-  _G.Random_Auto = Value
+    _G.Random_Auto = Value
 end)
+
 spawn(function()
-  while wait(Sec) do
-   	pcall(function()
-      if _G.Random_Auto then replicated.Remotes.CommF_:InvokeServer("Cousin","Buy") end 
-    end)
-  end
+    while wait(3) do
+        pcall(function()
+            if _G.Random_Auto then
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+
+                -- Thử click nút mua nếu Gacha Box hiện
+                task.wait(1)
+                local main = plr.PlayerGui:FindFirstChild("Main")
+                if main then
+                    for _, v in pairs(main:GetDescendants()) do
+                        if v:IsA("TextButton") or v:IsA("ImageButton") then
+                            local text = tostring(v.Text or v.Name or ""):lower()
+                            if text:find("%$") or text:find("buy") or text:find("mua") then
+                                local pos = v.AbsolutePosition + (v.AbsoluteSize / 2)
+                                vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+                                task.wait(0.05)
+                                vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
 end)
 DropF = Tabs.Fruit:AddToggle("DropF", {Title = "Auto Drop Fruit", Description = "Automatic drop devil fruit", Default = false})
 DropF:OnChanged(function(Value)
