@@ -6678,18 +6678,18 @@ Tabs.Shop:AddButton({Title = "Buy Cyborg Race (2.5k)", Description = "",Callback
   replicated.Remotes.CommF_:InvokeServer("CyborgTrainer","Buy")
 end})
 
-Tabs.Misc:AddSection("Server - Function")
-Tabs.Misc:AddButton({Title = "Rejoin Server", Description = "", Callback = function()
+Tabs.Misc:AddSection("Máy Chủ - Chức Năng")
+Tabs.Misc:AddButton({Title = "Vào Lại Máy Chủ", Description = "", Callback = function()
     pcall(function()
         -- Vào lại đúng Server cũ qua Remote game (tránh lỗi 773)
         replicated.__ServerBrowser:InvokeServer("teleport", tostring(game.JobId))
     end)
 end})
 
-Tabs.Misc:AddButton({Title = "Hop Server", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Đổi Máy Chủ", Description = "",Callback = function()
   Hop()
 end})
-Tabs.Misc:AddButton({Title = "Hop to Lowest Players", Description = "", Callback = function()
+Tabs.Misc:AddButton({Title = "Đổi Máy Chủ Ít Người Nhất", Description = "", Callback = function()
   local Http = game:GetService("HttpService")
   local Api = "https://games.roblox.com/v1/games/"
   local _place = game.PlaceId
@@ -6712,7 +6712,7 @@ Tabs.Misc:AddButton({Title = "Hop to Lowest Players", Description = "", Callback
     end)
   end
 end})
-Tabs.Misc:AddButton({Title = "Hop to Lowest Pings Server", Description = "", Callback = function()
+Tabs.Misc:AddButton({Title = "Đổi Máy Chủ Ping Thấp", Description = "", Callback = function()
   local HTTPService = game:GetService("HttpService")
   local StatsService = game:GetService("Stats")
   local function fetchServersData(placeId, limit)
