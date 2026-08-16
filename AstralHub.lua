@@ -6459,9 +6459,18 @@ end
 Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
+-- Đảm bảo khai báo an toàn các biến hệ thống nếu script chính chưa có
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local plr = LocalPlayer
+local replicated = ReplicatedStorage
+local vim1 = VirtualInputManager
+
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit (Đứng tại chỗ)",
-    Description = "Bay tới Zioles random rồi bay về chỗ cũ",
+    Description = "Bay tới Zioles random rồi bay về chỗ cũ (Fixed)",
     Default = false
 })
 
@@ -6474,43 +6483,50 @@ spawn(function()
         pcall(function()
             if not _G.Random_Auto then return end
             
-            -- 1. Kiểm tra tiền theo Level
-            local level = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Level")) and plr.Data.Level.Value or 1
-            local beli = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Beli")) and plr.Data.Beli.Value or 0
+            -- 1. Kiểm tra dữ liệu và tiền theo Level
+            local data = plr:FindFirstChild("Data")
+            if not data then return end
+            
+            local level = data:FindFirstChild("Level") and data.Level.Value or 1
+            local beli = data:FindFirstChild("Beli") and data.Beli.Value or 0
             local gachaCost = 25000 + (level - 1) * 150
             
             if beli < gachaCost then return end
             
-            local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+            local character = plr.Character
+            if not character then return end
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
             if not rootPart then return end
             
-            -- 2. LƯU LẠI VỊ TRÍ HIỆN TẠI (Nơi bạn đang đứng cày)
+            -- 2. Lưu lại vị trí hiện tại
             local oldCFrame = rootPart.CFrame
             
-            -- 3. Tìm NPC Gacha
-            local gacha = nil
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and (string.find(string.lower(v.Name), "gacha") or string.find(string.lower(v.Name), "zioles")) then
-                    if v:FindFirstChild("HumanoidRootPart") then
-                        gacha = v
+            -- 3. Tìm NPC Gacha an toàn và chính xác hơn
+            local gachaPart = nil
+            for _, v in pairs(workspace:GetChildren()) do
+                if v:IsA("Model") and (v.Name:lower():find("gacha") or v.Name:lower():find("zioles")) then
+                    local hrp = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
+                    if hrp then
+                        gachaPart = hrp
                         break
                     end
                 end
             end
             
-            if gacha then
-                -- 4. Bay tới sát NPC trong tích tắc
-                rootPart.CFrame = gacha.HumanoidRootPart.CFrame * CFrame.new(0, 3, 4)
-                task.wait(0.8) -- Đợi server nhận tọa độ mới
+            -- Nếu tìm thấy vị trí NPC
+            if gachaPart then
+                -- Bay tới sát NPC
+                rootPart.CFrame = gachaPart.CFrame * CFrame.new(0, 3, 4)
+                task.wait(1)
                 
-                -- 5. Gọi Remote mua trái cây
+                -- Gọi Remote mua trái cây
                 replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
                 task.wait(1)
                 
-                -- 6. Click nút mua trên UI Gacha mới nếu hiện lên
-                local main = plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("Main")
-                if main then
-                    for _, v in pairs(main:GetDescendants()) do
+                -- Click nút mua trên UI Gacha mới
+                local mainGui = plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("Main")
+                if mainGui then
+                    for _, v in pairs(mainGui:GetDescendants()) do
                         if (v:IsA("TextButton") or v:IsA("ImageButton")) and v.Visible then
                             local text = tostring(v.Text or v.Name):lower()
                             if text:find("%$") or text:find("buy") or text:find("mua") or text:find("random") or text:find("spin") then
@@ -6524,9 +6540,9 @@ spawn(function()
                     end
                 end
                 
-                task.wait(0.5)
+                task.wait(0.8)
                 
-                -- 7. BAY NGAY LẬP TỨC TRẢ VỀ VỊ TRÍ CŨ
+                -- Trả về vị trí cũ
                 rootPart.CFrame = oldCFrame
             end
         end)
