@@ -6684,7 +6684,7 @@ Tabs.Shop:AddButton({Title = "Buy Cyborg Race (2.5k)", Description = "",Callback
   replicated.Remotes.CommF_:InvokeServer("CyborgTrainer","Buy")
 end})
 
-Tabs.Misc:AddSection("Máy Chủ - Chức Năng")
+Tabs.Misc:AddSection("Máy Chủ")
 Tabs.Misc:AddButton({Title = "Vào Lại Máy Chủ", Description = "", Callback = function()
     pcall(function()
         -- Vào lại đúng Server cũ qua Remote game (tránh lỗi 773)
@@ -7001,7 +7001,7 @@ walkWater:OnChanged(function(Value)
   end
 end)
 
-iceWalk = Tabs.Misc:AddToggle("iceWalk", {Title = "Đi Trên Băng", Description = "Đi trên nước y hệt như trên nhưng có hiệu ứng băng", Default = false})
+iceWalk = Tabs.Misc:AddToggle("iceWalk", {Title = "Đi Trên Băng", Description = "Đi y hệt như đi trên nước nhưng có hiệu ứng trái băng-v2", Default = false})
 iceWalk:OnChanged(function(Value)
   _G.WalkWater = Value
 end)
