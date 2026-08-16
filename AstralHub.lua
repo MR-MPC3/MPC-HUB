@@ -6459,16 +6459,64 @@ end
 Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
-RandomFF = Tabs.Fruit:AddToggle("RandomFF", {Title = "Auto Random Fruit", Description = "Automatic random devil fruit", Default = false})
+RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
+    Title = "Auto Random Fruit",
+    Description = "Fixed for new Gacha UI (Hybrid)",
+    Default = false
+})
 RandomFF:OnChanged(function(Value)
-  _G.Random_Auto = Value
+    _G.Random_Auto = Value
 end)
+local FailCount = 0
 spawn(function()
-  while wait(Sec) do
-   	pcall(function()
-      if _G.Random_Auto then replicated.Remotes.CommF_:InvokeServer("Cousin","Buy") end 
-    end)
-  end
+    while wait(4) do   -- chậm lại để ổn định + giảm detect
+        pcall(function()
+            if not _G.Random_Auto then
+                FailCount = 0
+                return
+            end
+            -- Gọi remote cũ
+            replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+            task.wait(1.1)
+            -- Tự click nút mua nếu Gacha Box hiện ra
+            local clicked = false
+            local gui = plr.PlayerGui:FindFirstChild("Main")
+            if gui then
+                for _, btn in pairs(gui:GetDescendants()) do
+                    if btn:IsA("TextButton") or btn:IsA("ImageButton") then
+                        local txt = string.lower(tostring(btn.Text or btn.Name or ""))
+                        if string.find(txt, "%$") or string.find(txt, "buy") or string.find(txt, "mua") or string.find(txt, "purchase") then
+                            local pos = btn.AbsolutePosition + btn.AbsoluteSize / 2
+                            vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+                            task.wait(0.07)
+                            vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+                            clicked = true
+                            break
+                        end
+                    end
+                end
+            end
+            -- Nếu fail nhiều lần thì mới teleport đến NPC
+            if not clicked then
+                FailCount = FailCount + 1
+            else
+                FailCount = 0
+            end
+            if FailCount >= 3 then
+                FailCount = 0
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("Model") and (v.Name == "Blox Fruit Gacha" or v.Name == "Zioles" or string.find(string.lower(v.Name), "gacha")) then
+                        if v:FindFirstChild("HumanoidRootPart") then
+                            _tp(v.HumanoidRootPart.CFrame * CFrame.new(0, 3, 5))
+                            task.wait(0.9)
+                            replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+                            break
+                        end
+                    end
+                end
+            end
+        end)
+    end
 end)
 DropF = Tabs.Fruit:AddToggle("DropF", {Title = "Auto Drop Fruit", Description = "Automatic drop devil fruit", Default = false})
 DropF:OnChanged(function(Value)
