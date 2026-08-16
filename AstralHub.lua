@@ -890,7 +890,7 @@ local Tabs = {
   Shop = Window:AddTab({Title = "Shop", Icon = ""}),
   Misc = Window:AddTab({Title = "Misc", Icon = ""})
 }
-local FarmLevel = Tabs.Main:AddToggle("FarmLevel", {Title = "Auto Farm Level", Description = "", Default = false})
+local FarmLevel = Tabs.Main:AddToggle("FarmLevel", {Title = "Tự Động Cày Cấp", Description = "", Default = false})
 FarmLevel:OnChanged(function(Value)
   _G.Level = Value
 end)
