@@ -6489,18 +6489,10 @@ end
 Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
--- Đảm bảo khai báo an toàn các biến hệ thống nếu script chính chưa có
-local LocalPlayer = game:GetService("Players").LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
-local plr = LocalPlayer
-local replicated = ReplicatedStorage
-local vim1 = VirtualInputManager
-
+-- ==================== AUTO RANDOM FRUIT (FIXED - TP NHANH TỚI GACHA RỒI VỀ) ====================
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
-    Title = "Auto Random Fruit (Đứng tại chỗ)",
-    Description = "Bay tới Zioles random rồi bay về chỗ cũ (Fixed)",
+    Title = "Auto Random Fruit",
+    Description = "Bay tới Zioles random rồi bay về chỗ cũ (hoạt động mọi nơi)",
     Default = false
 })
 
@@ -6509,72 +6501,57 @@ RandomFF:OnChanged(function(Value)
 end)
 
 spawn(function()
-    while task.wait(5) do
+    while task.wait(4) do   -- cooldown khoảng 4s cho an toàn, có thể giảm xuống 2~3 nếu muốn
         pcall(function()
             if not _G.Random_Auto then return end
-            
-            -- 1. Kiểm tra dữ liệu và tiền theo Level
-            local data = plr:FindFirstChild("Data")
-            if not data then return end
-            
-            local level = data:FindFirstChild("Level") and data.Level.Value or 1
-            local beli = data:FindFirstChild("Beli") and data.Beli.Value or 0
-            local gachaCost = 25000 + (level - 1) * 150
-            
-            if beli < gachaCost then return end
-            
+
             local character = plr.Character
             if not character then return end
-            local rootPart = character:FindFirstChild("HumanoidRootPart")
-            if not rootPart then return end
-            
-            -- 2. Lưu lại vị trí hiện tại
-            local oldCFrame = rootPart.CFrame
-            
-            -- 3. Tìm NPC Gacha an toàn và chính xác hơn
-            local gachaPart = nil
+            local root = character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            -- Kiểm tra tiền đủ không (công thức giá Gacha)
+            local data = plr:FindFirstChild("Data")
+            if not data then return end
+            local level = (data:FindFirstChild("Level") and data.Level.Value) or 1
+            local beli  = (data:FindFirstChild("Beli") and data.Beli.Value) or 0
+            local cost  = 25000 + (level - 1) * 150
+            if beli < cost then return end
+
+            -- 1. Lưu vị trí hiện tại
+            local oldCFrame = root.CFrame
+
+            -- 2. Tìm NPC Gacha / Zioles
+            local gachaHRP = nil
             for _, v in pairs(workspace:GetChildren()) do
-                if v:IsA("Model") and (v.Name:lower():find("gacha") or v.Name:lower():find("zioles")) then
-                    local hrp = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
-                    if hrp then
-                        gachaPart = hrp
-                        break
+                if v:IsA("Model") then
+                    local nameLower = v.Name:lower()
+                    if nameLower:find("gacha") or nameLower:find("zioles") or nameLower:find("fruit dealer") then
+                        gachaHRP = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
+                        if gachaHRP then break end
                     end
                 end
             end
-            
-            -- Nếu tìm thấy vị trí NPC
-            if gachaPart then
-                -- Bay tới sát NPC
-                rootPart.CFrame = gachaPart.CFrame * CFrame.new(0, 3, 4)
-                task.wait(1)
-                
-                -- Gọi Remote mua trái cây
-                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-                task.wait(1)
-                
-                -- Click nút mua trên UI Gacha mới
-                local mainGui = plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("Main")
-                if mainGui then
-                    for _, v in pairs(mainGui:GetDescendants()) do
-                        if (v:IsA("TextButton") or v:IsA("ImageButton")) and v.Visible then
-                            local text = tostring(v.Text or v.Name):lower()
-                            if text:find("%$") or text:find("buy") or text:find("mua") or text:find("random") or text:find("spin") then
-                                local pos = v.AbsolutePosition + (v.AbsoluteSize / 2)
-                                vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
-                                task.wait(0.08)
-                                vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
-                                break
-                            end
-                        end
-                    end
-                end
-                
-                task.wait(0.8)
-                
-                -- Trả về vị trí cũ
-                rootPart.CFrame = oldCFrame
+
+            -- Fallback nếu không tìm thấy (vị trí cố định hay dùng)
+            if not gachaHRP then
+                -- Bạn có thể thêm vị trí cứng của Gacha ở từng sea nếu cần
+                return
             end
+
+            -- 3. Bay tới sát NPC (nhanh)
+            root.CFrame = gachaHRP.CFrame * CFrame.new(0, 3, 5)
+            task.wait(0.35)   -- chờ 1 chút để server nhận vị trí
+
+            -- 4. Gọi remote random
+            replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+            -- Một số bản dùng remote mới hơn, thử thêm dòng dưới nếu cần:
+            -- replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
+
+            task.wait(0.25)
+
+            -- 5. Bay về chỗ cũ ngay
+            root.CFrame = oldCFrame
         end)
     end
 end)
