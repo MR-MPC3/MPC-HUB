@@ -2371,8 +2371,8 @@ _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
-    Title = "Bật Giới Hạn Tốc Độ Đánh",
-    Description = "Tắt = max speed | Bật = dùng ô nhập bên dưới",
+    Title = "Giới Hạn Tốc Độ Đánh",
+    Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Nhập Bên Dưới",
     Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
@@ -2380,9 +2380,9 @@ UseCooldownToggle:OnChanged(function(Value)
 end)
 
 Tabs.Settings:AddInput("AttackSpeedInput", {
-    Title = "Tốc độ đánh (0.02 -> 2)",
+    Title = "Nhập Tốc Độ Đánh (0.02s -> 2s)",
     Default = "0.12",
-    Placeholder = "0.02 -> 2 (nhỏ hơn = nhanh hơn)",
+    Placeholder = "Nhỏ Hơn = Nhanh Hơn",
     Numeric = false,
     Finished = false,
     Callback = function(Value)
