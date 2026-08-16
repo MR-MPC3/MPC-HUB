@@ -142,77 +142,30 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
--- ==================== ATTACK (RegisterAttack + RegisterHit) ====================
+-- Khai báo biến lưu thời gian tấn công trước đó (đặt ở phía trên hàm hoặc ngoài cùng file script)
 local lastAttackTick = 0
-_G.UseAttackCooldown = true
-_G.AttackCooldown = 0.12
-
-local function GetEquippedTool()
-    local char = plr.Character
-    if not char then return nil end
-    for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("Tool") then return v end
-    end
-    return nil
-end
-
-local function FindEnemiesInRange(tbl, list)
-    local char = plr.Character
-    if not char or not char.PrimaryPart then return nil end
-    local myPos = char:GetPivot().Position
-    local mainPart = nil
-    for _, enemy in ipairs(list) do
-        if not enemy:GetAttribute("IsBoat") then
-            local hum = enemy:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 60 then
-                    if enemy ~= char then
-                        table.insert(tbl, {enemy, head})
-                        mainPart = head
-                    end
-                end
-            end
-        end
-    end
-    return mainPart
-end
-
-function AttackNoCoolDown()
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
-    local targets = {}
-    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart or not GetEquippedTool() then return end
-    pcall(function()
-        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
-        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
-    end)
-end
-
 Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
+    
+    -- [Bộ lọc thời gian] Kiểm tra khoảng cách thời gian giữa 2 lần đánh liên tiếp
+    local cd = tonumber(_G.AttackCooldown) or 0.25 -- Mặc định 0.25 giây, bạn có thể chỉnh lại _G.AttackCooldown tuỳ ý
+    if (tick() - lastAttackTick) < cd then return end
+    lastAttackTick = tick()
+
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
     PosMon = model:GetAttribute("Locked").Position
     BringEnemy()
+    
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
         weaponSc(_G.ChooseWP or "Melee")
     end
+    
     local char = plr.Character
     local Equipped = char and char:FindFirstChildOfClass("Tool")
     if not Equipped then
@@ -220,13 +173,35 @@ Attack.Kill = function(model, Succes)
         Equipped = char and char:FindFirstChildOfClass("Tool")
     end
     if not Equipped then return end
+    
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
         _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
         _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
-    AttackNoCoolDown()
+    
+    if RandomCFrame then
+        task.spawn(function()
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(0, 30, 25))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(25, 30, 0))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(-25, 30, 0))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(0, 30, 25))
+            task.wait(0.5)
+            _tp(hrp.CFrame * CFrame.new(-25, 30, 0))
+        end)
+    end
+    
+    if vim2 then
+        pcall(function()
+            vim2:CaptureController()
+            vim2:ClickButton1(Vector2.new(851, 158))
+        end)
+    end
 end
 Attack.Kill2 = function(model,Succes)
   if model and Succes then
@@ -2366,35 +2341,20 @@ spawn(function()
   end
 end)
 
--- Tốc độ đánh: Toggle + ô nhập số (0.02 -> 2)
-_G.UseAttackCooldown = true
-_G.AttackCooldown = 0.12
-
-local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
-    Title = "Giới Hạn Tốc Độ Đánh",
-    Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Ở Dưới",
-    Default = true
+-- Cài đặt Tốc độ đánh (Slider)
+_G.AttackCooldown = 0.25 
+local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
+    Title = "Tốc độ đánh (Tùy chỉnh nhịp)",
+    Description = "Kéo trái để đánh chậm (an toàn), kéo phải để đánh nhanh hơn",
+    Default = 0.25,
+    Min = 0.05,   -- Tốc độ nhanh nhất
+    Max = 0.8,    -- Tốc độ chậm nhất
+    Rounding = 2, -- Làm tròn 2 chữ số thập phân
 })
-UseCooldownToggle:OnChanged(function(Value)
-    _G.UseAttackCooldown = Value
+
+AttackSpeed:OnChanged(function(Value)
+    _G.AttackCooldown = Value
 end)
-
-Tabs.Settings:AddInput("AttackSpeedInput", {
-    Title = "Nhập Tốc Độ Đánh (0.02s -> 2s)",
-    Default = "0.12",
-    Placeholder = "Nhỏ Hơn = Nhanh Hơn",
-    Numeric = false,
-    Finished = false,
-    Callback = function(Value)
-        local num = tonumber(Value)
-        if num then
-            if num < 0.02 then num = 0.02 end
-            if num > 2 then num = 2 end
-            _G.AttackCooldown = num
-        end
-    end
-})
-
 
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
     Title = "Initialize Attack [M1/Melee/Sword]",
@@ -2541,13 +2501,24 @@ spawn(function()
 end)      
 
 Tabs.Settings:AddSection("Stats Upgrade")
-local StatusSelect = Tabs.Settings:AddSlider("StatusSelect",{Title = "Stats Value",Description = "choose your point need to upgrade",Default = 10,Min = 0,Max = 1000,Rounding = 1, 
-Callback = function(Value)
-  pSats = Value
-end})
-StatusSelect:OnChanged(function(Value)
-  pSats = Value
-end)
+pSats = 1
+Tabs.Settings:AddInput("StatusInput", {
+    Title = "Stats Value (1 -> 1000)",
+    Default = "1",
+    Placeholder = "1 -> 1000 (nhỏ nhất = 1)",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then
+            if num < 1 then num = 1 end
+            if num > 1000 then num = 1000 end
+            pSats = num
+        else
+            pSats = 1
+        end
+    end
+})
 
 local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Melee", Description = "", Default = false})
 StatsUpg:OnChanged(function(Value)
@@ -7039,15 +7010,23 @@ end
 
 CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
 CameraShakerR:Stop()
-
+get_Monster=function()for a,b in pairs(workspace.Enemies:GetChildren())do local c=b:FindFirstChild("UpperTorso")or b:FindFirstChild("Head")if b:FindFirstChild("HumanoidRootPart",true)and c then if(b.Head.Position-plr.Character.HumanoidRootPart.Position).Magnitude<=50 then return true,c.Position end end end;for a,d in pairs(workspace.SeaBeasts:GetChildren())do if d:FindFirstChild("HumanoidRootPart")and d:FindFirstChild("Health")and d.Health.Value>0 then return true,d.HumanoidRootPart.Position end end;for a,d in pairs(workspace.Enemies:GetChildren())do if d:FindFirstChild("Health")and d.Health.Value>0 and d:FindFirstChild("VehicleSeat")then return true,d.Engine.Position end end end
+Actived=function()local a=game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")for b,c in next,getconnections(a.Activated)do if typeof(c.Function)=='function'then getupvalues(c.Function)end end end
 task.spawn(function()
-    RunSer.Heartbeat:Connect(function()
-        pcall(function()
-            if _G.Seriality then
-                AttackNoCoolDown()
-            end
-        end)
+  RunSer.Heartbeat:Connect(function()
+    pcall(function()      
+      if not _G.Seriality then return end      
+      AttackNoCoolDown() 
+      local Pretool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+      local ToolTip = Pretool.ToolTip
+      local MobAura, Mon = get_Monster()      
+      if ToolTip == "Blox Fruit" then
+        if MobAura then           
+          local LeftClickRemote = Pretool:FindFirstChild('LeftClickRemote');
+          if LeftClickRemote then Actived() LeftClickRemote:FireServer(Vector3.new(0.01,-500,0.01),1,true);LeftClickRemote:FireServer(false)end
+        end     		                         
+      end      
     end)
+  end)
 end)
-
 Window:SelectTab(1)
