@@ -142,7 +142,7 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
--- ==================== ATTACK MỚI (RegisterAttack + RegisterHit) ====================
+-- ==================== ATTACK FIX (RegisterAttack + RegisterHit) ====================
 local lastAttackTick = 0
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
@@ -156,19 +156,19 @@ local function GetEquippedTool()
     return nil
 end
 
-local function FindEnemiesInRange(enemiesTable, enemiesList)
+local function FindEnemiesInRange(tbl, list)
     local char = plr.Character
     if not char or not char.PrimaryPart then return nil end
     local myPos = char:GetPivot().Position
     local mainPart = nil
-    for _, enemy in ipairs(enemiesList) do
+    for _, enemy in ipairs(list) do
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
                 local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
                 if head and (myPos - head.Position).Magnitude <= 60 then
                     if enemy ~= char then
-                        table.insert(enemiesTable, {enemy, head})
+                        table.insert(tbl, {enemy, head})
                         mainPart = head
                     end
                 end
@@ -185,18 +185,12 @@ function AttackNoCoolDown()
         lastAttackTick = tick()
     end
     local targets = {}
-    local enemies = workspace.Enemies:GetChildren()
-    local mainPart = FindEnemiesInRange(targets, enemies)
-    if not mainPart then return end
-    if not GetEquippedTool() then return end
+    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
+    if not mainPart or not GetEquippedTool() then return end
     pcall(function()
-        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
-        local RegisterHit = Net:WaitForChild("RE/RegisterHit")
-        if #targets > 0 then
-            RegisterAttack:FireServer(1e-9)
-            RegisterHit:FireServer(mainPart, targets)
-        end
+        local Net = replicated.Modules.Net
+        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
+        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
 end
 
@@ -2372,34 +2366,32 @@ spawn(function()
   end
 end)
 
--- ==================== TỐC ĐỘ ĐÁNH (Slider + TextBox) ====================
+-- Tốc độ đánh: Toggle + Slider + TextBox
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Bật Giới Hạn Tốc Độ Đánh",
-    Description = "Tắt = đánh max speed | Bật = dùng slider + ô nhập bên dưới",
+    Description = "Tắt = max speed | Bật = dùng slider + ô nhập",
     Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
     _G.UseAttackCooldown = Value
 end)
 
--- Slider
 local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
     Title = "Tốc độ đánh (kéo)",
-    Description = "Càng nhỏ càng nhanh | Khuyến nghị 0.08 ~ 0.15",
+    Description = "Càng nhỏ càng nhanh (0.08~0.15 khuyến nghị)",
     Default = 0.12,
     Min = 0.03,
     Max = 0.5,
     Rounding = 2
 })
 
--- TextBox (ô nhập số) - cùng chỉnh 1 giá trị với Slider
 local AttackSpeedInput = Tabs.Settings:AddInput("AttackSpeedInput", {
     Title = "Tốc độ đánh (nhập số)",
     Default = "0.12",
-    Placeholder = "Nhập số giây (vd: 0.1)",
+    Placeholder = "vd: 0.1",
     Numeric = true,
     Finished = true,
     Callback = function(Value)
@@ -2415,7 +2407,6 @@ AttackSpeed:OnChanged(function(Value)
     _G.AttackCooldown = Value
     pcall(function() AttackSpeedInput:SetValue(tostring(Value)) end)
 end)
--- =======================================================================
 
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
     Title = "Initialize Attack [M1/Melee/Sword]",
@@ -2561,36 +2552,33 @@ spawn(function()
   end
 end)      
 
--- ==================== STATS UPGRADE (Slider + TextBox) ====================
+-- Stats Upgrade: Toggle + Slider + TextBox
 Tabs.Settings:AddSection("Stats Upgrade")
-
 _G.UseStatsValue = true
 pSats = 10
 
 local UseStatsToggle = Tabs.Settings:AddToggle("UseStatsToggle", {
     Title = "Bật Giới Hạn Điểm Cộng",
-    Description = "Tắt = cộng full điểm | Bật = dùng slider + ô nhập bên dưới",
+    Description = "Tắt = cộng full | Bật = dùng slider + ô nhập",
     Default = true
 })
 UseStatsToggle:OnChanged(function(Value)
     _G.UseStatsValue = Value
 end)
 
--- Slider
 local StatusSelect = Tabs.Settings:AddSlider("StatusSelect", {
     Title = "Số điểm cộng (kéo)",
-    Description = "Chọn số điểm muốn cộng mỗi lần",
+    Description = "Số điểm mỗi lần cộng",
     Default = 10,
     Min = 1,
     Max = 1000,
     Rounding = 0
 })
 
--- TextBox (ô nhập số)
 local StatusInput = Tabs.Settings:AddInput("StatusInput", {
     Title = "Số điểm cộng (nhập số)",
     Default = "10",
-    Placeholder = "Nhập số điểm (vd: 50)",
+    Placeholder = "vd: 50",
     Numeric = true,
     Finished = true,
     Callback = function(Value)
@@ -2608,20 +2596,15 @@ StatusSelect:OnChanged(function(Value)
 end)
 
 local function GetStatsAmount()
-    if _G.UseStatsValue then
-        return pSats or 10
-    else
-        return plr.Data.Points.Value
-    end
+    if _G.UseStatsValue then return pSats or 10 end
+    return plr.Data.Points.Value
 end
 
 local StatsMelee = Tabs.Settings:AddToggle("StatsMelee", {Title = "Auto Melee", Description = "", Default = false})
 StatsMelee:OnChanged(function(Value) _G.Auto_Melee = Value end)
 spawn(function()
     while wait(Sec) do
-        pcall(function()
-            if _G.Auto_Melee then statsSetings("Melee", GetStatsAmount()) end
-        end)
+        pcall(function() if _G.Auto_Melee then statsSetings("Melee", GetStatsAmount()) end end)
     end
 end)
 
@@ -2629,9 +2612,7 @@ local StatsSword = Tabs.Settings:AddToggle("StatsSword", {Title = "Auto Sword", 
 StatsSword:OnChanged(function(Value) _G.Auto_Sword = Value end)
 spawn(function()
     while wait(Sec) do
-        pcall(function()
-            if _G.Auto_Sword then statsSetings("Sword", GetStatsAmount()) end
-        end)
+        pcall(function() if _G.Auto_Sword then statsSetings("Sword", GetStatsAmount()) end end)
     end
 end)
 
@@ -2639,9 +2620,7 @@ local StatsGun = Tabs.Settings:AddToggle("StatsGun", {Title = "Auto Gun", Descri
 StatsGun:OnChanged(function(Value) _G.Auto_Gun = Value end)
 spawn(function()
     while wait(Sec) do
-        pcall(function()
-            if _G.Auto_Gun then statsSetings("Gun", GetStatsAmount()) end
-        end)
+        pcall(function() if _G.Auto_Gun then statsSetings("Gun", GetStatsAmount()) end end)
     end
 end)
 
@@ -2649,9 +2628,7 @@ local StatsFruit = Tabs.Settings:AddToggle("StatsFruit", {Title = "Auto Blox Fru
 StatsFruit:OnChanged(function(Value) _G.Auto_DevilFruit = Value end)
 spawn(function()
     while wait(Sec) do
-        pcall(function()
-            if _G.Auto_DevilFruit then statsSetings("Devil", GetStatsAmount()) end
-        end)
+        pcall(function() if _G.Auto_DevilFruit then statsSetings("Devil", GetStatsAmount()) end end)
     end
 end)
 
@@ -2659,12 +2636,9 @@ local StatsDefense = Tabs.Settings:AddToggle("StatsDefense", {Title = "Auto Defe
 StatsDefense:OnChanged(function(Value) _G.Auto_Defense = Value end)
 spawn(function()
     while wait(Sec) do
-        pcall(function()
-            if _G.Auto_Defense then statsSetings("Defense", GetStatsAmount()) end
-        end)
+        pcall(function() if _G.Auto_Defense then statsSetings("Defense", GetStatsAmount()) end end)
     end
 end)
--- =======================================================================
 
 Tabs.Melee:AddSection("Fighting Melee Styles")
 local SuperHuman = Tabs.Melee:AddToggle("SuperHuman", {Title = "Auto Superhuman", Description = "", Default = false})
