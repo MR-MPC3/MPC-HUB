@@ -6460,27 +6460,34 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = fu
   replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
-    Title = "Auto Random Fruit",
-    Description = "Fix Gacha New UI + Auto Price Calculation",
+    Title = "Auto Random Fruit (Đứng tại chỗ)",
+    Description = "Bay tới Zioles random rồi bay về chỗ cũ",
     Default = false
 })
+
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
 end)
+
 spawn(function()
-    while task.wait(5) do -- Dùng task.wait(5) thay cho wait(5) để mượt hơn
+    while task.wait(5) do
         pcall(function()
             if not _G.Random_Auto then return end
-            -- 1. Lấy dữ liệu Level và Beli từ Data của người chơi
+            
+            -- 1. Kiểm tra tiền theo Level
             local level = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Level")) and plr.Data.Level.Value or 1
             local beli = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Beli")) and plr.Data.Beli.Value or 0
-            -- 2. Công thức tính giá quay chuẩn
             local gachaCost = 25000 + (level - 1) * 150
-            -- Kiểm tra tiền
-            if beli < gachaCost then
-                return -- Không đủ tiền thì đứng đợi hoặc báo lỗi
-            end
-            -- 3. Tìm NPC Gacha (Sử dụng tìm kiếm linh hoạt theo từ khóa)
+            
+            if beli < gachaCost then return end
+            
+            local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+            if not rootPart then return end
+            
+            -- 2. LƯU LẠI VỊ TRÍ HIỆN TẠI (Nơi bạn đang đứng cày)
+            local oldCFrame = rootPart.CFrame
+            
+            -- 3. Tìm NPC Gacha
             local gacha = nil
             for _, v in pairs(workspace:GetDescendants()) do
                 if v:IsA("Model") and (string.find(string.lower(v.Name), "gacha") or string.find(string.lower(v.Name), "zioles")) then
@@ -6490,32 +6497,37 @@ spawn(function()
                     end
                 end
             end
-            -- 4. Thực hiện hành động
+            
             if gacha then
-                -- Bay đến sát NPC để bypass khoảng cách
-                _tp(gacha.HumanoidRootPart.CFrame * CFrame.new(0, 3, 5))
-                task.wait(1.5)
-                -- Gọi Remote chính
+                -- 4. Bay tới sát NPC trong tích tắc
+                rootPart.CFrame = gacha.HumanoidRootPart.CFrame * CFrame.new(0, 3, 4)
+                task.wait(0.8) -- Đợi server nhận tọa độ mới
+                
+                -- 5. Gọi Remote mua trái cây
                 replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-                task.wait(1.5)
-                -- Click giả lập vào nút Buy trên UI
-                local main = plr.PlayerGui:FindFirstChild("Main")
+                task.wait(1)
+                
+                -- 6. Click nút mua trên UI Gacha mới nếu hiện lên
+                local main = plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("Main")
                 if main then
                     for _, v in pairs(main:GetDescendants()) do
                         if (v:IsA("TextButton") or v:IsA("ImageButton")) and v.Visible then
                             local text = tostring(v.Text or v.Name):lower()
-                            if text:find("%$") or text:find("buy") or text:find("mua") or text:find("purchase") then
+                            if text:find("%$") or text:find("buy") or text:find("mua") or text:find("random") or text:find("spin") then
                                 local pos = v.AbsolutePosition + (v.AbsoluteSize / 2)
                                 vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
-                                task.wait(0.1)
+                                task.wait(0.08)
                                 vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+                                break
                             end
                         end
                     end
                 end
-            else
-                -- Dự phòng nếu không tìm thấy NPC
-                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+                
+                task.wait(0.5)
+                
+                -- 7. BAY NGAY LẬP TỨC TRẢ VỀ VỊ TRÍ CŨ
+                rootPart.CFrame = oldCFrame
             end
         end)
     end
