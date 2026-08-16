@@ -6466,7 +6466,7 @@ end})
 
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
-    Description = "Bay tới Gacha random rồi về",
+    Description = "Bay tới Gacha → thử random → về",
     Default = false
 })
 
@@ -6475,7 +6475,7 @@ RandomFF:OnChanged(function(Value)
 end)
 
 spawn(function()
-    while task.wait(4) do
+    while task.wait(5) do
         pcall(function()
             if not _G.Random_Auto then return end
 
@@ -6486,36 +6486,56 @@ spawn(function()
             if not data or (data.Beli and data.Beli.Value < 25000) then return end
 
             local old = root.CFrame
-            local target = nil
+            local target
 
-            -- Tìm NPC Gacha
-            for _, v in pairs(replicated.NPCs:GetChildren()) do
-                if v.Name == "Blox Fruit Gacha" then
-                    target = (v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart)
-                    if target then
-                        target = target.CFrame * CFrame.new(0, 2, 4)
-                        break
+            if World1 then
+                target = CFrame.new(-1151.9, 16.6, 1439.1)
+            elseif World2 then
+                target = CFrame.new(-450.5, 73.0, 298.5)
+            else
+                target = CFrame.new(-12548.5, 337.2, -7525.8)
+            end
+
+            -- Bay sát NPC
+            root.CFrame = target * CFrame.new(0, 1.5, 3)
+            task.wait(1.2)
+
+            -- 1. Thử tìm và fire ProximityPrompt
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and v.Parent and v.Parent.Name:lower():find("gacha") then
+                    pcall(function()
+                        fireproximityprompt(v)
+                    end)
+                end
+            end
+
+            -- 2. Thử các remote khác nhau
+            pcall(function() replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy") end)
+            pcall(function() replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit") end)
+            pcall(function() replicated.Remotes.CommF_:InvokeServer("Gacha", "Buy") end)
+            pcall(function() replicated.Remotes.CommF_:InvokeServer("BloxFruitGacha") end)
+
+            -- 3. Đợi UI Gacha hiện rồi thử click nút
+            task.wait(0.8)
+            local mainGui = plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("Main")
+            if mainGui then
+                for _, btn in pairs(mainGui:GetDescendants()) do
+                    if (btn:IsA("TextButton") or btn:IsA("ImageButton")) and btn.Visible then
+                        local text = (btn.Text or btn.Name or ""):lower()
+                        if text:find("buy") or text:find("mua") or text:find("random") or text:find("spin") or text:find("$") then
+                            pcall(function()
+                                local pos = btn.AbsolutePosition + (btn.AbsoluteSize / 2)
+                                game:GetService("VirtualInputManager"):SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+                                task.wait(0.05)
+                                game:GetService("VirtualInputManager"):SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+                            end)
+                            break
+                        end
                     end
                 end
             end
 
-            -- Không tìm thấy thì dùng vị trí theo Sea
-            if not target then
-                if World1 then
-                    target = CFrame.new(-1151.9, 16.6, 1439.1)
-                elseif World2 then
-                    target = CFrame.new(-450.5, 73, 298.5)
-                else
-                    target = CFrame.new(-12548.5, 337.2, -7525.8)
-                end
-            end
-
-            root.CFrame = target
-            task.wait(1)
-            pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            end)
-            task.wait(0.6)
+            task.wait(0.7)
             root.CFrame = old
         end)
     end
