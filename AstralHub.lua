@@ -2328,6 +2328,21 @@ spawn(function()
   end
 end)
 
+-- Cài đặt Tốc độ đánh (Slider)
+_G.AttackCooldown = 0.25 
+local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
+    Title = "Tốc độ đánh (Tùy chỉnh nhịp)",
+    Description = "Kéo trái để đánh chậm (an toàn), kéo phải để đánh nhanh hơn",
+    Default = 0.25,
+    Min = 0.05,   -- Tốc độ nhanh nhất
+    Max = 0.8,    -- Tốc độ chậm nhất
+    Rounding = 2, -- Làm tròn 2 chữ số thập phân
+})
+
+AttackSpeed:OnChanged(function(Value)
+    _G.AttackCooldown = Value
+end)
+
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
     Title = "Initialize Attack [M1/Melee/Sword]",
     Description = "[ Not Supported Gas M1 ]",
