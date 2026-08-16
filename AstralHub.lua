@@ -6459,6 +6459,36 @@ end
 Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
+local Nms = {}
+for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",false)) do
+    if fruitData["OnSale"] == true then
+        local price = addCommas(fruitData["Price"])
+        local NormalInFO = fruitData["Name"]
+        table.insert(Nms, NormalInFO)
+    end
+end
+Sel_NFruit = Tabs.Fruit:AddDropdown("Sel_NFruit",{Title = "Select Fruit Stock",Values = Nms,Multi = false,Default = 1})
+Sel_NFruit:OnChanged(function(Value)
+  _G.SelectFruit = Value
+end)
+Tabs.Fruit:AddButton({Title = "Buy Basic Stock", Description = "",Callback = function()
+  replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",_G.SelectFruit)
+end})
+Sel_MFruit = Tabs.Fruit:AddDropdown("Sel_MFruit",{Title = "Select Mirage Fruit",Values = fruitsOnSale,Multi = false,Default = 1})
+Sel_MFruit:OnChanged(function(Value)
+  SelectF_Adv = Value
+end)
+local Nms = {}
+for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",false)) do
+    if fruitData["OnSale"] == true then
+        local price = addCommas(fruitData["Price"])
+        local NormalInFO = fruitData["Name"]
+        table.insert(Nms, NormalInFO)
+    end
+end
+Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
+  replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
+end})
 -- Đảm bảo khai báo an toàn các biến hệ thống nếu script chính chưa có
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -6548,6 +6578,16 @@ spawn(function()
         end)
     end
 end)
+StoredF = Tabs.Fruit:AddToggle("StoredF", {Title = "Auto Store Fruit", Description = "Automatic store devil fruit", Default = false})
+StoredF:OnChanged(function(Value)
+  _G.StoreF = Value
+end)
+spawn(function()
+  while wait(Sec) do
+    if _G.StoreF then
+      pcall(function() UpdStFruit() end)
+    end
+  end
 StoredF = Tabs.Fruit:AddToggle("StoredF", {Title = "Auto Store Fruit", Description = "Automatic store devil fruit", Default = false})
 StoredF:OnChanged(function(Value)
   _G.StoreF = Value
