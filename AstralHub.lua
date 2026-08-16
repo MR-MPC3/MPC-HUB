@@ -2320,50 +2320,56 @@ spawn(function()
 end)
 
 Tabs.Settings:AddSection("Settings / Configure")
-local _Weapon = {"Melee","Sword","Blox Fruit","Gun"}
-local Weapon_Config = Tabs.Settings:AddDropdown("Weapon_Config",{Title = "Select Weapon",Values = _Weapon,Multi = false,Default = 1})
+local WeaponMap = { ["Cận Chiến"] = "Melee", ["Kiếm"] = "Sword", ["Trái Blox"] = "Blox Fruit", ["Súng"] = "Gun" }
+local _WeaponDisplay = {"Cận Chiến", "Kiếm", "Trái Blox", "Súng"}
+local Weapon_Config = Tabs.Settings:AddDropdown("Weapon_Config", {
+    Title = "Chọn Vũ Khí",
+    Values = _WeaponDisplay,
+    Multi = false,
+    Default = 1
+})
 Weapon_Config:OnChanged(function(Value)
-  _G.ChooseWP = Value
+    _G.ChooseWP = WeaponMap[Value] or "Melee"
 end)
 _G.ChooseWP = _G.ChooseWP or "Melee"
 spawn(function()
-  while wait(Sec) do
-    pcall(function()
-      if _G.ChooseWP == "Melee" then
-        for _,v in pairs(plr.Backpack:GetChildren()) do
-	      if v.ToolTip == "Melee" then
-		    if plr.Backpack:FindFirstChild(tostring(v.Name)) then
-	          _G.SelectWeapon = v.Name              
+    while wait(Sec) do
+        pcall(function()
+            if _G.ChooseWP == "Melee" then
+                for _,v in pairs(plr.Backpack:GetChildren()) do
+                    if v.ToolTip == "Melee" then
+                        if plr.Backpack:FindFirstChild(tostring(v.Name)) then
+                            _G.SelectWeapon = v.Name                           
+                        end
+                    end
+                end
+            elseif _G.ChooseWP == "Sword" then     
+                for _,v in pairs(plr.Backpack:GetChildren()) do
+                    if v.ToolTip == "Sword" then
+                        if plr.Backpack:FindFirstChild(tostring(v.Name)) then
+                            _G.SelectWeapon = v.Name                           
+                        end
+                    end
+                end
+            elseif _G.ChooseWP == "Gun" then     
+                for _,v in pairs(plr.Backpack:GetChildren()) do
+                    if v.ToolTip == "Gun" then
+                        if plr.Backpack:FindFirstChild(tostring(v.Name)) then
+                            _G.SelectWeapon = v.Name                           
+                        end
+                    end
+                end
+            elseif _G.ChooseWP == "Blox Fruit" then     
+                for _,v in pairs(plr.Backpack:GetChildren()) do
+                    if v.ToolTip == "Blox Fruit" then
+                        if plr.Backpack:FindFirstChild(tostring(v.Name)) then
+                            _G.SelectWeapon = v.Name                                                 
+                        end
+                    end
+                end         
             end
-          end
-        end
-   	  elseif _G.ChooseWP == "Sword" then     
-	    for _,v in pairs(plr.Backpack:GetChildren()) do
-	      if v.ToolTip == "Sword" then
-		    if plr.Backpack:FindFirstChild(tostring(v.Name)) then
-		      _G.SelectWeapon = v.Name              
-            end
-          end
-        end
-      elseif _G.ChooseWP == "Gun" then     
-	     for _,v in pairs(plr.Backpack:GetChildren()) do
-	       if v.ToolTip == "Gun" then
-		    if plr.Backpack:FindFirstChild(tostring(v.Name)) then
-		      _G.SelectWeapon = v.Name              
-            end
-          end
-        end
-      elseif _G.ChooseWP == "Blox Fruit" then     
-	    for _,v in pairs(plr.Backpack:GetChildren()) do
-	      if v.ToolTip == "Blox Fruit" then
-		    if plr.Backpack:FindFirstChild(tostring(v.Name)) then
-		      _G.SelectWeapon = v.Name		                    
-            end
-          end
-        end        
-      end
-    end)
-  end
+        end)
+    end
 end)
 
 -- Tốc độ đánh: Toggle + ô nhập số (0.02 -> 2)
