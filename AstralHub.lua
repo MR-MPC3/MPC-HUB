@@ -7001,7 +7001,7 @@ walkWater:OnChanged(function(Value)
   end
 end)
 
-iceWalk = Tabs.Misc:AddToggle("iceWalk", {Title = "Đi Trên Băng", Description = "Đi y hệt như đi trên nước nhưng có hiệu ứng trái băng-v2", Default = false})
+iceWalk = Tabs.Misc:AddToggle("iceWalk", {Title = "Đi Trên Băng", Description = "Như đi trên nước nhưng có hiệu ứng đi của trái băng-v2", Default = false})
 iceWalk:OnChanged(function(Value)
   _G.WalkWater = Value
 end)
