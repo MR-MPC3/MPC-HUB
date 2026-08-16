@@ -188,7 +188,7 @@ function AttackNoCoolDown()
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
     if not mainPart or not GetEquippedTool() then return end
     pcall(function()
-        local Net = replicated.Modules.Net
+        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
         Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
         Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
@@ -2366,47 +2366,34 @@ spawn(function()
   end
 end)
 
--- Tốc độ đánh: Toggle + Slider + TextBox
+-- Tốc độ đánh: chỉ Toggle + ô nhập số
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Bật Giới Hạn Tốc Độ Đánh",
-    Description = "Tắt = max speed | Bật = dùng slider + ô nhập",
+    Description = "Tắt = max speed | Bật = dùng ô nhập bên dưới",
     Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
     _G.UseAttackCooldown = Value
 end)
 
-local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
-    Title = "Tốc độ đánh (kéo)",
-    Description = "Càng nhỏ càng nhanh (0.08~0.15 khuyến nghị)",
-    Default = 0.12,
-    Min = 0.03,
-    Max = 0.5,
-    Rounding = 2
-})
-
-local AttackSpeedInput = Tabs.Settings:AddInput("AttackSpeedInput", {
-    Title = "Tốc độ đánh (nhập số)",
+Tabs.Settings:AddInput("AttackSpeedInput", {
+    Title = "Tốc độ đánh (giây)",
     Default = "0.12",
-    Placeholder = "vd: 0.1",
-    Numeric = true,
-    Finished = true,
+    Placeholder = "vd: 0.1 (càng nhỏ càng nhanh)",
+    Numeric = false,
+    Finished = false,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num and num >= 0.03 and num <= 0.5 then
+        if num then
+            if num < 0.03 then num = 0.03 end
+            if num > 0.5 then num = 0.5 end
             _G.AttackCooldown = num
-            pcall(function() AttackSpeed:SetValue(num) end)
         end
     end
 })
-
-AttackSpeed:OnChanged(function(Value)
-    _G.AttackCooldown = Value
-    pcall(function() AttackSpeedInput:SetValue(tostring(Value)) end)
-end)
 
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
     Title = "Initialize Attack [M1/Melee/Sword]",
@@ -2552,48 +2539,35 @@ spawn(function()
   end
 end)      
 
--- Stats Upgrade: Toggle + Slider + TextBox
+-- Stats Upgrade: chỉ Toggle + ô nhập số
 Tabs.Settings:AddSection("Stats Upgrade")
 _G.UseStatsValue = true
 pSats = 10
 
 local UseStatsToggle = Tabs.Settings:AddToggle("UseStatsToggle", {
     Title = "Bật Giới Hạn Điểm Cộng",
-    Description = "Tắt = cộng full | Bật = dùng slider + ô nhập",
+    Description = "Tắt = cộng full | Bật = dùng ô nhập bên dưới",
     Default = true
 })
 UseStatsToggle:OnChanged(function(Value)
     _G.UseStatsValue = Value
 end)
 
-local StatusSelect = Tabs.Settings:AddSlider("StatusSelect", {
-    Title = "Số điểm cộng (kéo)",
-    Description = "Số điểm mỗi lần cộng",
-    Default = 10,
-    Min = 1,
-    Max = 1000,
-    Rounding = 0
-})
-
-local StatusInput = Tabs.Settings:AddInput("StatusInput", {
-    Title = "Số điểm cộng (nhập số)",
+Tabs.Settings:AddInput("StatusInput", {
+    Title = "Số điểm cộng mỗi lần",
     Default = "10",
     Placeholder = "vd: 50",
-    Numeric = true,
-    Finished = true,
+    Numeric = false,
+    Finished = false,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num and num >= 1 and num <= 1000 then
+        if num then
+            if num < 1 then num = 1 end
+            if num > 1000 then num = 1000 end
             pSats = num
-            pcall(function() StatusSelect:SetValue(num) end)
         end
     end
 })
-
-StatusSelect:OnChanged(function(Value)
-    pSats = Value
-    pcall(function() StatusInput:SetValue(tostring(Value)) end)
-end)
 
 local function GetStatsAmount()
     if _G.UseStatsValue then return pSats or 10 end
