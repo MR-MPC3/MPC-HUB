@@ -142,7 +142,7 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
--- ==================== ATTACK FIX (RegisterAttack + RegisterHit) ====================
+-- ==================== ATTACK (RegisterAttack + RegisterHit) ====================
 local lastAttackTick = 0
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
@@ -2366,7 +2366,7 @@ spawn(function()
   end
 end)
 
--- Tốc độ đánh: chỉ Toggle + ô nhập số (bỏ slider)
+-- Tốc độ đánh: Toggle + ô nhập số (0.02 -> 2)
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
@@ -2380,20 +2380,21 @@ UseCooldownToggle:OnChanged(function(Value)
 end)
 
 Tabs.Settings:AddInput("AttackSpeedInput", {
-    Title = "Tốc độ đánh (giây)",
+    Title = "Tốc độ đánh (0.02 -> 2)",
     Default = "0.12",
-    Placeholder = "vd: 0.1 (càng nhỏ càng nhanh)",
+    Placeholder = "0.02 -> 2 (nhỏ hơn = nhanh hơn)",
     Numeric = false,
     Finished = false,
     Callback = function(Value)
         local num = tonumber(Value)
         if num then
-            if num < 0.03 then num = 0.03 end
-            if num > 0.5 then num = 0.5 end
+            if num < 0.02 then num = 0.02 end
+            if num > 2 then num = 2 end
             _G.AttackCooldown = num
         end
     end
 })
+
 
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
     Title = "Initialize Attack [M1/Melee/Sword]",
@@ -2539,79 +2540,70 @@ spawn(function()
   end
 end)      
 
--- Stats Upgrade: chỉ Toggle + ô nhập số (bỏ slider)
 Tabs.Settings:AddSection("Stats Upgrade")
-_G.UseStatsValue = true
-pSats = 10
-
-local UseStatsToggle = Tabs.Settings:AddToggle("UseStatsToggle", {
-    Title = "Bật Giới Hạn Điểm Cộng",
-    Description = "Tắt = cộng full | Bật = dùng ô nhập bên dưới",
-    Default = true
-})
-UseStatsToggle:OnChanged(function(Value)
-    _G.UseStatsValue = Value
+local StatusSelect = Tabs.Settings:AddSlider("StatusSelect",{Title = "Stats Value",Description = "choose your point need to upgrade",Default = 10,Min = 0,Max = 1000,Rounding = 1, 
+Callback = function(Value)
+  pSats = Value
+end})
+StatusSelect:OnChanged(function(Value)
+  pSats = Value
 end)
 
-Tabs.Settings:AddInput("StatusInput", {
-    Title = "Số điểm cộng mỗi lần",
-    Default = "10",
-    Placeholder = "vd: 50",
-    Numeric = false,
-    Finished = false,
-    Callback = function(Value)
-        local num = tonumber(Value)
-        if num then
-            if num < 1 then num = 1 end
-            if num > 1000 then num = 1000 end
-            pSats = num
-        end
-    end
-})
-
-local function GetStatsAmount()
-    if _G.UseStatsValue then return pSats or 10 end
-    return plr.Data.Points.Value
-end
-
-local StatsMelee = Tabs.Settings:AddToggle("StatsMelee", {Title = "Auto Melee", Description = "", Default = false})
-StatsMelee:OnChanged(function(Value) _G.Auto_Melee = Value end)
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Melee", Description = "", Default = false})
+StatsUpg:OnChanged(function(Value)
+  _G.Auto_Melee = Value
+end)
 spawn(function()
-    while wait(Sec) do
-        pcall(function() if _G.Auto_Melee then statsSetings("Melee", GetStatsAmount()) end end)
-    end
+  while wait(Sec) do
+    pcall(function()
+    if _G.Auto_Melee then statsSetings("Melee",pSats) end
+    end)
+  end
 end)
 
-local StatsSword = Tabs.Settings:AddToggle("StatsSword", {Title = "Auto Sword", Description = "", Default = false})
-StatsSword:OnChanged(function(Value) _G.Auto_Sword = Value end)
-spawn(function()
-    while wait(Sec) do
-        pcall(function() if _G.Auto_Sword then statsSetings("Sword", GetStatsAmount()) end end)
-    end
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Swords", Description = "", Default = false})
+StatsUpg:OnChanged(function(Value)
+  _G.Auto_Sword = Value
 end)
-
-local StatsGun = Tabs.Settings:AddToggle("StatsGun", {Title = "Auto Gun", Description = "", Default = false})
-StatsGun:OnChanged(function(Value) _G.Auto_Gun = Value end)
 spawn(function()
-    while wait(Sec) do
-        pcall(function() if _G.Auto_Gun then statsSetings("Gun", GetStatsAmount()) end end)
-    end
+  while wait(Sec) do
+    pcall(function()
+    if _G.Auto_Sword then statsSetings("Sword",pSats) end
+    end)
+  end
 end)
-
-local StatsFruit = Tabs.Settings:AddToggle("StatsFruit", {Title = "Auto Blox Fruit", Description = "", Default = false})
-StatsFruit:OnChanged(function(Value) _G.Auto_DevilFruit = Value end)
-spawn(function()
-    while wait(Sec) do
-        pcall(function() if _G.Auto_DevilFruit then statsSetings("Devil", GetStatsAmount()) end end)
-    end
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Gun", Description = "", Default = false})
+StatsUpg:OnChanged(function(Value)
+  _G.Auto_Gun = Value
 end)
-
-local StatsDefense = Tabs.Settings:AddToggle("StatsDefense", {Title = "Auto Defense", Description = "", Default = false})
-StatsDefense:OnChanged(function(Value) _G.Auto_Defense = Value end)
 spawn(function()
-    while wait(Sec) do
-        pcall(function() if _G.Auto_Defense then statsSetings("Defense", GetStatsAmount()) end end)
-    end
+  while wait(Sec) do
+    pcall(function()
+    if _G.Auto_Gun then statsSetings("Gun",pSats) end
+    end)
+  end
+end)
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Blox Fruit", Description = "", Default = false})
+StatsUpg:OnChanged(function(Value)
+  _G.Auto_DevilFruit = Value
+end)
+spawn(function()
+  while wait(Sec) do
+    pcall(function()
+    if _G.Auto_DevilFruit then statsSetings("Devil",pSats) end
+    end)
+  end
+end)
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Defense", Description = "", Default = false})
+StatsUpg:OnChanged(function(Value)
+  _G.Auto_Defense = Value
+end)
+spawn(function()
+  while wait(Sec) do
+    pcall(function()
+    if _G.Auto_Defense then statsSetings("Defense",pSats) end
+    end)
+  end
 end)
 
 Tabs.Melee:AddSection("Fighting Melee Styles")
