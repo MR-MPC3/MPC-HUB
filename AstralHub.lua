@@ -6935,8 +6935,8 @@ Tabs.Misc:AddButton({Title = "Remove Sky Fog", Description = "",Callback = funct
   if Lighting:FindFirstChild("FantasySky") then Lighting.FantasySky:Destroy() end
 end})
 
-Tabs.Misc:AddSection("Configure - God")
-Tabs.Misc:AddButton({Title = "Rain Fruits (Client)", Description = "",Callback = function()
+Tabs.Misc:AddSection("Cấu Hình")
+Tabs.Misc:AddButton({Title = "Mưa Trái Blox (Client)", Description = "",Callback = function()
   for i, v in pairs(game:GetObjects("rbxassetid://14759368201")[1]:GetChildren()) do
     v.Parent = game.Workspace.Map
     v:MoveTo(plr.Character.PrimaryPart.Position + Vector3.new(math.random(-50, 50), 100, math.random(-50, 50)))
@@ -6951,7 +6951,7 @@ Tabs.Misc:AddButton({Title = "Rain Fruits (Client)", Description = "",Callback =
     end)
   end
 end})
-briggt1 = Tabs.Misc:AddToggle("briggt1", {Title = "Turn on Full Bright", Description = "", Default = false})
+briggt1 = Tabs.Misc:AddToggle("briggt1", {Title = "Bật Sáng Hết Cỡ", Description = "", Default = false})
 briggt1:OnChanged(function(Value)
   bright = Value
   if Value == true then
@@ -6965,15 +6965,20 @@ briggt1:OnChanged(function(Value)
   end  
 end)
 
-Cheat_DayNight = {"Day", "Night"}
-DayN = Tabs.Misc:AddDropdown("DayN",{Title = "Select Time",Values = Cheat_DayNight,Multi = false,Default = 1})
+-- Tạo bảng ánh xạ thời gian sang tiếng Việt
+local TimeMap = { ["Ban Ngày"] = "Day", ["Ban Đêm"] = "Night" }
+local _TimeDisplay = {"Ban Ngày", "Ban Đêm"}
+
+DayN = Tabs.Misc:AddDropdown("DayN",{Title = "Chọn Thời Gian", Values = _TimeDisplay, Multi = false, Default = 1})
 DayN:OnChanged(function(Value)
-  _G.SelectDN = Value
+  _G.SelectDN = TimeMap[Value] or "Day"
 end)
-dayornight = Tabs.Misc:AddToggle("dayornight", {Title = "Turn on Time", Description = "", Default = false})
+
+dayornight = Tabs.Misc:AddToggle("dayornight", {Title = "Bật Chỉnh Thời Gian", Description = "", Default = false})
 dayornight:OnChanged(function(Value)
   _G.daylightN = Value
 end)
+
 task.spawn(function()
   while task.wait() do
     if _G.daylightN then
@@ -6985,7 +6990,8 @@ task.spawn(function()
     end
   end
 end)
-walkWater = Tabs.Misc:AddToggle("walkWater", {Title = "Turn on Walk on Water", Description = "walk on water", Default = true})
+
+walkWater = Tabs.Misc:AddToggle("walkWater", {Title = "Đi Trên Nước", Description = "đi trên mặt nước", Default = true})
 walkWater:OnChanged(function(Value)
   _G.WalkWater_Part = Value
   if _G.WalkWater_Part then
@@ -6994,16 +7000,18 @@ walkWater:OnChanged(function(Value)
     game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000, 80, 1000)
   end
 end)
-iceWalk = Tabs.Misc:AddToggle("iceWalk", {Title = "Turn on Ice Walk", Description = "Ice walk just like walk on water but have ice effect", Default = false})
+
+iceWalk = Tabs.Misc:AddToggle("iceWalk", {Title = "Đi Trên Băng", Description = "Đi trên nước y hệt như trên nhưng có hiệu ứng băng", Default = false})
 iceWalk:OnChanged(function(Value)
   _G.WalkWater = Value
 end)
+
 spawn(function()
   while task.wait() do
     if _G.WalkWater then
       pcall(function()
-	   if plr.Character and plr.Character:FindFirstChild("LeftFoot") then
-	   local upval0 = replicated.Assets.Models.IceSpikes4:Clone()
+       if plr.Character and plr.Character:FindFirstChild("LeftFoot") then
+       local upval0 = replicated.Assets.Models.IceSpikes4:Clone()
         upval0.Parent = workspace
         upval0.Size = Vector3.new(3+math.random(10,12),1.7,3+math.random(10,12))
         upval0.Color = Color3.fromRGB(128,187,219)
@@ -7015,7 +7023,7 @@ spawn(function()
           upval0:Destroy()
         end)
           var3:Play()
-	    end	
+       end  
       end)
     end
   end
