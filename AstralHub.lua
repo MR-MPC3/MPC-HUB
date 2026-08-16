@@ -26,7 +26,8 @@ do
   debug = false
   Brazier1 = false
   Brazier2 = false
-  Brazier3 = false  
+  Brazier3 = false 
+  lastAttackTick = 0
   Sec = 0.1
   ClickState = 0
   Num_self = 25
@@ -141,21 +142,30 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
+-- Khai báo biến lưu thời gian tấn công trước đó (đặt ở phía trên hàm hoặc ngoài cùng file script)
+local lastAttackTick = 0
 Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     
+    -- [Bộ lọc thời gian] Kiểm tra khoảng cách thời gian giữa 2 lần đánh liên tiếp
+    local cd = tonumber(_G.AttackCooldown) or 0.25 -- Mặc định 0.25 giây, bạn có thể chỉnh lại _G.AttackCooldown tuỳ ý
+    if (tick() - lastAttackTick) < cd then return end
+    lastAttackTick = tick()
+
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
     PosMon = model:GetAttribute("Locked").Position
     BringEnemy()
+    
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
         weaponSc(_G.ChooseWP or "Melee")
     end
+    
     local char = plr.Character
     local Equipped = char and char:FindFirstChildOfClass("Tool")
     if not Equipped then
@@ -163,12 +173,14 @@ Attack.Kill = function(model, Succes)
         Equipped = char and char:FindFirstChildOfClass("Tool")
     end
     if not Equipped then return end
+    
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
         _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
         _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
+    
     if RandomCFrame then
         task.spawn(function()
             task.wait(0.5)
@@ -183,6 +195,7 @@ Attack.Kill = function(model, Succes)
             _tp(hrp.CFrame * CFrame.new(-25, 30, 0))
         end)
     end
+    
     if vim2 then
         pcall(function()
             vim2:CaptureController()
