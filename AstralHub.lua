@@ -142,36 +142,33 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
--- Khai báo biến lưu thời gian tấn công trước đó
+-- ==================== ATTACK FIX (RegisterAttack + RegisterHit) ====================
 local lastAttackTick = 0
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
 
--- ==================== ATTACK MỚI (RegisterAttack + RegisterHit) ====================
--- Đây là cách MinGaming đang dùng, gây sát thương ổn định
 local function GetEquippedTool()
     local char = plr.Character
     if not char then return nil end
     for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("Tool") then
-            return v
-        end
+        if v:IsA("Tool") then return v end
     end
     return nil
 end
 
-local function FindEnemiesInRange(enemiesTable, enemiesList)
+local function FindEnemiesInRange(tbl, list)
     local char = plr.Character
     if not char or not char.PrimaryPart then return nil end
     local myPos = char:GetPivot().Position
     local mainPart = nil
-
-    for _, enemy in ipairs(enemiesList) do
+    for _, enemy in ipairs(list) do
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
                 local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
                 if head and (myPos - head.Position).Magnitude <= 60 then
                     if enemy ~= char then
-                        table.insert(enemiesTable, {enemy, head})
+                        table.insert(tbl, {enemy, head})
                         mainPart = head
                     end
                 end
@@ -182,20 +179,18 @@ local function FindEnemiesInRange(enemiesTable, enemiesList)
 end
 
 function AttackNoCoolDown()
+    if _G.UseAttackCooldown then
+        local cd = tonumber(_G.AttackCooldown) or 0.12
+        if (tick() - lastAttackTick) < cd then return end
+        lastAttackTick = tick()
+    end
     local targets = {}
-    local enemies = workspace.Enemies:GetChildren()
-    local mainPart = FindEnemiesInRange(targets, enemies)
-    if not mainPart then return end
-    if not GetEquippedTool() then return end
-
+    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
+    if not mainPart or not GetEquippedTool() then return end
     pcall(function()
-        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
-        local RegisterHit = Net:WaitForChild("RE/RegisterHit")
-        if #targets > 0 then
-            RegisterAttack:FireServer(1e-9)
-            RegisterHit:FireServer(mainPart, targets)
-        end
+        local Net = replicated.Modules.Net
+        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
+        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
 end
 
@@ -203,23 +198,21 @@ Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
-    local cd = tonumber(_G.AttackCooldown) or 0.15
-    if (tick() - lastAttackTick) < cd then return end
-    lastAttackTick = tick()
-
+    if _G.UseAttackCooldown then
+        local cd = tonumber(_G.AttackCooldown) or 0.12
+        if (tick() - lastAttackTick) < cd then return end
+        lastAttackTick = tick()
+    end
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
     PosMon = model:GetAttribute("Locked").Position
     BringEnemy()
-    
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
         weaponSc(_G.ChooseWP or "Melee")
     end
-    
     local char = plr.Character
     local Equipped = char and char:FindFirstChildOfClass("Tool")
     if not Equipped then
@@ -227,15 +220,12 @@ Attack.Kill = function(model, Succes)
         Equipped = char and char:FindFirstChildOfClass("Tool")
     end
     if not Equipped then return end
-    
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
         _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
         _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
-    
-    -- Gọi attack mới (gây sát thương thật)
     AttackNoCoolDown()
 end
 Attack.Kill2 = function(model,Succes)
@@ -327,23 +317,18 @@ statsSetings = function(Num, value)
 end
 BringEnemy = function()
   if not _B then return end
-  pcall(function()
-    plr.SimulationRadius = math.huge
-    for _,v in pairs(workspace.Enemies:GetChildren()) do
-      if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
-        if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
-          v.PrimaryPart.CFrame = CFrame.new(PosMon)
-          v.PrimaryPart.CanCollide = false
-          v.PrimaryPart.Velocity = Vector3.zero
-          v.Humanoid.WalkSpeed = 0
-          v.Humanoid.JumpPower = 0
-          if v.Humanoid:FindFirstChild("Animator") then
-            v.Humanoid.Animator:Destroy()
-          end
-        end
-      end
-    end
-  end)
+  for _,v in pairs(workspace.Enemies:GetChildren()) do
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
+	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
+		v.PrimaryPart.CanCollide = true;
+		v:FindFirstChild("Humanoid").WalkSpeed = 0;
+		v:FindFirstChild("Humanoid").JumpPower = 0;
+		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
+		plr.SimulationRadius = math.huge
+	  end
+	end                               
+  end                    	
 end
 Useskills = function(weapon, skill)
   if weapon == "Melee" then
@@ -2381,19 +2366,46 @@ spawn(function()
   end
 end)
 
--- Cài đặt Tốc độ đánh (Slider)
-_G.AttackCooldown = 0.25 
+-- Tốc độ đánh: Toggle + Slider + TextBox
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
+
+local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
+    Title = "Bật Giới Hạn Tốc Độ Đánh",
+    Description = "Tắt = max speed | Bật = dùng slider + ô nhập",
+    Default = true
+})
+UseCooldownToggle:OnChanged(function(Value)
+    _G.UseAttackCooldown = Value
+end)
+
 local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
-    Title = "Tốc độ đánh (Tùy chỉnh nhịp)",
-    Description = "Kéo trái để đánh chậm (an toàn), kéo phải để đánh nhanh hơn",
-    Default = 0.25,
-    Min = 0.05,   -- Tốc độ nhanh nhất
-    Max = 0.8,    -- Tốc độ chậm nhất
-    Rounding = 2, -- Làm tròn 2 chữ số thập phân
+    Title = "Tốc độ đánh (kéo)",
+    Description = "Càng nhỏ càng nhanh (0.08~0.15 khuyến nghị)",
+    Default = 0.12,
+    Min = 0.03,
+    Max = 0.5,
+    Rounding = 2
+})
+
+local AttackSpeedInput = Tabs.Settings:AddInput("AttackSpeedInput", {
+    Title = "Tốc độ đánh (nhập số)",
+    Default = "0.12",
+    Placeholder = "vd: 0.1",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num and num >= 0.03 and num <= 0.5 then
+            _G.AttackCooldown = num
+            pcall(function() AttackSpeed:SetValue(num) end)
+        end
+    end
 })
 
 AttackSpeed:OnChanged(function(Value)
     _G.AttackCooldown = Value
+    pcall(function() AttackSpeedInput:SetValue(tostring(Value)) end)
 end)
 
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
@@ -2540,70 +2552,92 @@ spawn(function()
   end
 end)      
 
+-- Stats Upgrade: Toggle + Slider + TextBox
 Tabs.Settings:AddSection("Stats Upgrade")
-local StatusSelect = Tabs.Settings:AddSlider("StatusSelect",{Title = "Stats Value",Description = "choose your point need to upgrade",Default = 10,Min = 0,Max = 1000,Rounding = 1, 
-Callback = function(Value)
-  pSats = Value
-end})
+_G.UseStatsValue = true
+pSats = 10
+
+local UseStatsToggle = Tabs.Settings:AddToggle("UseStatsToggle", {
+    Title = "Bật Giới Hạn Điểm Cộng",
+    Description = "Tắt = cộng full | Bật = dùng slider + ô nhập",
+    Default = true
+})
+UseStatsToggle:OnChanged(function(Value)
+    _G.UseStatsValue = Value
+end)
+
+local StatusSelect = Tabs.Settings:AddSlider("StatusSelect", {
+    Title = "Số điểm cộng (kéo)",
+    Description = "Số điểm mỗi lần cộng",
+    Default = 10,
+    Min = 1,
+    Max = 1000,
+    Rounding = 0
+})
+
+local StatusInput = Tabs.Settings:AddInput("StatusInput", {
+    Title = "Số điểm cộng (nhập số)",
+    Default = "10",
+    Placeholder = "vd: 50",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num and num >= 1 and num <= 1000 then
+            pSats = num
+            pcall(function() StatusSelect:SetValue(num) end)
+        end
+    end
+})
+
 StatusSelect:OnChanged(function(Value)
-  pSats = Value
+    pSats = Value
+    pcall(function() StatusInput:SetValue(tostring(Value)) end)
 end)
 
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Melee", Description = "", Default = false})
-StatsUpg:OnChanged(function(Value)
-  _G.Auto_Melee = Value
-end)
+local function GetStatsAmount()
+    if _G.UseStatsValue then return pSats or 10 end
+    return plr.Data.Points.Value
+end
+
+local StatsMelee = Tabs.Settings:AddToggle("StatsMelee", {Title = "Auto Melee", Description = "", Default = false})
+StatsMelee:OnChanged(function(Value) _G.Auto_Melee = Value end)
 spawn(function()
-  while wait(Sec) do
-    pcall(function()
-    if _G.Auto_Melee then statsSetings("Melee",pSats) end
-    end)
-  end
+    while wait(Sec) do
+        pcall(function() if _G.Auto_Melee then statsSetings("Melee", GetStatsAmount()) end end)
+    end
 end)
 
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Swords", Description = "", Default = false})
-StatsUpg:OnChanged(function(Value)
-  _G.Auto_Sword = Value
-end)
+local StatsSword = Tabs.Settings:AddToggle("StatsSword", {Title = "Auto Sword", Description = "", Default = false})
+StatsSword:OnChanged(function(Value) _G.Auto_Sword = Value end)
 spawn(function()
-  while wait(Sec) do
-    pcall(function()
-    if _G.Auto_Sword then statsSetings("Sword",pSats) end
-    end)
-  end
+    while wait(Sec) do
+        pcall(function() if _G.Auto_Sword then statsSetings("Sword", GetStatsAmount()) end end)
+    end
 end)
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Gun", Description = "", Default = false})
-StatsUpg:OnChanged(function(Value)
-  _G.Auto_Gun = Value
-end)
+
+local StatsGun = Tabs.Settings:AddToggle("StatsGun", {Title = "Auto Gun", Description = "", Default = false})
+StatsGun:OnChanged(function(Value) _G.Auto_Gun = Value end)
 spawn(function()
-  while wait(Sec) do
-    pcall(function()
-    if _G.Auto_Gun then statsSetings("Gun",pSats) end
-    end)
-  end
+    while wait(Sec) do
+        pcall(function() if _G.Auto_Gun then statsSetings("Gun", GetStatsAmount()) end end)
+    end
 end)
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Blox Fruit", Description = "", Default = false})
-StatsUpg:OnChanged(function(Value)
-  _G.Auto_DevilFruit = Value
-end)
+
+local StatsFruit = Tabs.Settings:AddToggle("StatsFruit", {Title = "Auto Blox Fruit", Description = "", Default = false})
+StatsFruit:OnChanged(function(Value) _G.Auto_DevilFruit = Value end)
 spawn(function()
-  while wait(Sec) do
-    pcall(function()
-    if _G.Auto_DevilFruit then statsSetings("Devil",pSats) end
-    end)
-  end
+    while wait(Sec) do
+        pcall(function() if _G.Auto_DevilFruit then statsSetings("Devil", GetStatsAmount()) end end)
+    end
 end)
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Defense", Description = "", Default = false})
-StatsUpg:OnChanged(function(Value)
-  _G.Auto_Defense = Value
-end)
+
+local StatsDefense = Tabs.Settings:AddToggle("StatsDefense", {Title = "Auto Defense", Description = "", Default = false})
+StatsDefense:OnChanged(function(Value) _G.Auto_Defense = Value end)
 spawn(function()
-  while wait(Sec) do
-    pcall(function()
-    if _G.Auto_Defense then statsSetings("Defense",pSats) end
-    end)
-  end
+    while wait(Sec) do
+        pcall(function() if _G.Auto_Defense then statsSetings("Defense", GetStatsAmount()) end end)
+    end
 end)
 
 Tabs.Melee:AddSection("Fighting Melee Styles")
@@ -7040,15 +7074,14 @@ end
 CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
 CameraShakerR:Stop()
 
--- Vòng spam attack (dùng RegisterAttack/RegisterHit)
 task.spawn(function()
-  RunSer.Heartbeat:Connect(function()
-    pcall(function()
-      if _G.Seriality then
-        AttackNoCoolDown()
-      end
+    RunSer.Heartbeat:Connect(function()
+        pcall(function()
+            if _G.Seriality then
+                AttackNoCoolDown()
+            end
+        end)
     end)
-  end)
 end)
 
 Window:SelectTab(1)
