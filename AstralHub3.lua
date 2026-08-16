@@ -188,7 +188,7 @@ function AttackNoCoolDown()
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
     if not mainPart or not GetEquippedTool() then return end
     pcall(function()
-        local Net = replicated.Modules.Net
+        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
         Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
         Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
@@ -2366,7 +2366,7 @@ spawn(function()
   end
 end)
 
--- Tốc độ đánh: Toggle + Slider + TextBox
+-- Tốc độ đánh: Toggle + Slider + TextBox (bỏ SetValue - Fluent dễ lỗi)
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
@@ -2387,26 +2387,25 @@ local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
     Max = 0.5,
     Rounding = 2
 })
+AttackSpeed:OnChanged(function(Value)
+    _G.AttackCooldown = Value
+end)
 
-local AttackSpeedInput = Tabs.Settings:AddInput("AttackSpeedInput", {
+Tabs.Settings:AddInput("AttackSpeedInput", {
     Title = "Tốc độ đánh (nhập số)",
     Default = "0.12",
     Placeholder = "vd: 0.1",
-    Numeric = true,
-    Finished = true,
+    Numeric = false,
+    Finished = false,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num and num >= 0.03 and num <= 0.5 then
+        if num then
+            if num < 0.03 then num = 0.03 end
+            if num > 0.5 then num = 0.5 end
             _G.AttackCooldown = num
-            pcall(function() AttackSpeed:SetValue(num) end)
         end
     end
 })
-
-AttackSpeed:OnChanged(function(Value)
-    _G.AttackCooldown = Value
-    pcall(function() AttackSpeedInput:SetValue(tostring(Value)) end)
-end)
 
 local Initialize = Tabs.Settings:AddToggle("Initialize", {
     Title = "Initialize Attack [M1/Melee/Sword]",
@@ -2574,26 +2573,25 @@ local StatusSelect = Tabs.Settings:AddSlider("StatusSelect", {
     Max = 1000,
     Rounding = 0
 })
+StatusSelect:OnChanged(function(Value)
+    pSats = Value
+end)
 
-local StatusInput = Tabs.Settings:AddInput("StatusInput", {
+Tabs.Settings:AddInput("StatusInput", {
     Title = "Số điểm cộng (nhập số)",
     Default = "10",
     Placeholder = "vd: 50",
-    Numeric = true,
-    Finished = true,
+    Numeric = false,
+    Finished = false,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num and num >= 1 and num <= 1000 then
+        if num then
+            if num < 1 then num = 1 end
+            if num > 1000 then num = 1000 end
             pSats = num
-            pcall(function() StatusSelect:SetValue(num) end)
         end
     end
 })
-
-StatusSelect:OnChanged(function(Value)
-    pSats = Value
-    pcall(function() StatusInput:SetValue(tostring(Value)) end)
-end)
 
 local function GetStatsAmount()
     if _G.UseStatsValue then return pSats or 10 end
