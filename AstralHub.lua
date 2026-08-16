@@ -6792,39 +6792,30 @@ Tabs.Misc:AddButton({
 
 Tabs.Misc:AddSection("Player Gui / Others")
 
-Tabs.Misc:AddButton({Title = "Open Awakenings Expert", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Mở Bảng Kĩ Năng Thức Tỉnh", Description = "",Callback = function()
   plr.PlayerGui.Main.AwakeningToggler.Visible = true
 end})
-Tabs.Misc:AddButton({Title = "Open Title Selection", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Mở Bảng Danh Hiệu", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("getTitles",true)
   plr.PlayerGui.Main.Titles.Visible = true
 end})
-DisbleChat = Tabs.Misc:AddToggle("DisbleChat", {Title = "Disable Chat GUI", Description = "", Default = false})
+local StarterGui = game:GetService("StarterGui")
+-- Nút Ẩn Khung Chat
+DisbleChat = Tabs.Misc:AddToggle("DisbleChat", {Title = "Ẩn Khung Chat", Description = "", Default = false})
 DisbleChat:OnChanged(function(Value)
-  _G.Rechat = Value
-  if  _G.Rechat == true then
-    local StarterGui = game:GetService('StarterGui')
-    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)    
-  elseif _G.chat == false then
-    local StarterGui = game:GetService('StarterGui')
-    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)    
-  end
+    _G.Rechat = Value
+    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, not Value)
 end)
-DisbleLeaderB = Tabs.Misc:AddToggle("DisbleLeaderB", {Title = "Disable Leader Board GUI", Description = "", Default = false})
+-- Nút Ẩn Bảng Xếp Hạng
+DisbleLeaderB = Tabs.Misc:AddToggle("DisbleLeaderB", {Title = "Ẩn Bảng Xếp Hạng", Description = "", Default = false})
 DisbleLeaderB:OnChanged(function(Value)
-  ReLeader = Value
-  if ReLeader == true then
-    local StarterGui = game:GetService('StarterGui')
-    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)   
-  elseif ReLeader == false then
-    local StarterGui = game:GetService('StarterGui')
-    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)   
-  end
+    local ReLeader = Value
+    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, not Value)
 end)
-Tabs.Misc:AddButton({Title = "Set Pirate Team", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Đổi Sang Hải Tặc", Description = "",Callback = function()
   Pirates()
 end})  
-Tabs.Misc:AddButton({Title = "Set Marine Team", Description = "",Callback = function()
+Tabs.Misc:AddButton({Title = "Đổi Sang Hải Quân", Description = "",Callback = function()
   Marines()
 end})
 UnPortal = Tabs.Misc:AddToggle("UnPortal", {Title = "Unlock All Portals", Description = "unlocked portal for who doesn't defeat rip_indra", Default = false})
