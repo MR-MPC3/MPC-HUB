@@ -6413,7 +6413,10 @@ spawn(function()
 end)
 
 Tabs.Fruit:AddSection("Fruits Options")
+
 local fruitsOnSale = {}
+local Nms = {}
+
 local function addCommas(number)
     local formatted = tostring(number)
     while true do  
@@ -6422,77 +6425,48 @@ local function addCommas(number)
     end
     return formatted
 end
-for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",true)) do
-    if fruitData["OnSale"] == true then
-        local priceWithCommas = addCommas(fruitData["Price"])
-        local fruitInfo = fruitData["Name"]
-        table.insert(fruitsOnSale, fruitInfo)
+
+pcall(function()
+    for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits", true) or {}) do
+        if fruitData["OnSale"] == true then
+            table.insert(fruitsOnSale, fruitData["Name"])
+        end
     end
-end
-local Nms = {}
-for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",false)) do
-    if fruitData["OnSale"] == true then
-        local price = addCommas(fruitData["Price"])
-        local NormalInFO = fruitData["Name"]
-        table.insert(Nms, NormalInFO)
+end)
+
+pcall(function()
+    for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits", false) or {}) do
+        if fruitData["OnSale"] == true then
+            table.insert(Nms, fruitData["Name"])
+        end
     end
-end
-Sel_NFruit = Tabs.Fruit:AddDropdown("Sel_NFruit",{Title = "Select Fruit Stock",Values = Nms,Multi = false,Default = 1})
+end)
+
+Sel_NFruit = Tabs.Fruit:AddDropdown("Sel_NFruit",{Title = "Select Fruit Stock", Values = Nms, Multi = false, Default = 1})
 Sel_NFruit:OnChanged(function(Value)
-  _G.SelectFruit = Value
+    _G.SelectFruit = Value
 end)
-Tabs.Fruit:AddButton({Title = "Buy Basic Stock", Description = "",Callback = function()
-  replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",_G.SelectFruit)
+
+Tabs.Fruit:AddButton({Title = "Buy Basic Stock", Description = "", Callback = function()
+    if _G.SelectFruit then
+        replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit", _G.SelectFruit)
+    end
 end})
-Sel_MFruit = Tabs.Fruit:AddDropdown("Sel_MFruit",{Title = "Select Mirage Fruit",Values = fruitsOnSale,Multi = false,Default = 1})
+
+Sel_MFruit = Tabs.Fruit:AddDropdown("Sel_MFruit",{Title = "Select Mirage Fruit", Values = fruitsOnSale, Multi = false, Default = 1})
 Sel_MFruit:OnChanged(function(Value)
-  SelectF_Adv = Value
+    SelectF_Adv = Value
 end)
-local Nms = {}
-for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",false)) do
-    if fruitData["OnSale"] == true then
-        local price = addCommas(fruitData["Price"])
-        local NormalInFO = fruitData["Name"]
-        table.insert(Nms, NormalInFO)
+
+Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "", Callback = function()
+    if SelectF_Adv then
+        replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit", SelectF_Adv)
     end
-end
-Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
-  replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
 end})
-local Nms = {}
-for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",false)) do
-    if fruitData["OnSale"] == true then
-        local price = addCommas(fruitData["Price"])
-        local NormalInFO = fruitData["Name"]
-        table.insert(Nms, NormalInFO)
-    end
-end
-Sel_NFruit = Tabs.Fruit:AddDropdown("Sel_NFruit",{Title = "Select Fruit Stock",Values = Nms,Multi = false,Default = 1})
-Sel_NFruit:OnChanged(function(Value)
-  _G.SelectFruit = Value
-end)
-Tabs.Fruit:AddButton({Title = "Buy Basic Stock", Description = "",Callback = function()
-  replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",_G.SelectFruit)
-end})
-Sel_MFruit = Tabs.Fruit:AddDropdown("Sel_MFruit",{Title = "Select Mirage Fruit",Values = fruitsOnSale,Multi = false,Default = 1})
-Sel_MFruit:OnChanged(function(Value)
-  SelectF_Adv = Value
-end)
-local Nms = {}
-for _, fruitData in pairs(replicated.Remotes.CommF_:InvokeServer("GetFruits",false)) do
-    if fruitData["OnSale"] == true then
-        local price = addCommas(fruitData["Price"])
-        local NormalInFO = fruitData["Name"]
-        table.insert(Nms, NormalInFO)
-    end
-end
-Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = function()
-  replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit",SelectF_Adv)
-end})
--- ==================== AUTO RANDOM FRUIT (FIXED - TP NHANH TỚI GACHA RỒI VỀ) ====================
+
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
-    Description = "Bay tới Zioles random rồi bay về chỗ cũ (hoạt động mọi nơi)",
+    Description = "Bay tới Gacha random rồi về chỗ cũ (hoạt động mọi nơi)",
     Default = false
 })
 
@@ -6500,8 +6474,14 @@ RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
 end)
 
+local GachaFallback = {
+    [1] = CFrame.new(-1150, 20, 1400),
+    [2] = CFrame.new(-450, 70, 300),
+    [3] = CFrame.new(-12550, 340, -7600)
+}
+
 spawn(function()
-    while task.wait(4) do   -- cooldown khoảng 4s cho an toàn, có thể giảm xuống 2~3 nếu muốn
+    while task.wait(3.5) do
         pcall(function()
             if not _G.Random_Auto then return end
 
@@ -6510,99 +6490,106 @@ spawn(function()
             local root = character:FindFirstChild("HumanoidRootPart")
             if not root then return end
 
-            -- Kiểm tra tiền đủ không (công thức giá Gacha)
             local data = plr:FindFirstChild("Data")
             if not data then return end
-            local level = (data:FindFirstChild("Level") and data.Level.Value) or 1
-            local beli  = (data:FindFirstChild("Beli") and data.Beli.Value) or 0
+            local level = data:FindFirstChild("Level") and data.Level.Value or 1
+            local beli  = data:FindFirstChild("Beli") and data.Beli.Value or 0
             local cost  = 25000 + (level - 1) * 150
             if beli < cost then return end
 
-            -- 1. Lưu vị trí hiện tại
             local oldCFrame = root.CFrame
-
-            -- 2. Tìm NPC Gacha / Zioles
             local gachaHRP = nil
-            for _, v in pairs(workspace:GetChildren()) do
-                if v:IsA("Model") then
-                    local nameLower = v.Name:lower()
-                    if nameLower:find("gacha") or nameLower:find("zioles") or nameLower:find("fruit dealer") then
+
+            if replicated:FindFirstChild("NPCs") then
+                for _, v in pairs(replicated.NPCs:GetChildren()) do
+                    local name = v.Name:lower()
+                    if name:find("gacha") or name:find("zioles") or name:find("fruit dealer") or name:find("cousin") then
                         gachaHRP = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
                         if gachaHRP then break end
                     end
                 end
             end
 
-            -- Fallback nếu không tìm thấy (vị trí cố định hay dùng)
             if not gachaHRP then
-                -- Bạn có thể thêm vị trí cứng của Gacha ở từng sea nếu cần
-                return
+                for _, v in pairs(workspace:GetChildren()) do
+                    if v:IsA("Model") then
+                        local name = v.Name:lower()
+                        if name:find("gacha") or name:find("zioles") or name:find("fruit dealer") then
+                            gachaHRP = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
+                            if gachaHRP then break end
+                        end
+                    end
+                end
             end
 
-            -- 3. Bay tới sát NPC (nhanh)
-            root.CFrame = gachaHRP.CFrame * CFrame.new(0, 3, 5)
-            task.wait(0.35)   -- chờ 1 chút để server nhận vị trí
+            local targetCFrame
+            if gachaHRP then
+                targetCFrame = gachaHRP.CFrame * CFrame.new(0, 3, 5)
+            else
+                local sea = World1 and 1 or (World2 and 2 or 3)
+                targetCFrame = GachaFallback[sea]
+            end
 
-            -- 4. Gọi remote random
-            replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            -- Một số bản dùng remote mới hơn, thử thêm dòng dưới nếu cần:
-            -- replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
+            root.CFrame = targetCFrame
+            task.wait(0.4)
 
-            task.wait(0.25)
+            pcall(function()
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+            end)
+            pcall(function()
+                replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
+            end)
 
-            -- 5. Bay về chỗ cũ ngay
+            task.wait(0.3)
             root.CFrame = oldCFrame
         end)
     end
 end)
+
 StoredF = Tabs.Fruit:AddToggle("StoredF", {Title = "Auto Store Fruit", Description = "Automatic store devil fruit", Default = false})
 StoredF:OnChanged(function(Value)
-  _G.StoreF = Value
-end)
-spawn(function()
-  while wait(Sec) do
-    if _G.StoreF then
-      pcall(function() UpdStFruit() end)
-    end
-  end
-StoredF = Tabs.Fruit:AddToggle("StoredF", {Title = "Auto Store Fruit", Description = "Automatic store devil fruit", Default = false})
-StoredF:OnChanged(function(Value)
-  _G.StoreF = Value
-end)
-spawn(function()
-  while wait(Sec) do
-    if _G.StoreF then
-      pcall(function() UpdStFruit() end)
-    end
-  end
-end)
-TwF = Tabs.Fruit:AddToggle("TwF", {Title = "Auto Tween to Fruit", Description = "Automatic tween to get devil fruit", Default = false})
-TwF:OnChanged(function(Value)
-  _G.TwFruits = Value
-end)
-spawn(function()
-  while wait(Sec) do
-    if _G.TwFruits then
-      pcall(function()
-        for _,x1 in pairs(workspace:GetChildren()) do
-	    if string.find(x1.Name, "Fruit") then _tp(x1.Handle.CFrame) end
-	    end
-      end)
-    end
-  end
-end)
-BringF = Tabs.Fruit:AddToggle("BringF", {Title = "Auto Collect Fruit", Description = "Automatic bring devil fruit", Default = false})
-BringF:OnChanged(function(Value)
-  _G.InstanceF = Value
-end)
-spawn(function()
-  while wait(Sec) do
-    if _G.InstanceF then
-      pcall(function() collectFruits(_G.InstanceF) end)
-    end
-  end
+    _G.StoreF = Value
 end)
 
+spawn(function()
+    while task.wait(Sec or 1) do
+        if _G.StoreF then
+            pcall(function() UpdStFruit() end)
+        end
+    end
+end)
+
+TwF = Tabs.Fruit:AddToggle("TwF", {Title = "Auto Tween to Fruit", Description = "Automatic tween to get devil fruit", Default = false})
+TwF:OnChanged(function(Value)
+    _G.TwFruits = Value
+end)
+
+spawn(function()
+    while task.wait(Sec or 1) do
+        if _G.TwFruits then
+            pcall(function()
+                for _, x1 in pairs(workspace:GetChildren()) do
+                    if string.find(x1.Name, "Fruit") and x1:FindFirstChild("Handle") then 
+                        _tp(x1.Handle.CFrame) 
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+BringF = Tabs.Fruit:AddToggle("BringF", {Title = "Auto Collect Fruit", Description = "Automatic bring devil fruit", Default = false})
+BringF:OnChanged(function(Value)
+    _G.InstanceF = Value
+end)
+
+spawn(function()
+    while task.wait(Sec or 1) do
+        if _G.InstanceF then
+            pcall(function() collectFruits(_G.InstanceF) end)
+        end
+    end
+end)
 Tabs.Shop:AddSection("Shop Options")
 Tabs.Shop:AddButton({Title = "Buy Buso", Description = "",Callback = function()
   replicated.Remotes.CommF_:InvokeServer("BuyHaki","Buso")
