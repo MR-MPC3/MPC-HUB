@@ -6461,50 +6461,64 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = fu
 end})
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
-    Description = "Automatic random devil fruit",
+    Description = "Fix Gacha New UI + Auto Price Calculation",
     Default = false
 })
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
 end)
-
 spawn(function()
-    while wait(3) do
+    while task.wait(5) do -- Dùng task.wait(5) thay cho wait(5) để mượt hơn
         pcall(function()
-            if _G.Random_Auto then
+            if not _G.Random_Auto then return end
+            -- 1. Lấy dữ liệu Level và Beli từ Data của người chơi
+            local level = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Level")) and plr.Data.Level.Value or 1
+            local beli = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Beli")) and plr.Data.Beli.Value or 0
+            -- 2. Công thức tính giá quay chuẩn
+            local gachaCost = 25000 + (level - 1) * 150
+            -- Kiểm tra tiền
+            if beli < gachaCost then
+                return -- Không đủ tiền thì đứng đợi hoặc báo lỗi
+            end
+            -- 3. Tìm NPC Gacha (Sử dụng tìm kiếm linh hoạt theo từ khóa)
+            local gacha = nil
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and (string.find(string.lower(v.Name), "gacha") or string.find(string.lower(v.Name), "zioles")) then
+                    if v:FindFirstChild("HumanoidRootPart") then
+                        gacha = v
+                        break
+                    end
+                end
+            end
+            -- 4. Thực hiện hành động
+            if gacha then
+                -- Bay đến sát NPC để bypass khoảng cách
+                _tp(gacha.HumanoidRootPart.CFrame * CFrame.new(0, 3, 5))
+                task.wait(1.5)
+                -- Gọi Remote chính
                 replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-
-                -- Thử click nút mua nếu Gacha Box hiện
-                task.wait(1)
+                task.wait(1.5)
+                -- Click giả lập vào nút Buy trên UI
                 local main = plr.PlayerGui:FindFirstChild("Main")
                 if main then
                     for _, v in pairs(main:GetDescendants()) do
-                        if v:IsA("TextButton") or v:IsA("ImageButton") then
-                            local text = tostring(v.Text or v.Name or ""):lower()
-                            if text:find("%$") or text:find("buy") or text:find("mua") then
+                        if (v:IsA("TextButton") or v:IsA("ImageButton")) and v.Visible then
+                            local text = tostring(v.Text or v.Name):lower()
+                            if text:find("%$") or text:find("buy") or text:find("mua") or text:find("purchase") then
                                 local pos = v.AbsolutePosition + (v.AbsoluteSize / 2)
                                 vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
-                                task.wait(0.05)
+                                task.wait(0.1)
                                 vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
-                                break
                             end
                         end
                     end
                 end
+            else
+                -- Dự phòng nếu không tìm thấy NPC
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
             end
         end)
     end
-end)
-DropF = Tabs.Fruit:AddToggle("DropF", {Title = "Auto Drop Fruit", Description = "Automatic drop devil fruit", Default = false})
-DropF:OnChanged(function(Value)
-  _G.DropFruit = Value
-end)
-spawn(function()
-  while wait(Sec) do
-    if _G.DropFruit then
-      pcall(function() DropFruits() end)
-    end
-  end
 end)
 StoredF = Tabs.Fruit:AddToggle("StoredF", {Title = "Auto Store Fruit", Description = "Automatic store devil fruit", Default = false})
 StoredF:OnChanged(function(Value)
