@@ -6747,7 +6747,7 @@ local jobId = ""
 Tabs.Misc:AddInput("JobID", {
     Title = "Enter Job ID",
     Default = "",
-    Placeholder = "Dán JobID vào đây...",
+    Placeholder = "Dán Job ID vào đây...",
     Numeric = false,
     Finished = false,
     Callback = function(Value)
@@ -6775,8 +6775,8 @@ Tabs.Misc:AddButton({
     end
 })
 Tabs.Misc:AddButton({
-    Title = "Copy JobID Server",
-    Description = "Sao chép JobID của server này",
+    Title = "Copy Job ID Server",
+    Description = "Sao chép Job ID của server này",
     Callback = function()
         if setclipboard then
             setclipboard(tostring(game.JobId))
