@@ -144,8 +144,8 @@ Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild(
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 -- ==================== ATTACK MỚI (RegisterAttack + RegisterHit) ====================
 local lastAttackTick = 0
-_G.UseAttackCooldown = true          -- Bật/tắt giới hạn tốc độ đánh
-_G.AttackCooldown = 0.12             -- Mặc định
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
 
 local function GetEquippedTool()
     local char = plr.Character
@@ -179,19 +179,16 @@ local function FindEnemiesInRange(enemiesTable, enemiesList)
 end
 
 function AttackNoCoolDown()
-    -- Nếu bật giới hạn tốc độ thì check cooldown
     if _G.UseAttackCooldown then
         local cd = tonumber(_G.AttackCooldown) or 0.12
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-
     local targets = {}
     local enemies = workspace.Enemies:GetChildren()
     local mainPart = FindEnemiesInRange(targets, enemies)
     if not mainPart then return end
     if not GetEquippedTool() then return end
-
     pcall(function()
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
         local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
@@ -207,25 +204,21 @@ Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
     if _G.UseAttackCooldown then
         local cd = tonumber(_G.AttackCooldown) or 0.12
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
     PosMon = model:GetAttribute("Locked").Position
     BringEnemy()
-    
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
         weaponSc(_G.ChooseWP or "Melee")
     end
-    
     local char = plr.Character
     local Equipped = char and char:FindFirstChildOfClass("Tool")
     if not Equipped then
@@ -233,15 +226,12 @@ Attack.Kill = function(model, Succes)
         Equipped = char and char:FindFirstChildOfClass("Tool")
     end
     if not Equipped then return end
-    
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
         _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
         _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
-    
-    -- Gọi attack mới
     AttackNoCoolDown()
 end
 Attack.Kill2 = function(model,Succes)
@@ -333,23 +323,18 @@ statsSetings = function(Num, value)
 end
 BringEnemy = function()
   if not _B then return end
-  pcall(function()
-    plr.SimulationRadius = math.huge
-    for _,v in pairs(workspace.Enemies:GetChildren()) do
-      if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
-        if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
-          v.PrimaryPart.CFrame = CFrame.new(PosMon)
-          v.PrimaryPart.CanCollide = false
-          v.PrimaryPart.Velocity = Vector3.zero
-          v.Humanoid.WalkSpeed = 0
-          v.Humanoid.JumpPower = 0
-          if v.Humanoid:FindFirstChild("Animator") then
-            v.Humanoid.Animator:Destroy()
-          end
-        end
-      end
-    end
-  end)
+  for _,v in pairs(workspace.Enemies:GetChildren()) do
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
+	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
+		v.PrimaryPart.CanCollide = true;
+		v:FindFirstChild("Humanoid").WalkSpeed = 0;
+		v:FindFirstChild("Humanoid").JumpPower = 0;
+		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
+		plr.SimulationRadius = math.huge
+	  end
+	end                               
+  end                    	
 end
 Useskills = function(weapon, skill)
   if weapon == "Melee" then
@@ -2387,29 +2372,48 @@ spawn(function()
   end
 end)
 
--- ==================== TỐC ĐỘ ĐÁNH (Toggle + Slider) ====================
+-- ==================== TỐC ĐỘ ĐÁNH (Slider + TextBox) ====================
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Bật Giới Hạn Tốc Độ Đánh",
-    Description = "Tắt = đánh max speed | Bật = dùng slider bên dưới",
+    Description = "Tắt = đánh max speed | Bật = dùng slider + ô nhập bên dưới",
     Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
     _G.UseAttackCooldown = Value
 end)
 
+-- Slider
 local AttackSpeed = Tabs.Settings:AddSlider("AttackSpeed", {
-    Title = "Tốc độ đánh (giây)",
+    Title = "Tốc độ đánh (kéo)",
     Description = "Càng nhỏ càng nhanh | Khuyến nghị 0.08 ~ 0.15",
     Default = 0.12,
     Min = 0.03,
     Max = 0.5,
     Rounding = 2
 })
+
+-- TextBox (ô nhập số) - cùng chỉnh 1 giá trị với Slider
+local AttackSpeedInput = Tabs.Settings:AddInput("AttackSpeedInput", {
+    Title = "Tốc độ đánh (nhập số)",
+    Default = "0.12",
+    Placeholder = "Nhập số giây (vd: 0.1)",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num and num >= 0.03 and num <= 0.5 then
+            _G.AttackCooldown = num
+            pcall(function() AttackSpeed:SetValue(num) end)
+        end
+    end
+})
+
 AttackSpeed:OnChanged(function(Value)
     _G.AttackCooldown = Value
+    pcall(function() AttackSpeedInput:SetValue(tostring(Value)) end)
 end)
 -- =======================================================================
 
@@ -2557,7 +2561,7 @@ spawn(function()
   end
 end)      
 
--- ==================== STATS UPGRADE (Toggle + Slider) ====================
+-- ==================== STATS UPGRADE (Slider + TextBox) ====================
 Tabs.Settings:AddSection("Stats Upgrade")
 
 _G.UseStatsValue = true
@@ -2565,30 +2569,49 @@ pSats = 10
 
 local UseStatsToggle = Tabs.Settings:AddToggle("UseStatsToggle", {
     Title = "Bật Giới Hạn Điểm Cộng",
-    Description = "Tắt = cộng full điểm | Bật = dùng số điểm bên dưới",
+    Description = "Tắt = cộng full điểm | Bật = dùng slider + ô nhập bên dưới",
     Default = true
 })
 UseStatsToggle:OnChanged(function(Value)
     _G.UseStatsValue = Value
 end)
 
+-- Slider
 local StatusSelect = Tabs.Settings:AddSlider("StatusSelect", {
-    Title = "Số điểm cộng mỗi lần",
-    Description = "Chọn số điểm muốn cộng (1 ~ 1000)",
+    Title = "Số điểm cộng (kéo)",
+    Description = "Chọn số điểm muốn cộng mỗi lần",
     Default = 10,
     Min = 1,
     Max = 1000,
     Rounding = 0
 })
+
+-- TextBox (ô nhập số)
+local StatusInput = Tabs.Settings:AddInput("StatusInput", {
+    Title = "Số điểm cộng (nhập số)",
+    Default = "10",
+    Placeholder = "Nhập số điểm (vd: 50)",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num and num >= 1 and num <= 1000 then
+            pSats = num
+            pcall(function() StatusSelect:SetValue(num) end)
+        end
+    end
+})
+
 StatusSelect:OnChanged(function(Value)
     pSats = Value
+    pcall(function() StatusInput:SetValue(tostring(Value)) end)
 end)
 
 local function GetStatsAmount()
     if _G.UseStatsValue then
         return pSats or 10
     else
-        return plr.Data.Points.Value -- cộng hết điểm hiện có
+        return plr.Data.Points.Value
     end
 end
 
@@ -7077,7 +7100,6 @@ end
 CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
 CameraShakerR:Stop()
 
--- Spam attack bằng RegisterAttack/RegisterHit
 task.spawn(function()
     RunSer.Heartbeat:Connect(function()
         pcall(function()
