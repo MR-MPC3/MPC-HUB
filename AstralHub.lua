@@ -2540,10 +2540,10 @@ spawn(function()
   end
 end)      
 
-Tabs.Settings:AddSection("Stats Upgrade")
+Tabs.Settings:AddSection("Tư Động Nâng Chỉ Số")
 pSats = 1
 Tabs.Settings:AddInput("StatusInput", {
-    Title = "Stats Value (1 -> 9999)",
+    Title = "Nhập chỉ số (1 -> 9999)",
     Default = "1",
     Placeholder = "1 -> 9999 (nhỏ nhất = 1)",
     Numeric = false,
@@ -2560,7 +2560,7 @@ Tabs.Settings:AddInput("StatusInput", {
     end
 })
 
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Melee", Description = "", Default = false})
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Cận Chiến", Description = "", Default = false})
 StatsUpg:OnChanged(function(Value)
   _G.Auto_Melee = Value
 end)
@@ -2572,7 +2572,7 @@ spawn(function()
   end
 end)
 
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Swords", Description = "", Default = false})
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Kiếm", Description = "", Default = false})
 StatsUpg:OnChanged(function(Value)
   _G.Auto_Sword = Value
 end)
@@ -2583,7 +2583,7 @@ spawn(function()
     end)
   end
 end)
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Gun", Description = "", Default = false})
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Súng", Description = "", Default = false})
 StatsUpg:OnChanged(function(Value)
   _G.Auto_Gun = Value
 end)
@@ -2594,7 +2594,7 @@ spawn(function()
     end)
   end
 end)
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Blox Fruit", Description = "", Default = false})
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Trái Blox", Description = "", Default = false})
 StatsUpg:OnChanged(function(Value)
   _G.Auto_DevilFruit = Value
 end)
@@ -2605,7 +2605,7 @@ spawn(function()
     end)
   end
 end)
-local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Auto Defense", Description = "", Default = false})
+local StatsUpg = Tabs.Settings:AddToggle("StatsUpg", {Title = "Phòng Thủ", Description = "", Default = false})
 StatsUpg:OnChanged(function(Value)
   _G.Auto_Defense = Value
 end)
