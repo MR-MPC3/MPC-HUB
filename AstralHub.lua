@@ -6464,88 +6464,62 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "", Callback = f
     end
 end})
 
+-- ==================== AUTO RANDOM FRUIT (GỌN NHẸ) ====================
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
-    Description = "Bay tới Gacha random rồi về chỗ cũ (hoạt động mọi nơi)",
+    Description = "Bay tới Gacha random nhanh gọn",
     Default = false
 })
 
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
-end)
-
-local GachaFallback = {
-    [1] = CFrame.new(-1150, 20, 1400),
-    [2] = CFrame.new(-450, 70, 300),
-    [3] = CFrame.new(-12550, 340, -7600)
-}
-
-spawn(function()
-    while task.wait(3.5) do
-        pcall(function()
-            if not _G.Random_Auto then return end
-
-            local character = plr.Character
-            if not character then return end
-            local root = character:FindFirstChild("HumanoidRootPart")
-            if not root then return end
-
-            local data = plr:FindFirstChild("Data")
-            if not data then return end
-            local level = data:FindFirstChild("Level") and data.Level.Value or 1
-            local beli  = data:FindFirstChild("Beli") and data.Beli.Value or 0
-            local cost  = 25000 + (level - 1) * 150
-            if beli < cost then return end
-
-            local oldCFrame = root.CFrame
-            local gachaHRP = nil
-
-            if replicated:FindFirstChild("NPCs") then
-                for _, v in pairs(replicated.NPCs:GetChildren()) do
-                    local name = v.Name:lower()
-                    if name:find("gacha") or name:find("zioles") or name:find("fruit dealer") or name:find("cousin") then
-                        gachaHRP = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
-                        if gachaHRP then break end
-                    end
-                end
-            end
-
-            if not gachaHRP then
-                for _, v in pairs(workspace:GetChildren()) do
-                    if v:IsA("Model") then
-                        local name = v.Name:lower()
-                        if name:find("gacha") or name:find("zioles") or name:find("fruit dealer") then
-                            gachaHRP = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head") or v.PrimaryPart
-                            if gachaHRP then break end
-                        end
-                    end
-                end
-            end
-
-            local targetCFrame
-            if gachaHRP then
-                targetCFrame = gachaHRP.CFrame * CFrame.new(0, 3, 5)
-            else
-                local sea = World1 and 1 or (World2 and 2 or 3)
-                targetCFrame = GachaFallback[sea]
-            end
-
-            root.CFrame = targetCFrame
-            task.wait(0.4)
-
-            pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            end)
-            pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
-            end)
-
-            task.wait(0.3)
-            root.CFrame = oldCFrame
-        end)
+    if Value then
+        Fluent:Notify({Title = "Auto Random", Content = "Đã bật tính năng tự động quay!", Duration = 2})
     end
 end)
 
+-- Tọa độ Gacha chuẩn 3 Sea
+local GachaPos = {
+    [1] = CFrame.new(-1151.9, 16.6, 1439.1),
+    [2] = CFrame.new(-450.5, 73.0, 298.5),
+    [3] = CFrame.new(-12548.5, 337.2, -7525.8)
+}
+
+spawn(function()
+    while task.wait(5) do
+        pcall(function()
+            if not _G.Random_Auto then return end
+
+            local char = plr.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local root = char.HumanoidRootPart
+
+            -- Kiểm tra tiền Beli cơ bản
+            local data = plr:FindFirstChild("Data")
+            local level = data and data:FindFirstChild("Level") and data.Level.Value or 1
+            local beli = data and data:FindFirstChild("Beli") and data.Beli.Value or 0
+            if beli < (25000 + (level - 1) * 150) then return end
+
+            local oldPos = root.CFrame
+            local sea = World1 and 1 or (World2 and 2 or 3)
+
+            -- 1. Bay thẳng tới vị trí Gacha theo Sea hiện tại
+            root.CFrame = GachaPos[sea]
+            task.wait(0.5)
+
+            -- 2. Gọi lệnh mua trái cây qua Remote
+            replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+            replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
+
+            task.wait(0.4)
+            -- 3. Bay về chỗ cũ
+            root.CFrame = oldPos
+
+            -- Chờ 4 tiếng cho lần quay tiếp theo (hoặc chỉnh thời gian tùy ý)
+            task.wait(14400)
+        end)
+    end
+end)
 StoredF = Tabs.Fruit:AddToggle("StoredF", {Title = "Auto Store Fruit", Description = "Automatic store devil fruit", Default = false})
 StoredF:OnChanged(function(Value)
     _G.StoreF = Value
