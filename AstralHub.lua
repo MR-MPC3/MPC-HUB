@@ -6751,7 +6751,7 @@ Tabs.Misc:AddButton({Title = "Đổi Máy Chủ Ping Thấp", Description = "", 
 end})
 local jobId = ""
 Tabs.Misc:AddInput("JobID", {
-    Title = "Enter Job ID",
+    Title = "Nhập Job ID",
     Default = "",
     Placeholder = "Dán Job ID vào đây...",
     Numeric = false,
@@ -6761,7 +6761,7 @@ Tabs.Misc:AddInput("JobID", {
     end
 })
 Tabs.Misc:AddButton({
-    Title = "Teleport [Job ID]",
+    Title = "Dịch Chuyển đến [Job ID]",
     Description = "",
     Callback = function()
         if jobId and jobId ~= "" then
@@ -6781,8 +6781,8 @@ Tabs.Misc:AddButton({
     end
 })
 Tabs.Misc:AddButton({
-    Title = "Copy Job ID Server",
-    Description = "Sao chép Job ID của server này",
+    Title = "Sao chép Job ID Máy Chủ",
+    Description = "Sao chép Job ID của máy chủ này",
     Callback = function()
         if setclipboard then
             setclipboard(tostring(game.JobId))
