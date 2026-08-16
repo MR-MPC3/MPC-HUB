@@ -6464,59 +6464,59 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "", Callback = f
     end
 end})
 
--- ==================== AUTO RANDOM FRUIT (GỌN NHẸ) ====================
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
-    Description = "Bay tới Gacha random nhanh gọn",
+    Description = "Bay tới Gacha random rồi về",
     Default = false
 })
 
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
-    if Value then
-        Fluent:Notify({Title = "Auto Random", Content = "Đã bật tính năng tự động quay!", Duration = 2})
-    end
 end)
 
--- Tọa độ Gacha chuẩn 3 Sea
-local GachaPos = {
-    [1] = CFrame.new(-1151.9, 16.6, 1439.1),
-    [2] = CFrame.new(-450.5, 73.0, 298.5),
-    [3] = CFrame.new(-12548.5, 337.2, -7525.8)
-}
-
 spawn(function()
-    while task.wait(5) do
+    while task.wait(4) do
         pcall(function()
             if not _G.Random_Auto then return end
 
-            local char = plr.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local root = char.HumanoidRootPart
+            local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
 
-            -- Kiểm tra tiền Beli cơ bản
             local data = plr:FindFirstChild("Data")
-            local level = data and data:FindFirstChild("Level") and data.Level.Value or 1
-            local beli = data and data:FindFirstChild("Beli") and data.Beli.Value or 0
-            if beli < (25000 + (level - 1) * 150) then return end
+            if not data or (data.Beli and data.Beli.Value < 25000) then return end
 
-            local oldPos = root.CFrame
-            local sea = World1 and 1 or (World2 and 2 or 3)
+            local old = root.CFrame
+            local target = nil
 
-            -- 1. Bay thẳng tới vị trí Gacha theo Sea hiện tại
-            root.CFrame = GachaPos[sea]
-            task.wait(0.5)
+            -- Tìm NPC Gacha
+            for _, v in pairs(replicated.NPCs:GetChildren()) do
+                if v.Name == "Blox Fruit Gacha" then
+                    target = (v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart)
+                    if target then
+                        target = target.CFrame * CFrame.new(0, 2, 4)
+                        break
+                    end
+                end
+            end
 
-            -- 2. Gọi lệnh mua trái cây qua Remote
-            replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
+            -- Không tìm thấy thì dùng vị trí theo Sea
+            if not target then
+                if World1 then
+                    target = CFrame.new(-1151.9, 16.6, 1439.1)
+                elseif World2 then
+                    target = CFrame.new(-450.5, 73, 298.5)
+                else
+                    target = CFrame.new(-12548.5, 337.2, -7525.8)
+                end
+            end
 
-            task.wait(0.4)
-            -- 3. Bay về chỗ cũ
-            root.CFrame = oldPos
-
-            -- Chờ 4 tiếng cho lần quay tiếp theo (hoặc chỉnh thời gian tùy ý)
-            task.wait(14400)
+            root.CFrame = target
+            task.wait(1)
+            pcall(function()
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+            end)
+            task.wait(0.6)
+            root.CFrame = old
         end)
     end
 end)
