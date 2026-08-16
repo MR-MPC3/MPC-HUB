@@ -6461,7 +6461,7 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "",Callback = fu
 end})
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
-    Description = "Fixed for new Gacha UI (Hybrid)",
+    Description = "Hybrid - ổn định + ít detect",
     Default = false
 })
 RandomFF:OnChanged(function(Value)
@@ -6469,16 +6469,16 @@ RandomFF:OnChanged(function(Value)
 end)
 local FailCount = 0
 spawn(function()
-    while wait(4) do   -- chậm lại để ổn định + giảm detect
+    while task.wait(4) do
         pcall(function()
             if not _G.Random_Auto then
                 FailCount = 0
                 return
             end
-            -- Gọi remote cũ
+            -- Gọi remote
             replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            task.wait(1.1)
-            -- Tự click nút mua nếu Gacha Box hiện ra
+            task.wait(1.2)
+            -- Click nút mua nếu có Gacha Box
             local clicked = false
             local gui = plr.PlayerGui:FindFirstChild("Main")
             if gui then
@@ -6488,7 +6488,7 @@ spawn(function()
                         if string.find(txt, "%$") or string.find(txt, "buy") or string.find(txt, "mua") or string.find(txt, "purchase") then
                             local pos = btn.AbsolutePosition + btn.AbsoluteSize / 2
                             vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
-                            task.wait(0.07)
+                            task.wait(0.08)
                             vim1:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
                             clicked = true
                             break
@@ -6496,19 +6496,19 @@ spawn(function()
                     end
                 end
             end
-            -- Nếu fail nhiều lần thì mới teleport đến NPC
             if not clicked then
                 FailCount = FailCount + 1
             else
                 FailCount = 0
             end
+            -- Chỉ teleport khi fail 3 lần
             if FailCount >= 3 then
                 FailCount = 0
                 for _, v in pairs(workspace:GetDescendants()) do
                     if v:IsA("Model") and (v.Name == "Blox Fruit Gacha" or v.Name == "Zioles" or string.find(string.lower(v.Name), "gacha")) then
                         if v:FindFirstChild("HumanoidRootPart") then
                             _tp(v.HumanoidRootPart.CFrame * CFrame.new(0, 3, 5))
-                            task.wait(0.9)
+                            task.wait(1)
                             replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
                             break
                         end
