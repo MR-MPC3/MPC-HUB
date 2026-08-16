@@ -2366,7 +2366,7 @@ spawn(function()
   end
 end)
 
--- Tốc độ đánh: chỉ Toggle + ô nhập số
+-- Tốc độ đánh: chỉ Toggle + ô nhập số (bỏ slider)
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
@@ -2539,7 +2539,7 @@ spawn(function()
   end
 end)      
 
--- Stats Upgrade: chỉ Toggle + ô nhập số
+-- Stats Upgrade: chỉ Toggle + ô nhập số (bỏ slider)
 Tabs.Settings:AddSection("Stats Upgrade")
 _G.UseStatsValue = true
 pSats = 10
