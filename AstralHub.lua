@@ -154,8 +154,8 @@ end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 local lastAttackTick = 0
-_G.UseAttackCooldown = true
-_G.AttackCooldown = 0.12
+_G.UseAttackCooldown = false   -- mặc định tắt cooldown để đánh max tốc độ
+_G.AttackCooldown = 0.05
 
 local function GetEquippedTool()
     local char = plr.Character
@@ -176,10 +176,10 @@ local function FindEnemiesInRange(tbl, list)
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
                 local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 60 then
+                if head and (myPos - head.Position).Magnitude <= 80 then
                     if enemy ~= char then
                         table.insert(tbl, {enemy, head})
-                        mainPart = head
+                        if not mainPart then mainPart = head end
                     end
                 end
             end
@@ -188,16 +188,18 @@ local function FindEnemiesInRange(tbl, list)
     return mainPart
 end
 
+-- Attack mạnh hơn: bắn nhiều lần + force SimulationRadius + auto equip
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
+        local cd = tonumber(_G.AttackCooldown) or 0.05
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-    local targets = {}
-    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart then return end
-    -- Tự equip nếu chưa có tool
+
+    local char = plr.Character
+    if not char then return end
+
+    -- Auto equip vũ khí
     if not GetEquippedTool() then
         if _G.SelectWeapon then
             EquipWeapon(_G.SelectWeapon)
@@ -206,11 +208,27 @@ function AttackNoCoolDown()
         end
     end
     if not GetEquippedTool() then return end
+
+    local targets = {}
+    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
+    if not mainPart or #targets == 0 then return end
+
     pcall(function()
         sethiddenproperty(plr, "SimulationRadius", math.huge)
-        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
-        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
+        plr.SimulationRadius = math.huge
+
+        local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
+        if not Net then return end
+
+        local RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
+        local RegisterHit = Net:FindFirstChild("RE/RegisterHit")
+        if not RegisterAttack or not RegisterHit then return end
+
+        -- Bắn nhiều lần để tăng khả năng gây damage
+        for i = 1, 3 do
+            RegisterAttack:FireServer(0.5)
+            RegisterHit:FireServer(mainPart, targets)
+        end
     end)
 end
 
@@ -336,19 +354,21 @@ statsSetings = function(Num, value)
   end
 end
 BringEnemy = function()
-  if not _B then return end
+  if not _B or not PosMon then return end
   pcall(function()
     sethiddenproperty(plr, "SimulationRadius", math.huge)
     plr.SimulationRadius = math.huge
   end)
   for _,v in pairs(workspace.Enemies:GetChildren()) do
     if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
-	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
-		v.PrimaryPart.CanCollide = false
-		v.Humanoid.WalkSpeed = 0
-		v.Humanoid.JumpPower = 0
-		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 400 then
+	    pcall(function()
+          v.PrimaryPart.CFrame = CFrame.new(PosMon)
+          v.PrimaryPart.CanCollide = false
+          v.Humanoid.WalkSpeed = 0
+          v.Humanoid.JumpPower = 0
+          if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
+        end)
 	  end
 	end                               
   end                    	
@@ -2396,13 +2416,13 @@ spawn(function()
 end)
 
 -- Tốc độ đánh: Toggle + ô nhập số (0.02 -> 2)
-_G.UseAttackCooldown = true
-_G.AttackCooldown = 0.12
+_G.UseAttackCooldown = false   -- mặc định TẮT để đánh nhanh nhất
+_G.AttackCooldown = 0.05
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Giới Hạn Tốc Độ Đánh",
     Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Ở Dưới",
-    Default = true
+    Default = false
 })
 UseCooldownToggle:OnChanged(function(Value)
     _G.UseAttackCooldown = Value
@@ -2410,7 +2430,7 @@ end)
 
 Tabs.Settings:AddInput("AttackSpeedInput", {
     Title = "Nhập Tốc Độ Đánh (0.02s -> 2s)",
-    Default = "0.12",
+    Default = "0.05",
     Placeholder = "Nhỏ Hơn = Nhanh Hơn",
     Numeric = false,
     Finished = false,
