@@ -44,22 +44,6 @@ if plr.Character then
     UpdateCharacterData(plr.Character)
 end
 plr.CharacterAdded:Connect(UpdateCharacterData)
--- Force SimulationRadius + Buso (cần để RegisterHit gây damage trên acc thấp)
-task.spawn(function()
-    while task.wait(0.2) do
-        pcall(function()
-            sethiddenproperty(plr, "SimulationRadius", math.huge)
-            plr.SimulationRadius = math.huge
-            if typeof(setsimulationradius) == "function" then
-                setsimulationradius(math.huge, math.huge)
-            end
-            -- Auto Buso nếu chưa có
-            if plr.Character and not plr.Character:FindFirstChild("HasBuso") then
-                replicated.Remotes.CommF_:InvokeServer("Buso")
-            end
-        end)
-    end
-end)
 -- Vòng lặp chờ game load an toàn có Timeout
 local t0 = tick()
 repeat 
@@ -159,8 +143,8 @@ end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 local lastAttackTick = 0
-_G.UseAttackCooldown = false
-_G.AttackCooldown = 0.05
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
 
 local function GetEquippedTool()
     local char = plr.Character
@@ -180,12 +164,11 @@ local function FindEnemiesInRange(tbl, list)
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
-                -- Ưu tiên HumanoidRootPart (RegisterHit ổn định hơn Head)
-                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
-                if part and (myPos - part.Position).Magnitude <= 80 then
+                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
+                if head and (myPos - head.Position).Magnitude <= 60 then
                     if enemy ~= char then
-                        table.insert(tbl, {enemy, part})
-                        if not mainPart then mainPart = part end
+                        table.insert(tbl, {enemy, head})
+                        mainPart = head
                     end
                 end
             end
@@ -194,107 +177,20 @@ local function FindEnemiesInRange(tbl, list)
     return mainPart
 end
 
--- GUI log hiện trên màn hình điện thoại
-local function EnsureDebugGui()
-    local pg = plr:FindFirstChild("PlayerGui")
-    if not pg then return nil end
-    local gui = pg:FindFirstChild("AstralDebugLog")
-    if gui then return gui:FindFirstChild("Label") end
-    gui = Instance.new("ScreenGui")
-    gui.Name = "AstralDebugLog"
-    gui.ResetOnSpawn = false
-    gui.IgnoreGuiInset = true
-    gui.Parent = pg
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0.92, 0, 0.28, 0)
-    frame.Position = UDim2.new(0.04, 0, 0.02, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.35
-    frame.BorderSizePixel = 0
-    frame.Parent = gui
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Size = UDim2.new(1, -12, 1, -12)
-    label.Position = UDim2.new(0, 6, 0, 6)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(0, 255, 120)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextYAlignment = Enum.TextYAlignment.Top
-    label.Font = Enum.Font.Code
-    label.TextSize = 14
-    label.TextWrapped = true
-    label.Text = "Astral Debug: waiting..."
-    label.Parent = frame
-    return label
-end
-
-_G.AttackLogCount = 0
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.05
+        local cd = tonumber(_G.AttackCooldown) or 0.12
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-    if not GetEquippedTool() then
-        if _G.SelectWeapon then
-            EquipWeapon(_G.SelectWeapon)
-        else
-            weaponSc(_G.ChooseWP or "Melee")
-        end
-    end
-    local tool = GetEquippedTool()
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-
-    _G.AttackLogCount = (_G.AttackLogCount or 0) + 1
-    local doLog = (_G.AttackLogCount % 20 == 1)
-
-    local status = "..."
-    if not mainPart or not tool then
-        status = "SKIP: no tool or no targets"
-    else
-        local ok, err = pcall(function()
-            sethiddenproperty(plr, "SimulationRadius", math.huge)
-            plr.SimulationRadius = math.huge
-            if typeof(setsimulationradius) == "function" then
-                pcall(setsimulationradius, math.huge, math.huge)
-            end
-            local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
-            if not Net then error("Net missing") end
-            local RA = Net:FindFirstChild("RE/RegisterAttack")
-            local RH = Net:FindFirstChild("RE/RegisterHit")
-            if not RA or not RH then error("RA/RH missing") end
-            RA:FireServer(0)
-            RH:FireServer(mainPart, targets)
-            RA:FireServer(1e-9)
-            RH:FireServer(mainPart, targets)
-            pcall(function() tool:Activate() end)
-        end)
-        status = ok and ("FIRED OK n=" .. #targets) or ("ERROR: " .. tostring(err))
-    end
-
-    if doLog then
-        local hasBuso = false
-        local lv = "?"
-        pcall(function()
-            hasBuso = plr.Character and plr.Character:FindFirstChild("HasBuso") ~= nil
-            lv = plr.Data and plr.Data.Level and plr.Data.Level.Value or "?"
-        end)
-        local txt = table.concat({
-            "=== ASTRAL DEBUG (man hinh) ===",
-            "Tool: " .. (tool and tool.Name or "NONE") .. " | Tip: " .. (tool and tostring(tool.ToolTip) or "NONE"),
-            "Targets: " .. #targets .. " | main: " .. (mainPart and mainPart.Name or "NONE"),
-            "Seriality: " .. tostring(_G.Seriality) .. " | CD: " .. tostring(_G.UseAttackCooldown),
-            "sethidden: " .. tostring(typeof(sethiddenproperty) == "function"),
-            "setsimradius: " .. tostring(typeof(setsimulationradius) == "function"),
-            "HasBuso: " .. tostring(hasBuso) .. " | Level: " .. tostring(lv),
-            "Status: " .. status,
-        }, "\n")
-        pcall(function()
-            local label = EnsureDebugGui()
-            if label then label.Text = txt end
-        end)
-    end
+    if not mainPart or not GetEquippedTool() then return end
+    pcall(function()
+        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
+        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
+        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
+    end)
 end
 
 Attack.Kill = function(model, Succes)
@@ -419,21 +315,16 @@ statsSetings = function(Num, value)
   end
 end
 BringEnemy = function()
-  if not _B or not PosMon then return end
-  pcall(function()
-    sethiddenproperty(plr, "SimulationRadius", math.huge)
-    plr.SimulationRadius = math.huge
-  end)
+  if not _B then return end
   for _,v in pairs(workspace.Enemies:GetChildren()) do
-    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
-	    pcall(function()
-          v.PrimaryPart.CFrame = CFrame.new(PosMon)
-          v.PrimaryPart.CanCollide = false
-          v.Humanoid.WalkSpeed = 0
-          v.Humanoid.JumpPower = 0
-          if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
-        end)
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
+	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
+		v.PrimaryPart.CanCollide = true;
+		v:FindFirstChild("Humanoid").WalkSpeed = 0;
+		v:FindFirstChild("Humanoid").JumpPower = 0;
+		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
+		plr.SimulationRadius = math.huge
 	  end
 	end                               
   end                    	
@@ -2481,13 +2372,13 @@ spawn(function()
 end)
 
 -- Tốc độ đánh: Toggle + ô nhập số (0.02 -> 2)
-_G.UseAttackCooldown = false
-_G.AttackCooldown = 0.05
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Giới Hạn Tốc Độ Đánh",
     Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Ở Dưới",
-    Default = false
+    Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
     _G.UseAttackCooldown = Value
@@ -2495,7 +2386,7 @@ end)
 
 Tabs.Settings:AddInput("AttackSpeedInput", {
     Title = "Nhập Tốc Độ Đánh (0.02s -> 2s)",
-    Default = "0.05",
+    Default = "0.12",
     Placeholder = "Nhỏ Hơn = Nhanh Hơn",
     Numeric = false,
     Finished = false,
@@ -7144,4 +7035,48 @@ end)
 local player = game.Players.LocalPlayer
 local function IsEntityAlive(entity)
     if not entity then return false end
-    local humanoid = e
+    local humanoid = entity:FindFirstChild("Humanoid")
+    return humanoid and humanoid.Health > 0
+end
+local function GetEnemiesInRange(character, range)
+    local enemies = game:GetService("Workspace").Enemies:GetChildren()
+    local players = game:GetService("Players"):GetPlayers()
+    local targets = {}
+    local playerPos = character:GetPivot().Position
+    for _, enemy in ipairs(enemies) do
+        local rootPart = enemy:FindFirstChild("HumanoidRootPart")
+        if rootPart and IsEntityAlive(enemy) then
+            local distance = (rootPart.Position - playerPos).Magnitude
+            if distance <= range then
+                table.insert(targets, enemy)
+            end
+        end
+    end
+    for _, otherPlayer in ipairs(players) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local rootPart = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart and IsEntityAlive(otherPlayer.Character) then
+                local distance = (rootPart.Position - playerPos).Magnitude
+                if distance <= range then
+                    table.insert(targets, otherPlayer.Character)
+                end
+            end
+        end
+    end
+    return targets
+end
+
+CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
+CameraShakerR:Stop()
+
+task.spawn(function()
+    RunSer.Heartbeat:Connect(function()
+        pcall(function()
+            if _G.Seriality then
+                AttackNoCoolDown()
+            end
+        end)
+    end)
+end)
+
+Window:SelectTab(1)
