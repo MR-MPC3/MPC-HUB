@@ -143,7 +143,6 @@ end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 local lastAttackTick = 0
-local attackCombo = 1
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
@@ -165,11 +164,11 @@ local function FindEnemiesInRange(tbl, list)
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
-                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
-                if part and (myPos - part.Position).Magnitude <= 80 then
+                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
+                if head and (myPos - head.Position).Magnitude <= 60 then
                     if enemy ~= char then
-                        table.insert(tbl, {enemy, part})
-                        if not mainPart then mainPart = part end
+                        table.insert(tbl, {enemy, head})
+                        mainPart = head
                     end
                 end
             end
@@ -184,24 +183,23 @@ function AttackNoCoolDown()
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-    if not GetEquippedTool() then
-        if _G.SelectWeapon then EquipWeapon(_G.SelectWeapon)
-        else weaponSc(_G.ChooseWP or "Melee") end
-    end
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
     if not mainPart or not GetEquippedTool() then return end
+    
     pcall(function()
-        sethiddenproperty(plr, "SimulationRadius", math.huge)
-        plr.SimulationRadius = math.huge
-        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        local RA = Net:WaitForChild("RE/RegisterAttack")
-        local RH = Net:WaitForChild("RE/RegisterHit")
-        -- Giong danh tay / RealKid: RegisterAttack(0.5, combo 1-4)
-        RA:FireServer(0.5, attackCombo)
-        RH:FireServer(mainPart, targets)
-        attackCombo = attackCombo + 1
-        if attackCombo > 4 then attackCombo = 1 end
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+        local remoteAttack = replicatedStorage:FindFirstChild("RE") and replicatedStorage.RE:FindFirstChild("RegisterAttack")
+        if remoteAttack then
+            for combo = 1, 4 do
+                remoteAttack:FireServer(0.5, combo)
+                task.wait(0.1) -- Độ trễ nhỏ giữa các đòn combo
+            end
+        end
+        local netFolder = replicatedStorage:FindFirstChild("Modules") and replicatedStorage.Modules:FindFirstChild("Net")
+        if netFolder and netFolder:FindFirstChild("RE/RegisterHit") then
+            netFolder["RE/RegisterHit"]:FireServer(mainPart, targets)
+        end
     end)
 end
 
@@ -327,24 +325,19 @@ statsSetings = function(Num, value)
   end
 end
 BringEnemy = function()
-  if not _B or not PosMon then return end
-  pcall(function()
-    sethiddenproperty(plr, "SimulationRadius", math.huge)
-    plr.SimulationRadius = math.huge
-  end)
+  if not _B then return end
   for _,v in pairs(workspace.Enemies:GetChildren()) do
-    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
-	    pcall(function()
-          v.PrimaryPart.CFrame = CFrame.new(PosMon)
-          v.PrimaryPart.CanCollide = false
-          v.Humanoid.WalkSpeed = 0
-          v.Humanoid.JumpPower = 0
-          if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
-        end)
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
+	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
+		v.PrimaryPart.CanCollide = true;
+		v:FindFirstChild("Humanoid").WalkSpeed = 0;
+		v:FindFirstChild("Humanoid").JumpPower = 0;
+		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
+		plr.SimulationRadius = math.huge
 	  end
-	end
-  end
+	end                               
+  end                    	
 end
 Useskills = function(weapon, skill)
   if weapon == "Melee" then
