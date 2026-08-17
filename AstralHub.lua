@@ -6462,7 +6462,6 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "", Callback = f
         replicated.Remotes.CommF_:InvokeServer("PurchaseRawFruit", SelectF_Adv)
     end
 end})
-
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
     Title = "Auto Random Fruit",
     Description = "Random tại chỗ (không bay)",
@@ -6472,24 +6471,18 @@ RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
 end)
-
 spawn(function()
     while task.wait(5) do
         pcall(function()
             if not _G.Random_Auto then return end
 
             local data = plr:FindFirstChild("Data")
+            -- Kiểm tra Beli (mỗi lần random tốn tiền tùy level, ví dụ từ 50k trở xuống hoặc check cơ bản)
             if not data or (data.Beli and data.Beli.Value < 25000) then return end
 
-            -- Chỉ gọi remote, không bay
+            -- Gọi remote với cấu trúc chuẩn mới bắt được qua Spy
             pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            end)
-            pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("BuyRandomFruit")
-            end)
-            pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("Gacha", "Buy")
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "CheckTime", "DLCBoxData")
             end)
         end)
     end
