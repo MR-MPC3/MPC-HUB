@@ -194,6 +194,40 @@ local function FindEnemiesInRange(tbl, list)
     return mainPart
 end
 
+-- GUI log hiện trên màn hình điện thoại
+local function EnsureDebugGui()
+    local pg = plr:FindFirstChild("PlayerGui")
+    if not pg then return nil end
+    local gui = pg:FindFirstChild("AstralDebugLog")
+    if gui then return gui:FindFirstChild("Label") end
+    gui = Instance.new("ScreenGui")
+    gui.Name = "AstralDebugLog"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.Parent = pg
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.92, 0, 0.28, 0)
+    frame.Position = UDim2.new(0.04, 0, 0.02, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.35
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Size = UDim2.new(1, -12, 1, -12)
+    label.Position = UDim2.new(0, 6, 0, 6)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(0, 255, 120)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextYAlignment = Enum.TextYAlignment.Top
+    label.Font = Enum.Font.Code
+    label.TextSize = 14
+    label.TextWrapped = true
+    label.Text = "Astral Debug: waiting..."
+    label.Parent = frame
+    return label
+end
+
 _G.AttackLogCount = 0
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
@@ -212,49 +246,54 @@ function AttackNoCoolDown()
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
 
-    -- LOG mỗi ~2s (Delta console)
     _G.AttackLogCount = (_G.AttackLogCount or 0) + 1
-    local doLog = (_G.AttackLogCount % 40 == 1)
-    if doLog then
-        print("=== ATTACK LOG ===")
-        print("Tool:", tool and tool.Name or "NONE", "| Tip:", tool and tostring(tool.ToolTip) or "NONE")
-        print("Targets:", #targets, "| mainPart:", mainPart and mainPart.Name or "NONE")
-        print("Seriality:", tostring(_G.Seriality), "| CD:", tostring(_G.UseAttackCooldown))
-        print("sethiddenproperty:", typeof(sethiddenproperty) == "function")
-        print("setsimulationradius:", typeof(setsimulationradius) == "function")
-        pcall(function()
-            print("HasBuso:", plr.Character and (plr.Character:FindFirstChild("HasBuso") ~= nil))
-            print("Level:", plr.Data and plr.Data.Level and plr.Data.Level.Value)
+    local doLog = (_G.AttackLogCount % 20 == 1)
+
+    local status = "..."
+    if not mainPart or not tool then
+        status = "SKIP: no tool or no targets"
+    else
+        local ok, err = pcall(function()
+            sethiddenproperty(plr, "SimulationRadius", math.huge)
+            plr.SimulationRadius = math.huge
+            if typeof(setsimulationradius) == "function" then
+                pcall(setsimulationradius, math.huge, math.huge)
+            end
+            local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
+            if not Net then error("Net missing") end
+            local RA = Net:FindFirstChild("RE/RegisterAttack")
+            local RH = Net:FindFirstChild("RE/RegisterHit")
+            if not RA or not RH then error("RA/RH missing") end
+            RA:FireServer(0)
+            RH:FireServer(mainPart, targets)
+            RA:FireServer(1e-9)
+            RH:FireServer(mainPart, targets)
+            pcall(function() tool:Activate() end)
         end)
+        status = ok and ("FIRED OK n=" .. #targets) or ("ERROR: " .. tostring(err))
     end
 
-    if not mainPart or not tool then
-        if doLog then print("SKIP: no tool or no targets in range") end
-        return
-    end
-    local ok, err = pcall(function()
-        sethiddenproperty(plr, "SimulationRadius", math.huge)
-        plr.SimulationRadius = math.huge
-        if typeof(setsimulationradius) == "function" then
-            pcall(setsimulationradius, math.huge, math.huge)
-        end
-        local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
-        if not Net then error("Net missing") end
-        local RA = Net:FindFirstChild("RE/RegisterAttack")
-        local RH = Net:FindFirstChild("RE/RegisterHit")
-        if not RA or not RH then error("RA/RH missing") end
-        RA:FireServer(0)
-        RH:FireServer(mainPart, targets)
-        RA:FireServer(1e-9)
-        RH:FireServer(mainPart, targets)
-        pcall(function() tool:Activate() end)
-    end)
     if doLog then
-        if ok then
-            print("FIRED RegisterHit OK | n=", #targets)
-        else
-            print("FIRE ERROR:", tostring(err))
-        end
+        local hasBuso = false
+        local lv = "?"
+        pcall(function()
+            hasBuso = plr.Character and plr.Character:FindFirstChild("HasBuso") ~= nil
+            lv = plr.Data and plr.Data.Level and plr.Data.Level.Value or "?"
+        end)
+        local txt = table.concat({
+            "=== ASTRAL DEBUG (man hinh) ===",
+            "Tool: " .. (tool and tool.Name or "NONE") .. " | Tip: " .. (tool and tostring(tool.ToolTip) or "NONE"),
+            "Targets: " .. #targets .. " | main: " .. (mainPart and mainPart.Name or "NONE"),
+            "Seriality: " .. tostring(_G.Seriality) .. " | CD: " .. tostring(_G.UseAttackCooldown),
+            "sethidden: " .. tostring(typeof(sethiddenproperty) == "function"),
+            "setsimradius: " .. tostring(typeof(setsimulationradius) == "function"),
+            "HasBuso: " .. tostring(hasBuso) .. " | Level: " .. tostring(lv),
+            "Status: " .. status,
+        }, "\n")
+        pcall(function()
+            local label = EnsureDebugGui()
+            if label then label.Text = txt end
+        end)
     end
 end
 
@@ -7105,48 +7144,4 @@ end)
 local player = game.Players.LocalPlayer
 local function IsEntityAlive(entity)
     if not entity then return false end
-    local humanoid = entity:FindFirstChild("Humanoid")
-    return humanoid and humanoid.Health > 0
-end
-local function GetEnemiesInRange(character, range)
-    local enemies = game:GetService("Workspace").Enemies:GetChildren()
-    local players = game:GetService("Players"):GetPlayers()
-    local targets = {}
-    local playerPos = character:GetPivot().Position
-    for _, enemy in ipairs(enemies) do
-        local rootPart = enemy:FindFirstChild("HumanoidRootPart")
-        if rootPart and IsEntityAlive(enemy) then
-            local distance = (rootPart.Position - playerPos).Magnitude
-            if distance <= range then
-                table.insert(targets, enemy)
-            end
-        end
-    end
-    for _, otherPlayer in ipairs(players) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            local rootPart = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart and IsEntityAlive(otherPlayer.Character) then
-                local distance = (rootPart.Position - playerPos).Magnitude
-                if distance <= range then
-                    table.insert(targets, otherPlayer.Character)
-                end
-            end
-        end
-    end
-    return targets
-end
-
-CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
-CameraShakerR:Stop()
-
-task.spawn(function()
-    RunSer.Heartbeat:Connect(function()
-        pcall(function()
-            if _G.Seriality then
-                AttackNoCoolDown()
-            end
-        end)
-    end)
-end)
-
-Window:SelectTab(1)
+    local humanoid = e
