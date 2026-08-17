@@ -6463,21 +6463,15 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "", Callback = f
     end
 end})
 
--- Khai báo biến ReplicatedStorage nếu script gốc chưa có
 local replicated = game:GetService("ReplicatedStorage")
-
--- Khai báo Toggle Auto Gacha Fruit từ xa
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
-    Title = "Auto Gacha Fruit",
-    Description = "Tự động gacha trái ác quỷ từ bất kỳ đâu trong server",
+    Title = "Ở đâu trong máy chủ cũng tự động Gacha trái blox",
+    Description = "",
     Default = false
 })
-
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
 end)
-
--- Vòng lặp auto gacha từ xa
 task.spawn(function()
     while true do
         task.wait(5) -- Kiểm tra mỗi 5 giây
