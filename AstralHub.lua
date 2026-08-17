@@ -44,20 +44,6 @@ if plr.Character then
     UpdateCharacterData(plr.Character)
 end
 plr.CharacterAdded:Connect(UpdateCharacterData)
-
--- Fix SimulationRadius (quan trọng để RegisterHit gây damage)
-task.spawn(function()
-    while task.wait(0.2) do
-        pcall(function()
-            sethiddenproperty(plr, "SimulationRadius", 9e9)
-            plr.SimulationRadius = 9e9
-            if typeof(setsimulationradius) == "function" then
-                setsimulationradius(9e9, 9e9)
-            end
-        end)
-    end
-end)
-
 -- Vòng lặp chờ game load an toàn có Timeout
 local t0 = tick()
 repeat 
@@ -156,78 +142,54 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
-lastAttackTick = 0
-_G.UseAttackCooldown = false
-_G.AttackCooldown = 0.05
-_G.RegisterAttack = nil
-_G.RegisterHit = nil
+local lastAttackTick = 0
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
 
-function AttackNoCoolDown()
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.05
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
+local function GetEquippedTool()
     local char = plr.Character
-    if not char then return end
-    -- equip
-    local hasTool = false
+    if not char then return nil end
     for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("Tool") then hasTool = true break end
+        if v:IsA("Tool") then return v end
     end
-    if not hasTool then
-        if _G.SelectWeapon then EquipWeapon(_G.SelectWeapon) else weaponSc(_G.ChooseWP or "Melee") end
-    end
-    hasTool = false
-    for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("Tool") then hasTool = true break end
-    end
-    if not hasTool then return end
-    -- remotes
-    if not _G.RegisterAttack or not _G.RegisterHit then
-        local ok, Net = pcall(function() return replicated.Modules.Net end)
-        if ok and Net then
-            _G.RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
-            _G.RegisterHit = Net:FindFirstChild("RE/RegisterHit")
-        end
-    end
-    if not _G.RegisterAttack or not _G.RegisterHit then return end
-    -- targets
-    local targets, mainPart = {}, nil
-    local myPos = char.PrimaryPart and char.PrimaryPart.Position
-    if not myPos then return end
-    for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+    return nil
+end
+
+local function FindEnemiesInRange(tbl, list)
+    local char = plr.Character
+    if not char or not char.PrimaryPart then return nil end
+    local myPos = char:GetPivot().Position
+    local mainPart = nil
+    for _, enemy in ipairs(list) do
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
-                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
-                if part and (myPos - part.Position).Magnitude <= 120 then
-                    table.insert(targets, {enemy, part})
-                    if not mainPart then mainPart = part end
+                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
+                if head and (myPos - head.Position).Magnitude <= 60 then
+                    if enemy ~= char then
+                        table.insert(tbl, {enemy, head})
+                        mainPart = head
+                    end
                 end
             end
         end
     end
-    if not mainPart then return end
+    return mainPart
+end
+
+function AttackNoCoolDown()
+    if _G.UseAttackCooldown then
+        local cd = tonumber(_G.AttackCooldown) or 0.12
+        if (tick() - lastAttackTick) < cd then return end
+        lastAttackTick = tick()
+    end
+    local targets = {}
+    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
+    if not mainPart or not GetEquippedTool() then return end
     pcall(function()
-        sethiddenproperty(plr, "SimulationRadius", 9e9)
-        plr.SimulationRadius = 9e9
-        if typeof(setsimulationradius) == "function" then pcall(setsimulationradius, 9e9, 9e9) end
-        -- bypass cooldown
-        for _, v in pairs(getgc(true)) do
-            if typeof(v) == "table" and rawget(v, "activeController") then
-                local ac = v.activeController
-                if ac then
-                    ac.timeToNextAttack = -math.huge
-                    ac.attacking = false
-                    ac.hitboxMagnitude = 120
-                end
-            end
-        end
-        _G.RegisterAttack:FireServer(0)
-        _G.RegisterHit:FireServer(mainPart, targets)
-        _G.RegisterAttack:FireServer(1e-9)
-        _G.RegisterHit:FireServer(mainPart, targets)
+        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
+        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
+        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
 end
 
@@ -236,7 +198,7 @@ Attack.Kill = function(model, Succes)
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.05
+        local cd = tonumber(_G.AttackCooldown) or 0.12
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
@@ -353,21 +315,16 @@ statsSetings = function(Num, value)
   end
 end
 BringEnemy = function()
-  if not _B or not PosMon then return end
-  pcall(function()
-    sethiddenproperty(plr, "SimulationRadius", math.huge)
-    plr.SimulationRadius = math.huge
-  end)
+  if not _B then return end
   for _,v in pairs(workspace.Enemies:GetChildren()) do
-    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 400 then
-	    pcall(function()
-          v.PrimaryPart.CFrame = CFrame.new(PosMon)
-          v.PrimaryPart.CanCollide = false
-          v.Humanoid.WalkSpeed = 0
-          v.Humanoid.JumpPower = 0
-          if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
-        end)
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
+	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
+		v.PrimaryPart.CanCollide = true;
+		v:FindFirstChild("Humanoid").WalkSpeed = 0;
+		v:FindFirstChild("Humanoid").JumpPower = 0;
+		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
+		plr.SimulationRadius = math.huge
 	  end
 	end                               
   end                    	
@@ -2415,13 +2372,13 @@ spawn(function()
 end)
 
 -- Tốc độ đánh: Toggle + ô nhập số (0.02 -> 2)
-_G.UseAttackCooldown = false   -- mặc định TẮT để đánh nhanh nhất
-_G.AttackCooldown = 0.05
+_G.UseAttackCooldown = true
+_G.AttackCooldown = 0.12
 
 local UseCooldownToggle = Tabs.Settings:AddToggle("UseCooldownToggle", {
     Title = "Giới Hạn Tốc Độ Đánh",
     Description = "Tắt = Tốc Độ Tối Đa | Bật = Dùng Tốc Độ Ở Dưới",
-    Default = false
+    Default = true
 })
 UseCooldownToggle:OnChanged(function(Value)
     _G.UseAttackCooldown = Value
@@ -2429,7 +2386,7 @@ end)
 
 Tabs.Settings:AddInput("AttackSpeedInput", {
     Title = "Nhập Tốc Độ Đánh (0.02s -> 2s)",
-    Default = "0.05",
+    Default = "0.12",
     Placeholder = "Nhỏ Hơn = Nhanh Hơn",
     Numeric = false,
     Finished = false,
@@ -7106,8 +7063,6 @@ end
 CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
 CameraShakerR:Stop()
 
-_G.Seriality = true
-
 task.spawn(function()
     RunSer.Heartbeat:Connect(function()
         pcall(function()
@@ -7118,5 +7073,4 @@ task.spawn(function()
     end)
 end)
 
-print("[AstralHub Fixed] Loaded - Attack ready")
 Window:SelectTab(1)
