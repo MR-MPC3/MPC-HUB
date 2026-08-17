@@ -164,11 +164,11 @@ local function FindEnemiesInRange(tbl, list)
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
-                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 60 then
+                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
+                if part and (myPos - part.Position).Magnitude <= 80 then
                     if enemy ~= char then
-                        table.insert(tbl, {enemy, head})
-                        mainPart = head
+                        table.insert(tbl, {enemy, part})
+                        if not mainPart then mainPart = part end
                     end
                 end
             end
@@ -183,12 +183,19 @@ function AttackNoCoolDown()
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
+    if not GetEquippedTool() then
+        if _G.SelectWeapon then EquipWeapon(_G.SelectWeapon)
+        else weaponSc(_G.ChooseWP or "Melee") end
+    end
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
     if not mainPart or not GetEquippedTool() then return end
     pcall(function()
+        sethiddenproperty(plr, "SimulationRadius", math.huge)
+        plr.SimulationRadius = math.huge
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
+        -- Giong RealKid Hub: RegisterAttack(0.5, 1)
+        Net:WaitForChild("RE/RegisterAttack"):FireServer(0.5, 1)
         Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
 end
@@ -315,19 +322,24 @@ statsSetings = function(Num, value)
   end
 end
 BringEnemy = function()
-  if not _B then return end
+  if not _B or not PosMon then return end
+  pcall(function()
+    sethiddenproperty(plr, "SimulationRadius", math.huge)
+    plr.SimulationRadius = math.huge
+  end)
   for _,v in pairs(workspace.Enemies:GetChildren()) do
-    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
-	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
-		v.PrimaryPart.CanCollide = true;
-		v:FindFirstChild("Humanoid").WalkSpeed = 0;
-		v:FindFirstChild("Humanoid").JumpPower = 0;
-		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
-		plr.SimulationRadius = math.huge
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
+	    pcall(function()
+          v.PrimaryPart.CFrame = CFrame.new(PosMon)
+          v.PrimaryPart.CanCollide = false
+          v.Humanoid.WalkSpeed = 0
+          v.Humanoid.JumpPower = 0
+          if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
+        end)
 	  end
-	end                               
-  end                    	
+	end
+  end
 end
 Useskills = function(weapon, skill)
   if weapon == "Melee" then
