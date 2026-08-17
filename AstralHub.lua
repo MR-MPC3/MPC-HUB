@@ -143,6 +143,7 @@ end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 local lastAttackTick = 0
+local attackCombo = 1
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
 
@@ -194,9 +195,13 @@ function AttackNoCoolDown()
         sethiddenproperty(plr, "SimulationRadius", math.huge)
         plr.SimulationRadius = math.huge
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        -- Giong RealKid Hub: RegisterAttack(0.5, 1)
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(0.5, 1)
-        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
+        local RA = Net:WaitForChild("RE/RegisterAttack")
+        local RH = Net:WaitForChild("RE/RegisterHit")
+        -- Giong danh tay / RealKid: RegisterAttack(0.5, combo 1-4)
+        RA:FireServer(0.5, attackCombo)
+        RH:FireServer(mainPart, targets)
+        attackCombo = attackCombo + 1
+        if attackCombo > 4 then attackCombo = 1 end
     end)
 end
 
