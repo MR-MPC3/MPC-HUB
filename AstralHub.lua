@@ -156,95 +156,78 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
-local lastAttackTick = 0
+lastAttackTick = 0
 _G.UseAttackCooldown = false
 _G.AttackCooldown = 0.05
+_G.RegisterAttack = nil
+_G.RegisterHit = nil
 
-local function GetEquippedTool()
-    local char = plr.Character
-    if not char then return nil end
-    for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("Tool") then return v end
-    end
-    return nil
-end
-
--- Cache remote
-local RegisterAttack, RegisterHit
-local function EnsureRemotes()
-    if RegisterAttack and RegisterHit then return true end
-    local ok, Net = pcall(function()
-        return replicated.Modules.Net
-    end)
-    if not ok or not Net then
-        ok, Net = pcall(function()
-            return replicated:WaitForChild("Modules", 3):WaitForChild("Net", 3)
-        end)
-    end
-    if not ok or not Net then return false end
-    RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
-    RegisterHit = Net:FindFirstChild("RE/RegisterHit")
-    return RegisterAttack ~= nil and RegisterHit ~= nil
-end
-
-local function CollectTargets(range)
-    local targets = {}
-    local mainPart = nil
-    local char = plr.Character
-    if not char or not char.PrimaryPart then return targets, nil end
-    local myPos = char.PrimaryPart.Position
-    for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-        if not enemy:GetAttribute("IsBoat") then
-            local hum = enemy:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
-                if part and (myPos - part.Position).Magnitude <= (range or 100) then
-                    table.insert(targets, {enemy, part})
-                    if not mainPart then mainPart = part end
-                end
-            end
-        end
-    end
-    return targets, mainPart
-end
-
--- Pure server attack (chỉ FireServer, không VirtualUser)
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
         local cd = tonumber(_G.AttackCooldown) or 0.05
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-
     local char = plr.Character
     if not char then return end
-
-    if not GetEquippedTool() then
-        if _G.SelectWeapon then
-            EquipWeapon(_G.SelectWeapon)
-        else
-            weaponSc(_G.ChooseWP or "Melee")
+    -- equip
+    local hasTool = false
+    for _, v in ipairs(char:GetChildren()) do
+        if v:IsA("Tool") then hasTool = true break end
+    end
+    if not hasTool then
+        if _G.SelectWeapon then EquipWeapon(_G.SelectWeapon) else weaponSc(_G.ChooseWP or "Melee") end
+    end
+    hasTool = false
+    for _, v in ipairs(char:GetChildren()) do
+        if v:IsA("Tool") then hasTool = true break end
+    end
+    if not hasTool then return end
+    -- remotes
+    if not _G.RegisterAttack or not _G.RegisterHit then
+        local ok, Net = pcall(function() return replicated.Modules.Net end)
+        if ok and Net then
+            _G.RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
+            _G.RegisterHit = Net:FindFirstChild("RE/RegisterHit")
         end
     end
-    if not GetEquippedTool() then return end
-    if not EnsureRemotes() then return end
-
-    local targets, mainPart = CollectTargets(120)
-    if not mainPart or #targets == 0 then return end
-
+    if not _G.RegisterAttack or not _G.RegisterHit then return end
+    -- targets
+    local targets, mainPart = {}, nil
+    local myPos = char.PrimaryPart and char.PrimaryPart.Position
+    if not myPos then return end
+    for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
+        if not enemy:GetAttribute("IsBoat") then
+            local hum = enemy:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
+                if part and (myPos - part.Position).Magnitude <= 120 then
+                    table.insert(targets, {enemy, part})
+                    if not mainPart then mainPart = part end
+                end
+            end
+        end
+    end
+    if not mainPart then return end
     pcall(function()
         sethiddenproperty(plr, "SimulationRadius", 9e9)
-        if typeof(setsimulationradius) == "function" then
-            setsimulationradius(9e9, 9e9)
-        end
         plr.SimulationRadius = 9e9
-
-        -- Gửi trực tiếp lên server
-        RegisterAttack:FireServer(0)
-        RegisterHit:FireServer(mainPart, targets)
-
-        RegisterAttack:FireServer(1e-9)
-        RegisterHit:FireServer(mainPart, targets)
+        if typeof(setsimulationradius) == "function" then pcall(setsimulationradius, 9e9, 9e9) end
+        -- bypass cooldown
+        for _, v in pairs(getgc(true)) do
+            if typeof(v) == "table" and rawget(v, "activeController") then
+                local ac = v.activeController
+                if ac then
+                    ac.timeToNextAttack = -math.huge
+                    ac.attacking = false
+                    ac.hitboxMagnitude = 120
+                end
+            end
+        end
+        _G.RegisterAttack:FireServer(0)
+        _G.RegisterHit:FireServer(mainPart, targets)
+        _G.RegisterAttack:FireServer(1e-9)
+        _G.RegisterHit:FireServer(mainPart, targets)
     end)
 end
 
@@ -7123,6 +7106,8 @@ end
 CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
 CameraShakerR:Stop()
 
+_G.Seriality = true
+
 task.spawn(function()
     RunSer.Heartbeat:Connect(function()
         pcall(function()
@@ -7133,4 +7118,5 @@ task.spawn(function()
     end)
 end)
 
+print("[AstralHub Fixed] Loaded - Attack ready")
 Window:SelectTab(1)
