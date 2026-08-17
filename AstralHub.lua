@@ -47,10 +47,13 @@ plr.CharacterAdded:Connect(UpdateCharacterData)
 
 -- Fix SimulationRadius (quan trọng để RegisterHit gây damage)
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.2) do
         pcall(function()
-            sethiddenproperty(plr, "SimulationRadius", math.huge)
-            plr.SimulationRadius = math.huge
+            sethiddenproperty(plr, "SimulationRadius", 9e9)
+            plr.SimulationRadius = 9e9
+            if typeof(setsimulationradius) == "function" then
+                setsimulationradius(9e9, 9e9)
+            end
         end)
     end
 end)
@@ -154,7 +157,7 @@ end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 local lastAttackTick = 0
-_G.UseAttackCooldown = false   -- mặc định tắt cooldown để đánh max tốc độ
+_G.UseAttackCooldown = false
 _G.AttackCooldown = 0.05
 
 local function GetEquippedTool()
@@ -166,29 +169,46 @@ local function GetEquippedTool()
     return nil
 end
 
-local function FindEnemiesInRange(tbl, list)
-    local char = plr.Character
-    if not char or not char.PrimaryPart then return nil end
-    local myPos = char:GetPivot().Position
+-- Cache remote
+local RegisterAttack, RegisterHit
+local function EnsureRemotes()
+    if RegisterAttack and RegisterHit then return true end
+    local ok, Net = pcall(function()
+        return replicated.Modules.Net
+    end)
+    if not ok or not Net then
+        ok, Net = pcall(function()
+            return replicated:WaitForChild("Modules", 3):WaitForChild("Net", 3)
+        end)
+    end
+    if not ok or not Net then return false end
+    RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
+    RegisterHit = Net:FindFirstChild("RE/RegisterHit")
+    return RegisterAttack ~= nil and RegisterHit ~= nil
+end
+
+local function CollectTargets(range)
+    local targets = {}
     local mainPart = nil
-    for _, enemy in ipairs(list) do
+    local char = plr.Character
+    if not char or not char.PrimaryPart then return targets, nil end
+    local myPos = char.PrimaryPart.Position
+    for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
-                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 80 then
-                    if enemy ~= char then
-                        table.insert(tbl, {enemy, head})
-                        if not mainPart then mainPart = head end
-                    end
+                local part = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head")
+                if part and (myPos - part.Position).Magnitude <= (range or 100) then
+                    table.insert(targets, {enemy, part})
+                    if not mainPart then mainPart = part end
                 end
             end
         end
     end
-    return mainPart
+    return targets, mainPart
 end
 
--- Attack mạnh hơn: bắn nhiều lần + force SimulationRadius + auto equip
+-- Pure server attack (chỉ FireServer, không VirtualUser)
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
         local cd = tonumber(_G.AttackCooldown) or 0.05
@@ -199,7 +219,6 @@ function AttackNoCoolDown()
     local char = plr.Character
     if not char then return end
 
-    -- Auto equip vũ khí
     if not GetEquippedTool() then
         if _G.SelectWeapon then
             EquipWeapon(_G.SelectWeapon)
@@ -208,27 +227,24 @@ function AttackNoCoolDown()
         end
     end
     if not GetEquippedTool() then return end
+    if not EnsureRemotes() then return end
 
-    local targets = {}
-    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
+    local targets, mainPart = CollectTargets(120)
     if not mainPart or #targets == 0 then return end
 
     pcall(function()
-        sethiddenproperty(plr, "SimulationRadius", math.huge)
-        plr.SimulationRadius = math.huge
-
-        local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
-        if not Net then return end
-
-        local RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
-        local RegisterHit = Net:FindFirstChild("RE/RegisterHit")
-        if not RegisterAttack or not RegisterHit then return end
-
-        -- Bắn nhiều lần để tăng khả năng gây damage
-        for i = 1, 3 do
-            RegisterAttack:FireServer(0.5)
-            RegisterHit:FireServer(mainPart, targets)
+        sethiddenproperty(plr, "SimulationRadius", 9e9)
+        if typeof(setsimulationradius) == "function" then
+            setsimulationradius(9e9, 9e9)
         end
+        plr.SimulationRadius = 9e9
+
+        -- Gửi trực tiếp lên server
+        RegisterAttack:FireServer(0)
+        RegisterHit:FireServer(mainPart, targets)
+
+        RegisterAttack:FireServer(1e-9)
+        RegisterHit:FireServer(mainPart, targets)
     end)
 end
 
@@ -237,7 +253,7 @@ Attack.Kill = function(model, Succes)
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
+        local cd = tonumber(_G.AttackCooldown) or 0.05
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
