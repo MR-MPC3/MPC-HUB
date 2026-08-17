@@ -44,6 +44,17 @@ if plr.Character then
     UpdateCharacterData(plr.Character)
 end
 plr.CharacterAdded:Connect(UpdateCharacterData)
+
+-- Fix SimulationRadius (quan trọng để RegisterHit gây damage)
+task.spawn(function()
+    while task.wait(0.3) do
+        pcall(function()
+            sethiddenproperty(plr, "SimulationRadius", math.huge)
+            plr.SimulationRadius = math.huge
+        end)
+    end
+end)
+
 -- Vòng lặp chờ game load an toàn có Timeout
 local t0 = tick()
 repeat 
@@ -185,8 +196,18 @@ function AttackNoCoolDown()
     end
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart or not GetEquippedTool() then return end
+    if not mainPart then return end
+    -- Tự equip nếu chưa có tool
+    if not GetEquippedTool() then
+        if _G.SelectWeapon then
+            EquipWeapon(_G.SelectWeapon)
+        else
+            weaponSc(_G.ChooseWP or "Melee")
+        end
+    end
+    if not GetEquippedTool() then return end
     pcall(function()
+        sethiddenproperty(plr, "SimulationRadius", math.huge)
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
         Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
         Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
@@ -316,15 +337,18 @@ statsSetings = function(Num, value)
 end
 BringEnemy = function()
   if not _B then return end
+  pcall(function()
+    sethiddenproperty(plr, "SimulationRadius", math.huge)
+    plr.SimulationRadius = math.huge
+  end)
   for _,v in pairs(workspace.Enemies:GetChildren()) do
-    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
+    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.PrimaryPart then
+	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 350 then
 	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
-		v.PrimaryPart.CanCollide = true;
-		v:FindFirstChild("Humanoid").WalkSpeed = 0;
-		v:FindFirstChild("Humanoid").JumpPower = 0;
-		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
-		plr.SimulationRadius = math.huge
+		v.PrimaryPart.CanCollide = false
+		v.Humanoid.WalkSpeed = 0
+		v.Humanoid.JumpPower = 0
+		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy() end
 	  end
 	end                               
   end                    	
