@@ -142,7 +142,6 @@ Attack.Pos = function(model, dist)
 end
 Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude <= dist end
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
--- ==================== ATTACK (RegisterAttack + RegisterHit) ====================
 local lastAttackTick = 0
 _G.UseAttackCooldown = true
 _G.AttackCooldown = 0.12
