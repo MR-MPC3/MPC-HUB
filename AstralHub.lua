@@ -6463,20 +6463,32 @@ Tabs.Fruit:AddButton({Title = "Buy Mirage Stock", Description = "", Callback = f
     end
 end})
 
+-- Khai báo biến ReplicatedStorage nếu script gốc chưa có
+local replicated = game:GetService("ReplicatedStorage")
+
+-- Khai báo Toggle Auto Gacha Fruit từ xa
 RandomFF = Tabs.Fruit:AddToggle("RandomFF", {
-    Title = "Auto Random Fruit",
-    Description = "Random tại chỗ (không bay)",
+    Title = "Auto Gacha Fruit",
+    Description = "Tự động gacha trái ác quỷ từ bất kỳ đâu trong server",
     Default = false
 })
+
 RandomFF:OnChanged(function(Value)
     _G.Random_Auto = Value
 end)
+
+-- Vòng lặp auto gacha từ xa
 task.spawn(function()
     while true do
-        task.wait(5) -- Nghỉ 5 giây giữa mỗi vòng lặp kiểm tra
+        task.wait(5) -- Kiểm tra mỗi 5 giây
         if _G.Random_Auto then
             pcall(function()
-                replicated.Remotes.CommF_:InvokeServer("Cousin", "CheckTime", "DLCBoxData")
+                -- Gửi chuỗi lệnh xác thực và mua trực tiếp đến server
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "Check", "DLCBoxData")
+                task.wait(0.3)
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "CheckCanBuyType", "DLCBoxData")
+                task.wait(0.3)
+                replicated.Remotes.CommF_:InvokeServer("Cousin", "DLCBoxData")
             end)
         end
     end
