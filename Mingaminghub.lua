@@ -321,34 +321,30 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
-
-local ToggleGui = Instance.new("ScreenGui")
-local ToggleButton = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
-
-ToggleGui.Name = "MobileToggleGui"
-ToggleGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer.PlayerGui
-ToggleGui.ResetOnSpawn = false
-
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Parent = ToggleGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleButton.Position = UDim2.new(0, 10, 0.4, 0)
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Text = "MENU"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 11
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.Active = true
-ToggleButton.Draggable = true -- Cho phép kéo rê nút trên màn hình
-
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = ToggleButton
-
--- Giả lập bấm phím End khi nhấn vào nút trên điện thoại
-ToggleButton.MouseButton1Click:Connect(function()
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
-    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.End, false, game)
+task.spawn(function()
+    task.wait(1)
+    local coreGui = game:GetService("CoreGui")
+    local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+    local function FixMobileIcon(gui)
+        if not gui then return end
+        for _, btn in ipairs(gui:GetDescendants()) do
+            if btn:IsA("GuiButton") or btn:IsA("ImageButton") or btn:IsA("TextButton") then
+                if btn.Name:lower():find("minimize") or (btn.Parent and btn.Parent.Name:lower():find("minimize")) then
+                    -- Nhận cả sự kiện Click lẫn Touch Cảm Ứng trên điện thoại
+                    btn.MouseButton1Click:Connect(function()
+                        v14:Toggle()
+                    end)
+                    if btn.Activated then
+                        btn.Activated:Connect(function()
+                            v14:Toggle()
+                        end)
+                    end
+                end
+            end
+        end
+    end
+    FixMobileIcon(coreGui:FindFirstChild("Fluent"))
+    if playerGui then FixMobileIcon(playerGui:FindFirstChild("Fluent")) end
 end)
 
 local v16 = {
