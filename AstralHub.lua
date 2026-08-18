@@ -31,6 +31,7 @@ do
   Sec = 0.1
   ClickState = 0
   Num_self = 25
+  _B = true  -- default bring mob on
 end
 -- Cập nhật Root và Energy khi nhân vật xuất hiện / hồi sinh
 local function UpdateCharacterData(char)
@@ -165,7 +166,7 @@ local function FindEnemiesInRange(tbl, list)
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
                 local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 60 then
+                if head and (myPos - head.Position).Magnitude <= 100 then
                     if enemy ~= char then
                         table.insert(tbl, {enemy, head})
                         mainPart = head
@@ -197,11 +198,6 @@ Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
@@ -233,10 +229,23 @@ Attack.Kill2 = function(model,Succes)
   PosMon = model:GetAttribute("Locked").Position
   BringEnemy()
   EquipWeapon(_G.SelectWeapon)
-  local Equipped = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-  local ToolTip = Equipped.ToolTip
-  if ToolTip == "Blox Fruit" then _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) else _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,30,8) * CFrame.Angles(0,math.rad(180),0))end
-  if RandomCFrame then wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(25, 30, 0)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30 ,0)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30, 0))end
+  local Equipped = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+  if Equipped then
+    local ToolTip = Equipped.ToolTip
+    if ToolTip == "Blox Fruit" then 
+      _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) 
+    else 
+      _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,30,8) * CFrame.Angles(0,math.rad(180),0))
+    end
+  end
+  if RandomCFrame then 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(25, 30, 0)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30 ,0)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30, 0))
+  end
+  AttackNoCoolDown()
   end
 end
 Attack.KillSea = function(model,Succes)
@@ -245,9 +254,19 @@ Attack.KillSea = function(model,Succes)
   PosMon = model:GetAttribute("Locked").Position
   BringEnemy()
   EquipWeapon(_G.SelectWeapon)
-  local Equipped = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-  local ToolTip = Equipped.ToolTip
-  if ToolTip == "Blox Fruit" then _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) else notween(model.HumanoidRootPart.CFrame * CFrame.new(0,50,8)) wait(.85)notween(model.HumanoidRootPart.CFrame * CFrame.new(0,400,0)) wait(1)end
+  local Equipped = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+  if Equipped then
+    local ToolTip = Equipped.ToolTip
+    if ToolTip == "Blox Fruit" then 
+      _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) 
+    else 
+      notween(model.HumanoidRootPart.CFrame * CFrame.new(0,50,8)) 
+      wait(.85)
+      notween(model.HumanoidRootPart.CFrame * CFrame.new(0,400,0)) 
+      wait(1)
+    end
+  end
+  AttackNoCoolDown()
   end
 end
 Attack.Sword = function(model,Succes)
@@ -257,7 +276,14 @@ Attack.Sword = function(model,Succes)
   BringEnemy()
   weaponSc("Sword")
   _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,30,0))
-  if RandomCFrame then wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(25, 30, 0)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30 ,0)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30, 0))end
+  if RandomCFrame then 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(25, 30, 0)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30 ,0)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) 
+    wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30, 0))
+  end
+  AttackNoCoolDown()
   end
 end
 Attack.Mas = function(model,Succes)
@@ -324,7 +350,7 @@ BringEnemy = function()
 		v:FindFirstChild("Humanoid").WalkSpeed = 0;
 		v:FindFirstChild("Humanoid").JumpPower = 0;
 		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
-		plr.SimulationRadius = math.huge
+		pcall(function() sethiddenproperty(plr, "SimulationRadius", math.huge) end)
 	  end
 	end                               
   end                    	
