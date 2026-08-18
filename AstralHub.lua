@@ -180,10 +180,12 @@ end
 attackCombo = 1
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.1
+        local cd = tonumber(_G.AttackCooldown) or 0.09
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
+    local char = plr.Character
+    if not char then return end
     local tool = GetEquippedTool()
     if not tool then
         if _G.SelectWeapon then EquipWeapon(_G.SelectWeapon)
@@ -200,6 +202,7 @@ function AttackNoCoolDown()
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
         local RE_RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
         local RE_RegisterHit = Net:FindFirstChild("RE/RegisterHit")
+        -- Gửi remote
         if RE_RegisterAttack then
             RE_RegisterAttack:FireServer(0.000000001)
             RE_RegisterAttack:FireServer(0.5, attackCombo)
@@ -209,7 +212,15 @@ function AttackNoCoolDown()
             pcall(function() leftClick:FireServer(mainPart.Position, attackCombo) end)
             pcall(function() leftClick:FireServer(mainPart.Position, 1) end)
         end
-        if RE_RegisterHit then RE_RegisterHit:FireServer(mainPart, targets) end
+        if RE_RegisterHit then
+            RE_RegisterHit:FireServer(mainPart, targets)
+        end
+
+        -- Thêm click chuột thật (quan trọng với acc level thấp)
+        pcall(function()
+            vim2:CaptureController()
+            vim2:ClickButton1(Vector2.new(0, 0))
+        end)
         attackCombo = attackCombo + 1
         if attackCombo > 4 then attackCombo = 1 end
     end)
