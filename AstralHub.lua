@@ -165,7 +165,7 @@ local function FindEnemiesInRange(tbl, list)
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
                 local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 60 then
+                if head and (myPos - head.Position).Magnitude <= 120 then
                     if enemy ~= char then
                         table.insert(tbl, {enemy, head})
                         mainPart = head
@@ -183,13 +183,33 @@ function AttackNoCoolDown()
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
+
+    if not GetEquippedTool() then
+        weaponSc("Melee")
+        if not GetEquippedTool() then return end
+    end
+
+    -- Vung sat thuong rong quanh nhan vat (120 stud)
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart or not GetEquippedTool() then return end
+    if not mainPart or #targets == 0 then return end
+
     pcall(function()
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(0)
-        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
+        local RE_Attack = Net:FindFirstChild("RE/RegisterAttack")
+        local RE_Hit = Net:FindFirstChild("RE/RegisterHit")
+        if RE_Attack then
+            RE_Attack:FireServer(0.5, 1)
+        end
+        if RE_Hit then
+            RE_Hit:FireServer(mainPart, targets)
+        end
+    end)
+
+    -- M1 that de client cung gui hit
+    pcall(function()
+        vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
     end)
 end
 
