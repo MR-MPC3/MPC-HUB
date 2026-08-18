@@ -817,17 +817,48 @@ QuestNeta = function()
   }
 end
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local StarterGui = game:GetService("StarterGui")
 
-local Window = Fluent:CreateWindow({
-    Title = "Astral hub [Freemium] ",
-    SubTitle = "by xxxxx",
-    TabWidth = 155,
-    Size = UDim2.fromOffset(555, 320),
-    Acrylic = false,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.End
-})
+local function Notify(text)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "AstralHub",
+            Text = text,
+            Duration = 5
+        })
+    end)
+end
+
+Notify("Đang load UI...")
+
+local Fluent, Window
+local ok, err = pcall(function()
+    local source = game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua")
+    if not source or #source < 100 then
+        error("Không tải được Fluent")
+    end
+    local fn = loadstring(source)
+    if not fn then error("loadstring fail") end
+    Fluent = fn()
+    if not Fluent then error("Fluent = nil") end
+    Window = Fluent:CreateWindow({
+        Title = "Astral Hub",
+        SubTitle = "Mobile",
+        TabWidth = 140,
+        Size = UDim2.fromOffset(500, 300),
+        Acrylic = false,
+        Theme = "Darker",
+        MinimizeKey = Enum.KeyCode.LeftControl
+    })
+    if not Window then error("CreateWindow fail") end
+end)
+
+if not ok then
+    Notify("Lỗi: " .. tostring(err))
+    return
+end
+
+Notify("UI load thành công!")
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
