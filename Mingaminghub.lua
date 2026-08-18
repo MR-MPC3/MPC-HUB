@@ -321,16 +321,6 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
-local ContextActionService = game:GetService("ContextActionService")
-ContextActionService:BindAction("MinGaming_Toggle", function(actionName, inputState, inputObject)
-    if inputState == Enum.UserInputState.Begin then
-        v15:Minimize()
-    end
-end, true, Enum.KeyCode.End)
-
--- Đặt tên hiển thị cho nút nút bấm của Roblox
-ContextActionService:SetTitle("MinGaming_Toggle", "Menu")
-
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
