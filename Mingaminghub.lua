@@ -321,46 +321,6 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
--- FIX LỖI ẨN / MỞ MENU TRÊN ĐIỆN THOẠI (NÚT MẶT CƯỜI KÉO THẢ DỄ DÀNG)
-task.spawn(function()
-    local coreGui = game:GetService("CoreGui")
-    local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-    
-    if coreGui:FindFirstChild("MinGamingToggleGui") then
-        coreGui.MinGamingToggleGui:Destroy()
-    end
-
-    local ToggleGui = Instance.new("ScreenGui")
-    local ToggleButton = Instance.new("ImageButton")
-    local UICorner = Instance.new("UICorner")
-
-    ToggleGui.Name = "MinGamingToggleGui"
-    ToggleGui.Parent = coreGui or playerGui
-    ToggleGui.ResetOnSpawn = false
-
-    ToggleButton.Name = "ToggleButton"
-    ToggleButton.Parent = ToggleGui
-    ToggleButton.Position = UDim2.new(0.05, 0, 0.15, 0)
-    ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-    ToggleButton.Image = "rbxassetid://13717478897" -- Nút mặt cười
-    ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleButton.Active = true
-    ToggleButton.Draggable = true -- Có thể kéo di chuyển nút khắp màn hình
-
-    UICorner.CornerRadius = UDim.new(0, 25)
-    UICorner.Parent = ToggleButton
-
-    local debounce = false
-    ToggleButton.MouseButton1Click:Connect(function()
-        if not debounce then
-            debounce = true
-            v14:Toggle() -- Bật/Tắt Menu chuẩn Fluent
-            task.wait(0.3) -- Chống click đúp liên tục
-            debounce = false
-        end
-    end)
-end)
-
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
