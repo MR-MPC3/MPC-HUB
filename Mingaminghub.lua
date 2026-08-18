@@ -322,33 +322,36 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 });
 
--- Code tạo nút ẩn/hiện Menu dành riêng cho Điện thoại
+-- ==================== [NÚT NỎ BẬT/TẮT MENU ỔN ĐỊNH] ====================
 local ToggleGui = Instance.new("ScreenGui")
-local ToggleButton = Instance.new("TextButton")
+local ToggleButton = Instance.new("ImageButton")
 local UICorner = Instance.new("UICorner")
+local UIStroke = Instance.new("UIStroke")
 
-ToggleGui.Name = "MobileToggleGui"
+ToggleGui.Name = "MinGamingToggle"
 ToggleGui.Parent = game:GetService("CoreGui")
-ToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ToggleGui.ResetOnSpawn = false
 
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Parent = ToggleGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-ToggleButton.BorderSizePixel = 0
-ToggleButton.Position = UDim2.new(0.02, 0, 0.2, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleButton.Position = UDim2.new(0, 15, 0.15, 0)
 ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.Text = "MENU"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 11
+ToggleButton.Image = "rbxassetid://13717478897"
 ToggleButton.Active = true
-ToggleButton.Draggable = true -- Cho phép kéo di chuyển nút trên màn hình
+ToggleButton.Draggable = true
 
-UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = ToggleButton
 
+UIStroke.Color = Color3.fromRGB(3, 252, 3)
+UIStroke.Thickness = 2
+UIStroke.Parent = ToggleButton
+
 ToggleButton.MouseButton1Click:Connect(function()
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
+    if v15 then
+        v15:Minimize()
+    end
 end)
 
 local v16 = {
