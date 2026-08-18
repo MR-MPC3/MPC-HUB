@@ -321,36 +321,6 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
-
--- Code tạo nút ẩn/hiện Menu dành riêng cho Điện thoại
-local ToggleGui = Instance.new("ScreenGui")
-local ToggleButton = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
-
-ToggleGui.Name = "MobileToggleGui"
-ToggleGui.Parent = game:GetService("CoreGui")
-ToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Parent = ToggleGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-ToggleButton.BorderSizePixel = 0
-ToggleButton.Position = UDim2.new(0.02, 0, 0.2, 0)
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.Text = "MENU"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 11
-ToggleButton.Active = true
-ToggleButton.Draggable = true -- Cho phép kéo di chuyển nút trên màn hình
-
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = ToggleButton
-
-ToggleButton.MouseButton1Click:Connect(function()
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
-end)
-
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
