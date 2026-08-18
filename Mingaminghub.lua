@@ -321,47 +321,40 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
-local UserInputService = game:GetService("UserInputService")
 
--- 1. XỬ LÝ NÚT BẬT/TẮT MENU (ĐIỆN THOẠI & PC)
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Tạo nút bấm ảo nổi dành riêng cho điện thoại / thiết bị cảm ứng
 if UserInputService.TouchEnabled then
     local ToggleGui = Instance.new("ScreenGui")
     local ToggleButton = Instance.new("TextButton")
     local UICorner = Instance.new("UICorner")
-    local UIStroke = Instance.new("UIStroke")
 
     ToggleGui.Name = "FluentMobileToggle"
-    -- Tối ưu vị trí lưu Gui để không bị Executor chặn
-    ToggleGui.Parent = (gethui and gethui()) or game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    ToggleGui.Parent = game:GetService("CoreGui")
     ToggleGui.ResetOnSpawn = false
 
     ToggleButton.Name = "ToggleButton"
     ToggleButton.Parent = ToggleGui
-    ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    ToggleButton.Position = UDim2.new(0.05, 0, 0.2, 0)
-    ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ToggleButton.BackgroundTransparency = 0.2
+    ToggleButton.Position = UDim2.new(0, 15, 0.35, 0)
+    ToggleButton.Size = UDim2.new(0, 50, 0, 50)
     ToggleButton.Font = Enum.Font.GothamBold
     ToggleButton.Text = "MENU"
     ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleButton.TextSize = 11
+    ToggleButton.TextSize = 12
     ToggleButton.Active = true
-    ToggleButton.Draggable = true
+    ToggleButton.Draggable = true -- Bạn có thể kéo nút này đi bất kỳ vị trí nào trên màn hình
 
-    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.CornerRadius = UDim.new(0, 25)
     UICorner.Parent = ToggleButton
 
-    UIStroke.Color = Color3.fromRGB(0, 170, 255)
-    UIStroke.Thickness = 1.5
-    UIStroke.Parent = ToggleButton
-
+    -- Giả lập bấm phím End khi người dùng chạm vào nút ảo
     ToggleButton.MouseButton1Click:Connect(function()
-        v15:Minimize()
-    end)
-else
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
-            v15:Minimize()
-        end
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.End, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.End, false, game)
     end)
 end
 local v16 = {
