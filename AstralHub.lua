@@ -115,8 +115,8 @@ weaponSc = function(weapon)
 end
 hookfunction(require(game:GetService("ReplicatedStorage").Effect.Container.Death),function() end)
 hookfunction(require(game:GetService("ReplicatedStorage"):WaitForChild("GuideModule")).ChangeDisplayedNPC,function()end)
-hookfunction(error, function()end)
-hookfunction(warn, function()end)
+--hookfunction(error, function()end)
+--hookfunction(warn, function()end)
 local Rock = workspace:FindFirstChild("Rocks")
 if Rock then Rock:Destroy()end
 gay = (function()
@@ -817,7 +817,24 @@ QuestNeta = function()
   }
 end
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local function Notify(title, text)
+    pcall(function()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = 8
+        })
+    end)
+end
+
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+end)
+
+if not success or not Fluent then
+    Notify("Astral Hub Lỗi", "Không load được UI (Fluent). Có thể do mạng hoặc executor.")
+    return
+end
 local Window = Fluent:CreateWindow({
     Title = "Astral hub [Freemium] ",
     SubTitle = "by xxxxx",
@@ -832,7 +849,7 @@ local Window = Fluent:CreateWindow({
 local MobileGui = Instance.new("ScreenGui")
 MobileGui.Name = "AstralMobileToggle"
 MobileGui.ResetOnSpawn = false
-MobileGui.Parent = game:GetService("CoreGui")
+pcall(function() MobileGui.Parent = game:GetService("CoreGui") end); if not MobileGui.Parent then MobileGui.Parent = plr:WaitForChild("PlayerGui") end
 
 local Btn = Instance.new("ImageButton") 
 Btn.Size = UDim2.new(0, 50, 0, 50)
