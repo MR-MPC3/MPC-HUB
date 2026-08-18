@@ -179,29 +179,17 @@ end
 
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.08
+        local cd = tonumber(_G.AttackCooldown) or 0.12
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-    if not GetEquippedTool() then
-        weaponSc("Melee")
-        if not GetEquippedTool() then return end
-    end
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart then return end
-
+    if not mainPart or not GetEquippedTool() then return end
     pcall(function()
-        local Net = replicated.Modules.Net
-        local RE = Net:FindFirstChild("RE/RegisterAttack")
-        if RE then
-            RE:FireServer(0.5, 1)
-        end
-    end)
-
-    pcall(function()
-        vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-        vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
+        Net:WaitForChild("RE/RegisterAttack"):FireServer(0)
+        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
 end
 
@@ -393,17 +381,21 @@ local old = gg.__namecall
 setreadonly(gg, false)
 gg.__namecall = newcclosure(function(...)
   local method = getnamecallmethod()
-  local args = {...}    
-    if tostring(method) == "FireServer" then
-      if tostring(args[1]) == "RemoteEvent" then
-        if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-          if (_G.FarmMastery_G and not SoulGuitar) or (_G.FarmMastery_Dev) or (_G.FarmBlazeEM) or (_G.Prehis_Skills) or (_G.SeaBeast1 or _G.FishBoat or _G.PGB or _G.Leviathan1 or _G.Complete_Trials) or (_G.AimMethod and ABmethod == "AimBots Skill") or (_G.AimMethod and ABmethod == "Auto Aimbots") then
-            args[2] = MousePos
-            return old(unpack(args))
-          end
+  local args = {...}
+  if tostring(method) == "FireServer" then
+    local remoteName = tostring(args[1])
+    -- Không đụng RegisterAttack / RegisterHit
+    if not string.find(remoteName, "RegisterAttack") and not string.find(remoteName, "RegisterHit") then
+      if (_G.FarmMastery_G and not SoulGuitar) or (_G.FarmMastery_Dev) or (_G.FarmBlazeEM) or (_G.Prehis_Skills)
+        or (_G.SeaBeast1 or _G.FishBoat or _G.PGB or _G.Leviathan1 or _G.Complete_Trials)
+        or (_G.AimMethod and (ABmethod == "AimBots Skill" or ABmethod == "Auto Aimbots")) then
+        if typeof(args[2]) ~= "boolean" and MousePos then
+          args[2] = MousePos
+          return old(unpack(args))
         end
       end
     end
+  end
   return old(...)
 end)
 GetConnectionEnemies = function(a)
