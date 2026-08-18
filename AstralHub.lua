@@ -833,29 +833,44 @@ Notify("Đã chạy tới UI")
 
 local ok, Fluent, Window = pcall(function()
 
+    Notify("1. Đang HttpGet Fluent")
+
     local source = game:HttpGet(
         "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"
     )
 
+    Notify("2. HttpGet OK")
+
     if not source or #source < 100 then
-        error("Không tải được Fluent")
+        error("Fluent source rỗng")
     end
 
-    Notify("Đã tải Fluent")
+    Notify("3. Đang loadstring")
 
     local fn = loadstring(source)
 
-    if not fn then
-        error("loadstring thất bại")
+    if type(fn) ~= "function" then
+        error("loadstring không trả về function")
     end
+
+    Notify("4. loadstring OK")
 
     local fluent = fn()
 
+    Notify("5. Fluent init OK")
+
     if not fluent then
-        error("Fluent = nil")
+        error("fluent = nil")
     end
 
-    Notify("Fluent OK")
+    if type(fluent.CreateWindow) ~= "function" then
+        error(
+            "CreateWindow không phải function. Type = "
+            .. tostring(type(fluent.CreateWindow))
+        )
+    end
+
+    Notify("6. CreateWindow tồn tại")
 
     local window = fluent:CreateWindow({
         Title = "Astral hub [Freemium]",
@@ -867,21 +882,21 @@ local ok, Fluent, Window = pcall(function()
         MinimizeKey = Enum.KeyCode.End
     })
 
-    if not window then
-        error("CreateWindow thất bại")
-    end
+    Notify("7. Window OK")
 
-    Notify("Window OK")
+    if not window then
+        error("Window = nil")
+    end
 
     return fluent, window
 end)
 
 if not ok then
-    Notify("❌ " .. tostring(Fluent))
+    Notify("❌ LỖI: " .. tostring(Fluent))
     return
 end
 
-Notify("✅ UI đã tạo")
+Notify("✅ Fluent + Window OK")
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
