@@ -169,7 +169,6 @@ function AttackNoCoolDown()
     local char = plr.Character
     if not char or not char.PrimaryPart then return end
 
-    -- tự equip Melee nếu chưa có tool
     if not GetEquippedTool() then
         weaponSc("Melee")
         if not GetEquippedTool() then return end
@@ -184,7 +183,7 @@ function AttackNoCoolDown()
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             local hrp = enemy:FindFirstChild("HumanoidRootPart")
             if hum and hum.Health > 0 and hrp then
-                if (myPos - hrp.Position).Magnitude <= 150 then
+                if (myPos - hrp.Position).Magnitude <= 100 then
                     table.insert(targets, {enemy, hrp})
                     if not mainPart then
                         mainPart = hrp
@@ -196,22 +195,26 @@ function AttackNoCoolDown()
 
     if not mainPart or #targets == 0 then return end
 
-    -- Gửi remote thẳng lên server
     pcall(function()
-        local Modules = replicated:FindFirstChild("Modules")
-        if not Modules then return end
-        local Net = Modules:FindFirstChild("Net")
-        if not Net then return end
+        local Net = replicated.Modules.Net
 
-        local RE_Attack = Net:FindFirstChild("RE/RegisterAttack")
-        local RE_Hit = Net:FindFirstChild("RE/RegisterHit")
+        -- Format 1 (phổ biến nhất)
+        pcall(function()
+            Net:FindFirstChild("RE/RegisterAttack"):FireServer()
+            Net:FindFirstChild("RE/RegisterHit"):FireServer(mainPart, targets)
+        end)
 
-        if RE_Attack then
-            RE_Attack:FireServer()
-        end
-        if RE_Hit then
-            RE_Hit:FireServer(mainPart, targets)
-        end
+        -- Format 2
+        pcall(function()
+            Net["RE/RegisterAttack"]:FireServer(0)
+            Net["RE/RegisterHit"]:FireServer(mainPart, targets)
+        end)
+
+        -- Format 3 (một số bản mới)
+        pcall(function()
+            Net["RE/RegisterAttack"]:FireServer()
+            Net["RE/RegisterHit"]:FireServer(mainPart, targets, {})
+        end)
     end)
 end
 
