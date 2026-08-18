@@ -718,7 +718,7 @@ spawn(function()
           local Noclip = Instance.new("BodyVelocity")
           Noclip.Name = "BodyClip"
           Noclip.Parent = plr.Character.HumanoidRootPart
-          Noclip.MaxForce = Vector3.new(100000,100000,100000)
+          Noclip.MaxForce = Vector3.new(100000,0,100000) -- bỏ lực trục Y
           Noclip.Velocity = Vector3.new(0,0,0)
         end        
         if not plr.Character:FindFirstChild('highlight') then
@@ -731,7 +731,7 @@ spawn(function()
           Test.OutlineTransparency = 1
           Test.Parent = plr.Character
         end
-        for _, no in pairs(plr.Character:GetDescendants()) do if no:IsA("BasePart") then no.CanCollide = false end end
+        for _, no in pairs(plr.Character:GetDescendants()) do if no:IsA("BasePart") and no.Name ~= "HumanoidRootPart" then no.CanCollide = false end end
       else
         shouldTween = false
         if plr.Character.HumanoidRootPart:FindFirstChild("BodyClip") then plr.Character.HumanoidRootPart:FindFirstChild("BodyClip"):Destroy() end
