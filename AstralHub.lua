@@ -7111,22 +7111,3 @@ local function GetEnemiesInRange(character, range)
                     table.insert(targets, otherPlayer.Character)
                 end
             end
-        end
-    end
-    return targets
-end
-
-CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
-CameraShakerR:Stop()
-
-task.spawn(function()
-    RunSer.Heartbeat:Connect(function()
-        pcall(function()
-            if _G.Seriality then
-                AttackNoCoolDown()
-            end
-        end)
-    end)
-end)
-
-Window:SelectTab(1)
