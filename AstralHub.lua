@@ -156,41 +156,57 @@ local function GetEquippedTool()
     return nil
 end
 
-local function FindEnemiesInRange(tbl, list)
+function AttackNoCoolDown()
+    if _G.UseAttackCooldown then
+        local cd = tonumber(_G.AttackCooldown) or 0.1
+        if (tick() - lastAttackTick) < cd then return end
+        lastAttackTick = tick()
+    end
+
     local char = plr.Character
-    if not char or not char.PrimaryPart then return nil end
+    if not char or not char.PrimaryPart then return end
+    if not GetEquippedTool() then return end
+
     local myPos = char:GetPivot().Position
+    local targets = {}
     local mainPart = nil
-    for _, enemy in ipairs(list) do
+
+    for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                local head = enemy:FindFirstChild("Head") or enemy:FindFirstChild("HumanoidRootPart")
-                if head and (myPos - head.Position).Magnitude <= 100 then
-                    if enemy ~= char then
-                        table.insert(tbl, {enemy, head})
-                        mainPart = head
+            local hrp = enemy:FindFirstChild("HumanoidRootPart")
+            if hum and hum.Health > 0 and hrp then
+                local dist = (myPos - hrp.Position).Magnitude
+                if dist <= 120 then
+                    table.insert(targets, {enemy, hrp})
+                    if not mainPart then
+                        mainPart = hrp
                     end
                 end
             end
         end
     end
-    return mainPart
-end
 
-function AttackNoCoolDown()
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
-    local targets = {}
-    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart or not GetEquippedTool() then return end
+    if not mainPart or #targets == 0 then return end
+
     pcall(function()
-        local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
-        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
+        local tool = GetEquippedTool()
+        if tool and tool:FindFirstChild("Remote") then
+            -- some weapons use their own remote
+        end
+
+        local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
+        if Net then
+            local RE_Attack = Net:FindFirstChild("RE/RegisterAttack")
+            local RE_Hit = Net:FindFirstChild("RE/RegisterHit")
+            if RE_Attack then
+                pcall(function() RE_Attack:FireServer() end)
+                pcall(function() RE_Attack:FireServer(0) end)
+            end
+            if RE_Hit then
+                RE_Hit:FireServer(mainPart, targets)
+            end
+        end
     end)
 end
 
@@ -217,9 +233,10 @@ Attack.Kill = function(model, Succes)
     if not Equipped then return end
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
-        _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
+        _tp(hrp.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
-        _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
+        -- lower height for better hit registration with melee / sword
+        _tp(hrp.CFrame * CFrame.new(0, 22, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
     AttackNoCoolDown()
 end
@@ -342,15 +359,22 @@ statsSetings = function(Num, value)
 end
 BringEnemy = function()
   if not _B then return end
+  pcall(function() sethiddenproperty(plr, "SimulationRadius", math.huge) end)
   for _,v in pairs(workspace.Enemies:GetChildren()) do
-    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-	  if (v.PrimaryPart.Position - PosMon).Magnitude <= 300 then
-	    v.PrimaryPart.CFrame = CFrame.new(PosMon)
-		v.PrimaryPart.CanCollide = true;
-		v:FindFirstChild("Humanoid").WalkSpeed = 0;
-		v:FindFirstChild("Humanoid").JumpPower = 0;
-		if v.Humanoid:FindFirstChild("Animator") then v.Humanoid.Animator:Destroy()end;
-		pcall(function() sethiddenproperty(plr, "SimulationRadius", math.huge) end)
+    local hum = v:FindFirstChildOfClass("Humanoid")
+    local part = v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart
+    if hum and hum.Health > 0 and part then
+	  if (part.Position - PosMon).Magnitude <= 350 then
+	    part.CFrame = CFrame.new(PosMon)
+		part.CanCollide = false
+		part.Velocity = Vector3.zero
+		part.AssemblyLinearVelocity = Vector3.zero
+		hum.WalkSpeed = 0
+		hum.JumpPower = 0
+		hum.JumpHeight = 0
+		if hum:FindFirstChild("Animator") then 
+		  hum.Animator:Destroy()
+		end
 	  end
 	end                               
   end                    	
