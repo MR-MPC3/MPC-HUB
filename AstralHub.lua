@@ -215,17 +215,10 @@ function AttackNoCoolDown()
         if RE_RegisterHit then
             RE_RegisterHit:FireServer(mainPart, targets)
         end
-
-        -- Thêm click chuột thật (quan trọng với acc level thấp)
-        pcall(function()
-            vim2:CaptureController()
-            vim2:ClickButton1(Vector2.new(0, 0))
-        end)
         attackCombo = attackCombo + 1
         if attackCombo > 4 then attackCombo = 1 end
     end)
 end
-
 Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
@@ -675,7 +668,7 @@ block.Transparency = 1
 local blockfind = workspace:FindFirstChild(block.Name)
 if blockfind and blockfind ~= block then blockfind:Destroy() end
 task.spawn(function()while task.wait()do if block and block.Parent==workspace then if shouldTween then getgenv().OnFarm=true else getgenv().OnFarm=false end else getgenv().OnFarm=false end end end)
-task.spawn(function()local a=game.Players.LocalPlayer;repeat task.wait()until a.Character and a.Character.PrimaryPart;block.CFrame=a.Character.PrimaryPart.CFrame;while task.wait()do pcall(function()if getgenv().OnFarm then if block and block.Parent==workspace then local b=a.Character and a.Character.PrimaryPart;if b and(b.Position-block.Position).Magnitude<=200 then b.CFrame=block.CFrame else block.CFrame=b.CFrame end end;local c=a.Character;if c then for d,e in pairs(c:GetChildren())do if e:IsA("BasePart")then e.CanCollide=false end end end else local c=a.Character;if c then for d,e in pairs(c:GetChildren())do if e:IsA("BasePart")then e.CanCollide=true end end end end end)end end)
+task.spawn(function()local a=game.Players.LocalPlayer;repeat task.wait()until a.Character and a.Character.PrimaryPart;block.CFrame=a.Character.PrimaryPart.CFrame;while task.wait()do pcall(function()if getgenv().OnFarm then if block and block.Parent==workspace then local b=a.Character and a.Character.PrimaryPart;if b and(b.Position-block.Position).Magnitude<=200 then b.CFrame=block.CFrame else block.CFrame=b.CFrame end end;local c=a.Character;if c then for d,e in pairs(c:GetChildren())do if e:IsA("BasePart") and e.Name~="HumanoidRootPart" then e.CanCollide=false end end end else local c=a.Character;if c then for d,e in pairs(c:GetChildren())do if e:IsA("BasePart")then e.CanCollide=true end end end end end)end end
 _tp = function(target)
   local character = plr.Character
   if not character or not character:FindFirstChild("HumanoidRootPart") then return end
