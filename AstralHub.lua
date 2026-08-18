@@ -6854,26 +6854,12 @@ spawn(function()
 end)
 
 Tabs.Misc:AddSection("Graphics / Haki Stats")
-
 HakiSt = {"State 0","State 1","State 2","State 3","State 4","State 5"}
 HakiStat = Tabs.Misc:AddDropdown("HakiStat",{Title = "Select Haki States",Values = HakiSt,Multi = false,Default = 1})
-HakiStat:OnChanged(function(Value)
-  _G.SelectStateHaki = Value
-end)
-Tabs.Misc:AddButton({Title = "ChangeBusoStage", Description = "",Callback = function()
-  if _G.SelectStateHaki == "State 0" then
-    replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage",0)
-  elseif _G.SelectStateHaki == "State 1" then
-    replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage",1)
-  elseif _G.SelectStateHaki == "State 2" then
-    replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage",2)
-  elseif _G.SelectStateHaki == "State 3" then
-    replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage",3)
-  elseif _G.SelectStateHaki == "State 4" then
-    replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage",4)
-  elseif _G.SelectStateHaki == "State 5" then
-    replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage",5)
-  end
+HakiStat:OnChanged(function(Value) _G.SelectStateHaki = Value end)
+Tabs.Misc:AddButton({Title = "ChangeBusoStage", Description = "", Callback = function()
+    local stageNumber = tonumber((_G.SelectStateHaki or "State 0"):match("State (%d+)")) or 0
+    pcall(function() replicated.Remotes.CommF_:InvokeServer("ChangeBusoStage", stageNumber) end)
 end})
 rtxM = Tabs.Misc:AddToggle("rtxM", {Title = "Turn on RTX Mode", Description = "", Default = false})
 rtxM:OnChanged(function(Value)
