@@ -180,27 +180,41 @@ end
 attackCombo = 1
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
+        local cd = tonumber(_G.AttackCooldown) or 0.1
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
-    if not GetEquippedTool() then
+    local tool = GetEquippedTool()
+    if not tool then
         if _G.SelectWeapon then EquipWeapon(_G.SelectWeapon)
         else weaponSc(_G.ChooseWP or "Melee") end
+        tool = GetEquippedTool()
     end
+    if not tool then return end
     local targets = {}
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart or not GetEquippedTool() then return end
+    if not mainPart then return end
     pcall(function()
         sethiddenproperty(plr, "SimulationRadius", math.huge)
         plr.SimulationRadius = math.huge
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
-        Net:WaitForChild("RE/RegisterAttack"):FireServer(0.5, attackCombo)
-        Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
+        local RE_RegisterAttack = Net:FindFirstChild("RE/RegisterAttack")
+        local RE_RegisterHit = Net:FindFirstChild("RE/RegisterHit")
+        if RE_RegisterAttack then
+            RE_RegisterAttack:FireServer(0.000000001)
+            RE_RegisterAttack:FireServer(0.5, attackCombo)
+        end
+        local leftClick = tool:FindFirstChild("LeftClickRemote")
+        if leftClick then
+            pcall(function() leftClick:FireServer(mainPart.Position, attackCombo) end)
+            pcall(function() leftClick:FireServer(mainPart.Position, 1) end)
+        end
+        if RE_RegisterHit then RE_RegisterHit:FireServer(mainPart, targets) end
         attackCombo = attackCombo + 1
         if attackCombo > 4 then attackCombo = 1 end
     end)
 end
+
 Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
@@ -217,7 +231,7 @@ Attack.Kill = function(model, Succes)
     if not Equipped then return end
     local ToolTip = Equipped.ToolTip or ""
     if ToolTip == "Blox Fruit" then _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
-    else _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0)) end
+    else _tp(hrp.CFrame * CFrame.new(0, 28, 0) * CFrame.Angles(0, math.rad(180), 0)) end
     AttackNoCoolDown()
 end
 Attack.Kill2 = function(model,Succes)
