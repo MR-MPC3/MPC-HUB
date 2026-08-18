@@ -322,41 +322,36 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 });
 
+local ContextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- Tạo nút bấm ảo nổi dành riêng cho điện thoại / thiết bị cảm ứng
+-- Chỉ kích hoạt nút ảo hệ thống trên thiết bị di động / cảm ứng
 if UserInputService.TouchEnabled then
-    local ToggleGui = Instance.new("ScreenGui")
-    local ToggleButton = Instance.new("TextButton")
-    local UICorner = Instance.new("UICorner")
+    local TOGGLE_ACTION = "ToggleFluentUI_Action"
 
-    ToggleGui.Name = "FluentMobileToggle"
-    ToggleGui.Parent = game:GetService("CoreGui")
-    ToggleGui.ResetOnSpawn = false
+    -- 1. Bind phím End với hành động bật/tắt Menu
+    ContextActionService:BindAction(
+        TOGGLE_ACTION,
+        function(actionName, inputState, inputObject)
+            if inputState == Enum.UserInputState.Begin then
+                Window:Minimize() -- Gọi trực tiếp hàm ẩn/hiện của Fluent
+            end
+        end,
+        true, -- Kích hoạt tham số này để Roblox TỰ ĐỘNG tạo 1 nút bấm ảo trên mobile
+        Enum.KeyCode.End
+    )
 
-    ToggleButton.Name = "ToggleButton"
-    ToggleButton.Parent = ToggleGui
-    ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleButton.BackgroundTransparency = 0.2
-    ToggleButton.Position = UDim2.new(0, 15, 0.35, 0)
-    ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-    ToggleButton.Font = Enum.Font.GothamBold
-    ToggleButton.Text = "MENU"
-    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleButton.TextSize = 12
-    ToggleButton.Active = true
-    ToggleButton.Draggable = true -- Bạn có thể kéo nút này đi bất kỳ vị trí nào trên màn hình
+    -- 2. Đặt tên nhãn hiển thị trên nút ảo
+    ContextActionService:SetTitle(TOGGLE_ACTION, "Menu")
 
-    UICorner.CornerRadius = UDim.new(0, 25)
-    UICorner.Parent = ToggleButton
-
-    -- Giả lập bấm phím End khi người dùng chạm vào nút ảo
-    ToggleButton.MouseButton1Click:Connect(function()
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.End, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.End, false, game)
-    end)
+    -- 3. (Tùy chọn) Điều chỉnh vị trí nút ảo nếu bị vướng nút khác của game
+    local touchButton = ContextActionService:GetButton(TOGGLE_ACTION)
+    if touchButton then
+        touchButton.Position = UDim2.new(0.1, 0, 0.15, 0) -- Đặt ở vị trí tùy chỉnh trên màn hình
+        touchButton.Size = UDim2.new(0, 50, 0, 50)
+    end
 end
+
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
