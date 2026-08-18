@@ -311,8 +311,8 @@ v5:Destroy();
 --         pcall(v422);
 --     end
 -- end);
-local v14 = loadstring(game:HttpGet("https://raw.githubusercontent.com/obfalchx/testfluent/refs/heads/main/FluentTrau"))();
-local v15 = v14:CreateWindow({
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/obfalchx/testfluent/refs/heads/main/FluentTrau"))()
+local v15 = Fluent:CreateWindow({
     Title = "Min Gaming",
     SubTitle = "",
     TabWidth = 160,
@@ -320,7 +320,7 @@ local v15 = v14:CreateWindow({
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
-});
+})
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
