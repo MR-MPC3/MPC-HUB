@@ -400,14 +400,14 @@ local v16 = {
 };
 local v17 = v14.Options;
 local v18 = game.PlaceId;
-if (v18 == 2753915549) then
+if (v18 == 85211729168715) then
     Sea1 = true;
 elseif (v18 == 4442272183) then
     Sea2 = true;
 elseif (v18 == 7449423635) then
     Sea3 = true;
 else
-    game:Shutdown();
+    game:GetService("Players").LocalPlayer:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(v18) .. ")")
 end
 game:GetService("Players").LocalPlayer.Idled:connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame);
