@@ -165,9 +165,14 @@ function AttackNoCoolDown()
 
     local char = plr.Character
     if not char or not char.PrimaryPart then return end
-    if not GetEquippedTool() then return end
 
-    local myPos = char:GetPivot().Position
+    -- tự equip Melee nếu chưa có tool
+    if not GetEquippedTool() then
+        weaponSc("Melee")
+        if not GetEquippedTool() then return end
+    end
+
+    local myPos = char.PrimaryPart.Position
     local targets = {}
     local mainPart = nil
 
@@ -176,8 +181,7 @@ function AttackNoCoolDown()
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             local hrp = enemy:FindFirstChild("HumanoidRootPart")
             if hum and hum.Health > 0 and hrp then
-                local dist = (myPos - hrp.Position).Magnitude
-                if dist <= 120 then
+                if (myPos - hrp.Position).Magnitude <= 150 then
                     table.insert(targets, {enemy, hrp})
                     if not mainPart then
                         mainPart = hrp
@@ -189,23 +193,14 @@ function AttackNoCoolDown()
 
     if not mainPart or #targets == 0 then return end
 
+    -- Gửi remote thẳng lên server
     pcall(function()
-        local tool = GetEquippedTool()
-        if tool and tool:FindFirstChild("Remote") then
-            -- some weapons use their own remote
+        local Net = replicated.Modules.Net
+        if Net["RE/RegisterAttack"] then
+            Net["RE/RegisterAttack"]:FireServer()
         end
-
-        local Net = replicated:FindFirstChild("Modules") and replicated.Modules:FindFirstChild("Net")
-        if Net then
-            local RE_Attack = Net:FindFirstChild("RE/RegisterAttack")
-            local RE_Hit = Net:FindFirstChild("RE/RegisterHit")
-            if RE_Attack then
-                pcall(function() RE_Attack:FireServer() end)
-                pcall(function() RE_Attack:FireServer(0) end)
-            end
-            if RE_Hit then
-                RE_Hit:FireServer(mainPart, targets)
-            end
+        if Net["RE/RegisterHit"] then
+            Net["RE/RegisterHit"]:FireServer(mainPart, targets)
         end
     end)
 end
@@ -222,21 +217,21 @@ Attack.Kill = function(model, Succes)
     if _G.SelectWeapon then
         EquipWeapon(_G.SelectWeapon)
     else
-        weaponSc(_G.ChooseWP or "Melee")
+        weaponSc("Melee")  -- ưu tiên Melee Combat
     end
     local char = plr.Character
     local Equipped = char and char:FindFirstChildOfClass("Tool")
     if not Equipped then
         weaponSc("Melee")
+        task.wait(0.05)
         Equipped = char and char:FindFirstChildOfClass("Tool")
     end
     if not Equipped then return end
     local ToolTip = Equipped.ToolTip
     if ToolTip == "Blox Fruit" then
-        _tp(hrp.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(90), 0))
+        _tp(hrp.CFrame * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(90), 0))
     else
-        -- lower height for better hit registration with melee / sword
-        _tp(hrp.CFrame * CFrame.new(0, 22, 0) * CFrame.Angles(0, math.rad(180), 0))
+        _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
     AttackNoCoolDown()
 end
@@ -7111,3 +7106,22 @@ local function GetEnemiesInRange(character, range)
                     table.insert(targets, otherPlayer.Character)
                 end
             end
+        end
+    end
+    return targets
+end
+
+CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
+CameraShakerR:Stop()
+
+task.spawn(function()
+    RunSer.Heartbeat:Connect(function()
+        pcall(function()
+            if _G.Seriality then
+                AttackNoCoolDown()
+            end
+        end)
+    end)
+end)
+
+Window:SelectTab(1)
