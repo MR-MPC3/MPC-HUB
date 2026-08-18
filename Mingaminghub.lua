@@ -322,37 +322,35 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 });
 
--- ==================== [NÚT NỎ BẬT/TẮT MENU ỔN ĐỊNH] ====================
-local ToggleGui = Instance.new("ScreenGui")
-local ToggleButton = Instance.new("ImageButton")
-local UICorner = Instance.new("UICorner")
-local UIStroke = Instance.new("UIStroke")
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
 
-ToggleGui.Name = "MinGamingToggle"
-ToggleGui.Parent = game:GetService("CoreGui")
-ToggleGui.ResetOnSpawn = false
+-- Chỉ kích hoạt nút ảo hệ thống trên thiết bị di động / cảm ứng
+if UserInputService.TouchEnabled then
+    local TOGGLE_ACTION = "ToggleFluentUI_Action"
 
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Parent = ToggleGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleButton.Position = UDim2.new(0, 15, 0.15, 0)
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Image = "rbxassetid://13717478897"
-ToggleButton.Active = true
-ToggleButton.Draggable = true
+    -- 1. Bind phím End với hành động bật/tắt Menu
+    ContextActionService:BindAction(
+        TOGGLE_ACTION,
+        function(actionName, inputState, inputObject)
+            if inputState == Enum.UserInputState.Begin then
+                Window:Minimize() -- Gọi trực tiếp hàm ẩn/hiện của Fluent
+            end
+        end,
+        true, -- Kích hoạt tham số này để Roblox TỰ ĐỘNG tạo 1 nút bấm ảo trên mobile
+        Enum.KeyCode.End
+    )
 
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = ToggleButton
+    -- 2. Đặt tên nhãn hiển thị trên nút ảo
+    ContextActionService:SetTitle(TOGGLE_ACTION, "Menu")
 
-UIStroke.Color = Color3.fromRGB(3, 252, 3)
-UIStroke.Thickness = 2
-UIStroke.Parent = ToggleButton
-
-ToggleButton.MouseButton1Click:Connect(function()
-    if v15 then
-        v15:Minimize()
+    -- 3. (Tùy chọn) Điều chỉnh vị trí nút ảo nếu bị vướng nút khác của game
+    local touchButton = ContextActionService:GetButton(TOGGLE_ACTION)
+    if touchButton then
+        touchButton.Position = UDim2.new(0.1, 0, 0.15, 0) -- Đặt ở vị trí tùy chỉnh trên màn hình
+        touchButton.Size = UDim2.new(0, 50, 0, 50)
     end
-end)
+end
 
 local v16 = {
     Home = v15:AddTab({
