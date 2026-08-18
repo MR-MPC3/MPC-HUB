@@ -161,7 +161,7 @@ end
 
 function AttackNoCoolDown()
     if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.1
+        local cd = tonumber(_G.AttackCooldown) or 0.08
         if (tick() - lastAttackTick) < cd then return end
         lastAttackTick = tick()
     end
@@ -174,47 +174,30 @@ function AttackNoCoolDown()
         if not GetEquippedTool() then return end
     end
 
+    -- chỉ đánh khi có quái gần
     local myPos = char.PrimaryPart.Position
-    local targets = {}
-    local mainPart = nil
-
+    local hasTarget = false
     for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
         if not enemy:GetAttribute("IsBoat") then
             local hum = enemy:FindFirstChildOfClass("Humanoid")
             local hrp = enemy:FindFirstChild("HumanoidRootPart")
             if hum and hum.Health > 0 and hrp then
-                if (myPos - hrp.Position).Magnitude <= 100 then
-                    table.insert(targets, {enemy, hrp})
-                    if not mainPart then
-                        mainPart = hrp
-                    end
+                if (myPos - hrp.Position).Magnitude <= 80 then
+                    hasTarget = true
+                    break
                 end
             end
         end
     end
+    if not hasTarget then return end
 
-    if not mainPart or #targets == 0 then return end
-
+    -- spam nhanh đúng format log: RegisterAttack(0.5, 1)
     pcall(function()
         local Net = replicated.Modules.Net
-
-        -- Format 1 (phổ biến nhất)
-        pcall(function()
-            Net:FindFirstChild("RE/RegisterAttack"):FireServer()
-            Net:FindFirstChild("RE/RegisterHit"):FireServer(mainPart, targets)
-        end)
-
-        -- Format 2
-        pcall(function()
-            Net["RE/RegisterAttack"]:FireServer(0)
-            Net["RE/RegisterHit"]:FireServer(mainPart, targets)
-        end)
-
-        -- Format 3 (một số bản mới)
-        pcall(function()
-            Net["RE/RegisterAttack"]:FireServer()
-            Net["RE/RegisterHit"]:FireServer(mainPart, targets, {})
-        end)
+        local RE = Net:FindFirstChild("RE/RegisterAttack")
+        if RE then
+            RE:FireServer(0.5, 1)
+        end
     end)
 end
 
@@ -442,20 +425,26 @@ end
 local gg = getrawmetatable(game)
 local old = gg.__namecall
 setreadonly(gg, false)
-gg.__namecall = newcclosure(function(...)
+gg.__namecall = newcclosure(function(self, ...)
   local method = getnamecallmethod()
-  local args = {...}    
-    if tostring(method) == "FireServer" then
-      if tostring(args[1]) == "RemoteEvent" then
-        if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-          if (_G.FarmMastery_G and not SoulGuitar) or (_G.FarmMastery_Dev) or (_G.FarmBlazeEM) or (_G.Prehis_Skills) or (_G.SeaBeast1 or _G.FishBoat or _G.PGB or _G.Leviathan1 or _G.Complete_Trials) or (_G.AimMethod and ABmethod == "AimBots Skill") or (_G.AimMethod and ABmethod == "Auto Aimbots") then
-            args[2] = MousePos
-            return old(unpack(args))
-          end
+  local args = {...}
+
+  -- Chỉ sửa aimbot skill, tuyệt đối không đụng RegisterAttack / combat
+  if method == "FireServer" then
+    local remoteName = tostring(self)
+    if not string.find(remoteName, "RegisterAttack") and not string.find(remoteName, "RegisterHit") and not string.find(remoteName, "330") then
+      if (_G.FarmMastery_G and not SoulGuitar) or (_G.FarmMastery_Dev) or (_G.FarmBlazeEM) or (_G.Prehis_Skills)
+        or (_G.SeaBeast1 or _G.FishBoat or _G.PGB or _G.Leviathan1 or _G.Complete_Trials)
+        or (_G.AimMethod and (ABmethod == "AimBots Skill" or ABmethod == "Auto Aimbots")) then
+        if typeof(args[1]) ~= "boolean" and MousePos then
+          args[1] = MousePos
+          return old(self, unpack(args))
         end
       end
     end
-  return old(...)
+  end
+
+  return old(self, ...)
 end)
 GetConnectionEnemies = function(a)
   for i,v in pairs(replicated:GetChildren()) do
