@@ -191,7 +191,6 @@ function AttackNoCoolDown()
     local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
     if not mainPart then return end
 
-    -- RegisterAttack đúng format log hiện tại
     pcall(function()
         local Net = replicated.Modules.Net
         local RE = Net:FindFirstChild("RE/RegisterAttack")
@@ -200,7 +199,6 @@ function AttackNoCoolDown()
         end
     end)
 
-    -- M1 thật (đánh tay vẫn trừ máu)
     pcall(function()
         vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
         vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
@@ -211,11 +209,6 @@ Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
