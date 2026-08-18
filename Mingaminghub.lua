@@ -311,7 +311,7 @@ v5:Destroy();
 --         pcall(v422);
 --     end
 -- end);
-local v14 = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local v14 = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))();
 local v15 = v14:CreateWindow({
     Title = "Min Gaming",
     SubTitle = "",
@@ -371,14 +371,14 @@ local v16 = {
 local v17 = v14.Options;
 local v18 = game.PlaceId;
 if (v18 == 85211729168715) then
-    Sea1 = true;
+    Sea1 = true;
 elseif (v18 == 4442272183) then
-    Sea2 = true;
+    Sea2 = true;
 elseif (v18 == 7449423635) then
-    Sea3 = true;
+    Sea3 = true;
 else
-    game:GetService("Players").LocalPlayer:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(v18) .. ")")
-end
+    game:GetService("Players").LocalPlayer:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(v18) .. ")")
+end 
 game:GetService("Players").LocalPlayer.Idled:connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame);
     wait();
