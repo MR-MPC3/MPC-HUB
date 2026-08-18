@@ -177,17 +177,38 @@ local function FindEnemiesInRange(tbl, list)
     return mainPart
 end
 
-function AttackNoCoolDown()
+function AttackNoCoolDown(targetModel)
     if _G.UseAttackCooldown then
         local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
+        if (tick() - lastAttackTick) < cd then
+            return
+        end
         lastAttackTick = tick()
     end
     local targets = {}
-    local mainPart = FindEnemiesInRange(targets, workspace.Enemies:GetChildren())
-    if not mainPart or not GetEquippedTool() then return end
+    local mainPart = nil
+    if targetModel and targetModel.Parent then
+        local hum = targetModel:FindFirstChildOfClass("Humanoid")
+        local head = targetModel:FindFirstChild("Head")
+            or targetModel:FindFirstChild("HumanoidRootPart")
+
+        if not hum or hum.Health <= 0 or not head then
+            return
+        end
+        table.insert(targets, {targetModel, head})
+        mainPart = head
+    else
+        mainPart = FindEnemiesInRange(
+            targets,
+            workspace.Enemies:GetChildren()
+        )
+    end
+    if not mainPart or not GetEquippedTool() then
+        return
+    end
     pcall(function()
         local Net = replicated:WaitForChild("Modules"):WaitForChild("Net")
+
         Net:WaitForChild("RE/RegisterAttack"):FireServer(1e-9)
         Net:WaitForChild("RE/RegisterHit"):FireServer(mainPart, targets)
     end)
@@ -197,11 +218,6 @@ Attack.Kill = function(model, Succes)
     if not (model and Succes) then return end
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    if _G.UseAttackCooldown then
-        local cd = tonumber(_G.AttackCooldown) or 0.12
-        if (tick() - lastAttackTick) < cd then return end
-        lastAttackTick = tick()
-    end
     if not model:GetAttribute("Locked") then
         model:SetAttribute("Locked", hrp.CFrame)
     end
@@ -225,7 +241,7 @@ Attack.Kill = function(model, Succes)
     else
         _tp(hrp.CFrame * CFrame.new(0, 30, 0) * CFrame.Angles(0, math.rad(180), 0))
     end
-    AttackNoCoolDown()
+    AttackNoCoolDown(model
 end
 Attack.Kill2 = function(model,Succes)
   if model and Succes then
