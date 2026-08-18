@@ -817,86 +817,17 @@ QuestNeta = function()
   }
 end
 
-local StarterGui = game:GetService("StarterGui")
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-local function Notify(text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "AstralHub DEBUG",
-            Text = text,
-            Duration = 4
-        })
-    end)
-end
-
-Notify("Đã chạy tới UI")
-
-local ok, Fluent, Window = pcall(function()
-
-    Notify("1. Đang HttpGet Fluent")
-
-    local source = game:HttpGet(
-        "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"
-    )
-
-    Notify("2. HttpGet OK")
-
-    if not source or #source < 100 then
-        error("Fluent source rỗng")
-    end
-
-    Notify("3. Đang loadstring")
-
-    local fn = loadstring(source)
-
-    if type(fn) ~= "function" then
-        error("loadstring không trả về function")
-    end
-
-    Notify("4. loadstring OK")
-
-    local fluent = fn()
-
-    Notify("5. Fluent init OK")
-
-    if not fluent then
-        error("fluent = nil")
-    end
-
-    if type(fluent.CreateWindow) ~= "function" then
-        error(
-            "CreateWindow không phải function. Type = "
-            .. tostring(type(fluent.CreateWindow))
-        )
-    end
-
-    Notify("6. CreateWindow tồn tại")
-
-    local window = fluent:CreateWindow({
-        Title = "Astral hub [Freemium]",
-        SubTitle = "by xxxxx",
-        TabWidth = 155,
-        Size = UDim2.fromOffset(555, 320),
-        Acrylic = false,
-        Theme = "Dark",
-        MinimizeKey = Enum.KeyCode.End
-    })
-
-    Notify("7. Window OK")
-
-    if not window then
-        error("Window = nil")
-    end
-
-    return fluent, window
-end)
-
-if not ok then
-    Notify("❌ LỖI: " .. tostring(Fluent))
-    return
-end
-
-Notify("✅ Fluent + Window OK")
+local Window = Fluent:CreateWindow({
+    Title = "Astral hub [Freemium] ",
+    SubTitle = "by xxxxx",
+    TabWidth = 155,
+    Size = UDim2.fromOffset(555, 320),
+    Acrylic = false,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.End
+})
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
