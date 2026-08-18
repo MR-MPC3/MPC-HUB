@@ -930,35 +930,6 @@ Btn.MouseButton1Click:Connect(function()
     end)
 end)
 
-Btn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        Btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    if input == dragInput then
-        dragging = false
-        dragInput = nil
-    end
-end)
-
--- Sự kiện nhấn để mở/đóng menu
-Btn.MouseButton1Click:Connect(function()
-    pcall(function()
-        if Window and Window.Minimize then
-            Window:Minimize()
-        end
-    end)
-end)
-
 local Tabs = {
   Main = Window:AddTab({Title = "Farm", Icon = ""}),
   Settings = Window:AddTab({Title = "Config", Icon = ""}),
