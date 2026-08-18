@@ -322,58 +322,33 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 });
 
-local UserInputService = game:GetService("UserInputService")
+-- Code tạo nút ẩn/hiện Menu dành riêng cho Điện thoại
+local ToggleGui = Instance.new("ScreenGui")
+local ToggleButton = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
 
-local MainGui = nil
-local MenuVisible = true
+ToggleGui.Name = "MobileToggleGui"
+ToggleGui.Parent = game:GetService("CoreGui")
+ToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local function FindMainGui()
-    local CoreGui = game:GetService("CoreGui")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = ToggleGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Position = UDim2.new(0.02, 0, 0.2, 0)
+ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Text = "MENU"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 11
+ToggleButton.Active = true
+ToggleButton.Draggable = true -- Cho phép kéo di chuyển nút trên màn hình
 
-    for _, gui in ipairs(CoreGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and gui ~= ToggleGui then
-            for _, obj in ipairs(gui:GetDescendants()) do
-                if (obj:IsA("TextLabel") or obj:IsA("TextButton"))
-                    and obj.Text == "Min Gaming" then
-                    return gui
-                end
-            end
-        end
-    end
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = ToggleButton
 
-    return nil
-end
-
-task.wait(1)
-MainGui = FindMainGui()
-
-local function ToggleMenu()
-    if not MainGui or not MainGui.Parent then
-        MainGui = FindMainGui()
-    end
-
-    if not MainGui then
-        return
-    end
-
-    MenuVisible = not MenuVisible
-    MainGui.Enabled = MenuVisible
-end
-
--- PC: nhấn END
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then
-        return
-    end
-
-    if input.KeyCode == Enum.KeyCode.End then
-        ToggleMenu()
-    end
-end)
-
--- PC + Mobile: nút vuông
 ToggleButton.MouseButton1Click:Connect(function()
-    ToggleMenu()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
 end)
 
 local v16 = {
