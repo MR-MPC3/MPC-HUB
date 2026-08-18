@@ -319,8 +319,63 @@ local v15 = v14:CreateWindow({
     Theme = "Light",
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320),
-    MinimizeKey = Enum.KeyCode.End
+    --MinimizeKey = Enum.KeyCode.End
 });
+
+local UserInputService = game:GetService("UserInputService")
+
+local MainGui = nil
+local MenuVisible = true
+
+local function FindMainGui()
+    local CoreGui = game:GetService("CoreGui")
+
+    for _, gui in ipairs(CoreGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui ~= ToggleGui then
+            for _, obj in ipairs(gui:GetDescendants()) do
+                if (obj:IsA("TextLabel") or obj:IsA("TextButton"))
+                    and obj.Text == "Min Gaming" then
+                    return gui
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+task.wait(1)
+MainGui = FindMainGui()
+
+local function ToggleMenu()
+    if not MainGui or not MainGui.Parent then
+        MainGui = FindMainGui()
+    end
+
+    if not MainGui then
+        return
+    end
+
+    MenuVisible = not MenuVisible
+    MainGui.Enabled = MenuVisible
+end
+
+-- PC: nhấn END
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then
+        return
+    end
+
+    if input.KeyCode == Enum.KeyCode.End then
+        ToggleMenu()
+    end
+end)
+
+-- PC + Mobile: nút vuông
+ToggleButton.MouseButton1Click:Connect(function()
+    ToggleMenu()
+end)
+
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
