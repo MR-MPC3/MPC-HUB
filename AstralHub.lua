@@ -169,12 +169,14 @@ function AttackNoCoolDown()
     local char = plr.Character
     if not char or not char.PrimaryPart then return end
 
-    if not GetEquippedTool() then
+    local tool = GetEquippedTool()
+    if not tool then
         weaponSc("Melee")
-        if not GetEquippedTool() then return end
+        tool = GetEquippedTool()
+        if not tool then return end
     end
 
-    -- chỉ đánh khi có quái gần
+    -- có quái gần mới đánh
     local myPos = char.PrimaryPart.Position
     local hasTarget = false
     for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
@@ -191,12 +193,25 @@ function AttackNoCoolDown()
     end
     if not hasTarget then return end
 
-    -- spam nhanh đúng format log: RegisterAttack(0.5, 1)
+    -- 1) RegisterAttack đúng format log (0.5, 1)
     pcall(function()
         local Net = replicated.Modules.Net
         local RE = Net:FindFirstChild("RE/RegisterAttack")
         if RE then
             RE:FireServer(0.5, 1)
+        end
+    end)
+
+    -- 2) M1 thật bằng VirtualInputManager (vì click tay vẫn trừ máu)
+    pcall(function()
+        vim1:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        vim1:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    end)
+
+    -- 3) Activate tool (backup)
+    pcall(function()
+        if tool and tool.Activate then
+            tool:Activate()
         end
     end)
 end
@@ -7105,25 +7120,4 @@ local function GetEnemiesInRange(character, range)
             if rootPart and IsEntityAlive(otherPlayer.Character) then
                 local distance = (rootPart.Position - playerPos).Magnitude
                 if distance <= range then
-                    table.insert(targets, otherPlayer.Character)
-                end
-            end
-        end
-    end
-    return targets
-end
-
-CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
-CameraShakerR:Stop()
-
-task.spawn(function()
-    RunSer.Heartbeat:Connect(function()
-        pcall(function()
-            if _G.Seriality then
-                AttackNoCoolDown()
-            end
-        end)
-    end)
-end)
-
-Window:SelectTab(1)
+                    table.insert(targets, otherPlayer.Charact
