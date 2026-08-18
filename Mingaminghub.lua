@@ -321,41 +321,6 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
-
-local UserInputService = game:GetService("UserInputService")
-
--- Tạo nút ảo bật/tắt Menu hỗ trợ kéo thả dành riêng cho Mobile
-if UserInputService.TouchEnabled then
-    local ToggleGui = Instance.new("ScreenGui")
-    local ToggleButton = Instance.new("TextButton")
-    local UICorner = Instance.new("UICorner")
-
-    ToggleGui.Name = "FluentToggleGui"
-    ToggleGui.Parent = game:GetService("CoreGui")
-    ToggleGui.ResetOnSpawn = false
-
-    ToggleButton.Name = "ToggleButton"
-    ToggleButton.Parent = ToggleGui
-    ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleButton.Position = UDim2.new(0, 15, 0.4, 0)
-    ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-    ToggleButton.Font = Enum.Font.GothamBold
-    ToggleButton.Text = "Menu"
-    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleButton.TextSize = 13
-    ToggleButton.Active = true
-    ToggleButton.Draggable = true -- Cho phép giữ và kéo di chuyển nút trên màn hình
-
-    UICorner.CornerRadius = UDim.new(0, 25) -- Bo tròn nút thành hình tròn
-    UICorner.Parent = ToggleButton
-
-    -- Gọi hàm ẩn/hiện menu chính xác qua biến v15
-    ToggleButton.MouseButton1Click:Connect(function()
-        if v15 then
-            v15:Minimize()
-        end
-    end)
-end
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
