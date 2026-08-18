@@ -823,8 +823,8 @@ local function Notify(text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = "AstralHub",
-            Text = text,
-            Duration = 5
+            Text = tostring(text),
+            Duration = 6
         })
     end)
 end
@@ -834,32 +834,42 @@ Notify("Đang load UI...")
 local Fluent, Window
 local ok, err = pcall(function()
     local source = game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua")
-    if not source or #source < 100 then
+    if not source or #source < 50 then
         error("Không tải được Fluent")
     end
+
     local fn = loadstring(source)
-    if not fn then error("loadstring fail") end
+    if not fn then
+        error("loadstring fail")
+    end
+
     Fluent = fn()
-    if not Fluent then error("Fluent = nil") end
+    if not Fluent then
+        error("Fluent = nil")
+    end
+
     Window = Fluent:CreateWindow({
         Title = "Astral Hub",
         SubTitle = "Mobile",
         TabWidth = 140,
-        Size = UDim2.fromOffset(500, 300),
+        Size = UDim2.fromOffset(480, 280),
         Acrylic = false,
         Theme = "Darker",
         MinimizeKey = Enum.KeyCode.LeftControl
     })
-    if not Window then error("CreateWindow fail") end
+
+    if not Window then
+        error("CreateWindow fail")
+    end
 end)
 
 if not ok then
-    Notify("Lỗi: " .. tostring(err))
+    Notify("Lỗi UI: " .. tostring(err))
     return
 end
 
-Notify("UI load thành công!")
-
+Notify("UI load OK!")
+		
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
