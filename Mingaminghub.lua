@@ -322,27 +322,33 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 });
 task.spawn(function()
-    task.wait(1)
+    task.wait(1.5)
     local coreGui = game:GetService("CoreGui")
     local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+    
+    local isToggling = false
+    local function SafeToggle()
+        if isToggling then return end
+        isToggling = true
+        
+        v14:Toggle() -- Gọi lệnh ẩn/hiện menu chuẩn
+        
+        task.wait(0.4) -- Khóa nút 0.4 giây để tránh điện thoại nhận 2 lần chạm cùng lúc
+        isToggling = false
+    end
+
     local function FixMobileIcon(gui)
         if not gui then return end
         for _, btn in ipairs(gui:GetDescendants()) do
             if btn:IsA("GuiButton") or btn:IsA("ImageButton") or btn:IsA("TextButton") then
                 if btn.Name:lower():find("minimize") or (btn.Parent and btn.Parent.Name:lower():find("minimize")) then
-                    -- Nhận cả sự kiện Click lẫn Touch Cảm Ứng trên điện thoại
-                    btn.MouseButton1Click:Connect(function()
-                        v14:Toggle()
-                    end)
-                    if btn.Activated then
-                        btn.Activated:Connect(function()
-                            v14:Toggle()
-                        end)
-                    end
+                    -- Chỉ gán 1 sự kiện duy nhất kết hợp hàm chống bấm đúp SafeToggle
+                    btn.MouseButton1Click:Connect(SafeToggle)
                 end
             end
         end
     end
+
     FixMobileIcon(coreGui:FindFirstChild("Fluent"))
     if playerGui then FixMobileIcon(playerGui:FindFirstChild("Fluent")) end
 end)
