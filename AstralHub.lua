@@ -114,10 +114,85 @@ weaponSc = function(weapon)
         end
     end
 end
-hookfunction(require(game:GetService("ReplicatedStorage").Effect.Container.Death),function() end)
-hookfunction(require(game:GetService("ReplicatedStorage"):WaitForChild("GuideModule")).ChangeDisplayedNPC,function()end)
-hookfunction(error, function()end)
-hookfunction(warn, function()end)
+pcall(function()
+    hookfunction(require(game:GetService("ReplicatedStorage").Effect.Container.Death),function() end)
+end)
+pcall(function()
+    hookfunction(require(game:GetService("ReplicatedStorage"):WaitForChild("GuideModule")).ChangeDisplayedNPC,function()end)
+end)
+
+-- ========== LOG LỖI RA MÀN HÌNH (cho mobile) ==========
+local function ShowErrorOnScreen(err)
+    pcall(function()
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "AstralErrorLog"
+        sg.ResetOnSpawn = false
+        sg.IgnoreGuiInset = true
+        sg.Parent = game:GetService("CoreGui")
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0.92, 0, 0.32, 0)
+        frame.Position = UDim2.new(0.04, 0, 0.32, 0)
+        frame.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+        frame.BorderSizePixel = 0
+        frame.Parent = sg
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = frame
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, -16, 0, 28)
+        title.Position = UDim2.new(0, 8, 0, 6)
+        title.BackgroundTransparency = 1
+        title.Text = "ASTRAL HUB - LOI SCRIPT"
+        title.TextColor3 = Color3.fromRGB(255, 70, 70)
+        title.TextSize = 16
+        title.Font = Enum.Font.GothamBold
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = frame
+
+        local msg = Instance.new("TextLabel")
+        msg.Size = UDim2.new(1, -16, 1, -40)
+        msg.Position = UDim2.new(0, 8, 0, 34)
+        msg.BackgroundTransparency = 1
+        msg.Text = tostring(err)
+        msg.TextColor3 = Color3.fromRGB(255, 230, 230)
+        msg.TextSize = 13
+        msg.Font = Enum.Font.Code
+        msg.TextWrapped = true
+        msg.TextXAlignment = Enum.TextXAlignment.Left
+        msg.TextYAlignment = Enum.TextYAlignment.Top
+        msg.Parent = frame
+
+        task.delay(25, function()
+            if sg and sg.Parent then sg:Destroy() end
+        end)
+    end)
+end
+
+-- Bắt lỗi và hiện ra màn hình
+pcall(function()
+    hookfunction(error, function(...)
+        local args = {...}
+        local errMsg = tostring(args[1] or "Unknown error")
+        ShowErrorOnScreen(errMsg)
+    end)
+end)
+
+pcall(function()
+    hookfunction(warn, function(...)
+        local args = {...}
+        local msg = ""
+        for i, v in ipairs(args) do
+            msg = msg .. tostring(v) .. " "
+        end
+        if string.find(string.lower(msg), "error") or string.find(string.lower(msg), "fail") then
+            ShowErrorOnScreen("[WARN] " .. msg)
+        end
+    end)
+end)
+
 local Rock = workspace:FindFirstChild("Rocks")
 if Rock then Rock:Destroy()end
 gay = (function()
@@ -195,12 +270,19 @@ function AttackNoCoolDown()
 
     -- Gửi remote thẳng lên server
     pcall(function()
-        local Net = replicated.Modules.Net
-        if Net["RE/RegisterAttack"] then
-            Net["RE/RegisterAttack"]:FireServer()
+        local Modules = replicated:FindFirstChild("Modules")
+        if not Modules then return end
+        local Net = Modules:FindFirstChild("Net")
+        if not Net then return end
+
+        local RE_Attack = Net:FindFirstChild("RE/RegisterAttack")
+        local RE_Hit = Net:FindFirstChild("RE/RegisterHit")
+
+        if RE_Attack then
+            RE_Attack:FireServer()
         end
-        if Net["RE/RegisterHit"] then
-            Net["RE/RegisterHit"]:FireServer(mainPart, targets)
+        if RE_Hit then
+            RE_Hit:FireServer(mainPart, targets)
         end
     end)
 end
@@ -850,16 +932,23 @@ QuestNeta = function()
   }
 end
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local Window = Fluent:CreateWindow({
-    Title = "Astral hub [Freemium] ",
-    SubTitle = "by xxxxx",
-    TabWidth = 155,
-    Size = UDim2.fromOffset(555, 320),
-    Acrylic = false,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.End
-})
+local Fluent, Window
+local fluentOk, fluentErr = pcall(function()
+    Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+    Window = Fluent:CreateWindow({
+        Title = "Astral hub [Freemium] ",
+        SubTitle = "by xxxxx",
+        TabWidth = 155,
+        Size = UDim2.fromOffset(555, 320),
+        Acrylic = false,
+        Theme = "Dark",
+        MinimizeKey = Enum.KeyCode.End
+    })
+end)
+if not fluentOk then
+    ShowErrorOnScreen("Fluent UI load failed:\n" .. tostring(fluentErr))
+    return
+end
 
 -- Nút hiện/ẩn menu (Draggable + Image Ready)
 local MobileGui = Instance.new("ScreenGui")
