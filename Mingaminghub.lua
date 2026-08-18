@@ -321,6 +321,36 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
+
+local ToggleGui = Instance.new("ScreenGui")
+local ToggleButton = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+
+ToggleGui.Name = "MobileToggleGui"
+ToggleGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer.PlayerGui
+ToggleGui.ResetOnSpawn = false
+
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = ToggleGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleButton.Position = UDim2.new(0, 10, 0.4, 0)
+ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Text = "MENU"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 11
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Active = true
+ToggleButton.Draggable = true -- Cho phép kéo rê nút trên màn hình
+
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = ToggleButton
+
+-- Giả lập bấm phím End khi nhấn vào nút trên điện thoại
+ToggleButton.MouseButton1Click:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.End, false, game)
+end)
+
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
