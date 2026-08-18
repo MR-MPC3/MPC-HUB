@@ -115,8 +115,8 @@ weaponSc = function(weapon)
 end
 hookfunction(require(game:GetService("ReplicatedStorage").Effect.Container.Death),function() end)
 hookfunction(require(game:GetService("ReplicatedStorage"):WaitForChild("GuideModule")).ChangeDisplayedNPC,function()end)
-hookfunction(error, function()end)
-hookfunction(warn, function()end)
+--hookfunction(error, function()end)
+--hookfunction(warn, function()end)
 local Rock = workspace:FindFirstChild("Rocks")
 if Rock then Rock:Destroy()end
 gay = (function()
@@ -817,16 +817,71 @@ QuestNeta = function()
   }
 end
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local Window = Fluent:CreateWindow({
-    Title = "Astral hub [Freemium] ",
-    SubTitle = "by xxxxx",
-    TabWidth = 155,
-    Size = UDim2.fromOffset(555, 320),
-    Acrylic = false,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.End
-})
+local StarterGui = game:GetService("StarterGui")
+
+local function Notify(text)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "AstralHub DEBUG",
+            Text = text,
+            Duration = 4
+        })
+    end)
+end
+
+Notify("Đã chạy tới UI")
+
+local ok, Fluent, Window = pcall(function()
+
+    local source = game:HttpGet(
+        "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"
+    )
+
+    if not source or #source < 100 then
+        error("Không tải được Fluent")
+    end
+
+    Notify("Đã tải Fluent")
+
+    local fn = loadstring(source)
+
+    if not fn then
+        error("loadstring thất bại")
+    end
+
+    local fluent = fn()
+
+    if not fluent then
+        error("Fluent = nil")
+    end
+
+    Notify("Fluent OK")
+
+    local window = fluent:CreateWindow({
+        Title = "Astral hub [Freemium]",
+        SubTitle = "by xxxxx",
+        TabWidth = 155,
+        Size = UDim2.fromOffset(555, 320),
+        Acrylic = false,
+        Theme = "Dark",
+        MinimizeKey = Enum.KeyCode.End
+    })
+
+    if not window then
+        error("CreateWindow thất bại")
+    end
+
+    Notify("Window OK")
+
+    return fluent, window
+end)
+
+if not ok then
+    Notify("❌ " .. tostring(Fluent))
+    return
+end
+
+Notify("✅ UI đã tạo")
 
 -- Nút hiện/ẩn menu (Draggable + Image Ready)
 local MobileGui = Instance.new("ScreenGui")
