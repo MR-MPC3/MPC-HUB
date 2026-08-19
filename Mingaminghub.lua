@@ -2754,7 +2754,7 @@ task.spawn(function()
                         end
                     end
                 end
-            elseif (ChooseWeapon == "Blox Fruit") then
+            elseif (ChooseWeapon == "Blox Fruits") then
                 for v1430, v1431 in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
                     if (v1431.ToolTip == "Blox Fruit") then
                         if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(v1431.Name)) then
