@@ -375,9 +375,9 @@ local v18 = game.PlaceId;
 
 if (v18 == 85211729168715) then
     Sea1 = true;
-elseif (v18 == 4442272183) then
+elseif (v18 == 79091703265657) then
     Sea2 = true;
-elseif (v18 == 7449423635) then
+elseif (v18 == 100117331123089) then
     Sea3 = true;
 else
     plr:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(v18) .. ")");
@@ -394,9 +394,9 @@ Sea3 = false;
 local v19 = game.PlaceId;
 if (v19 == 85211729168715) then
     Sea1 = true;
-elseif (v19 == 4442272183) then
+elseif (v19 == 79091703265657) then
     Sea2 = true;
-elseif (v19 == 7449423635) then
+elseif (v19 == 100117331123089) then
     Sea3 = true;
 end
 function CheckLevel()
