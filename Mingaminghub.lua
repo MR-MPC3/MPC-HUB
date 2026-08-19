@@ -321,6 +321,32 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
+
+local MinGui = Instance.new("ScreenGui")
+MinGui.Name = "MinGamingToggle"
+MinGui.ResetOnSpawn = false
+MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+MinGui.Parent = game:GetService("CoreGui")
+
+local MinButton = Instance.new("ImageButton")
+MinButton.Name = "MinButton"
+MinButton.Parent = MinGui
+MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MinButton.BorderSizePixel = 0
+MinButton.Position = UDim2.new(0, 20, 0, 100)
+MinButton.Size = UDim2.fromOffset(50, 50)
+MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
+MinButton.AutoButtonColor = false
+MinButton.Draggable = true
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 12)
+MinCorner.Parent = MinButton
+
+MinButton.MouseButton1Click:Connect(function()
+    v15:Minimize()
+end)
+
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
