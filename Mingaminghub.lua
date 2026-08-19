@@ -369,19 +369,23 @@ local v16 = {
     })
 };
 local v17 = v14.Options;
+local Players = game:GetService("Players");
+local plr = Players.LocalPlayer;
 local v18 = game.PlaceId;
-if (v18 == 8521172916871) then
+
+if (v18 == 2753915549) then
     Sea1 = true;
 elseif (v18 == 4442272183) then
     Sea2 = true;
 elseif (v18 == 7449423635) then
     Sea3 = true;
 else
-    plr:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(pid) .. ")")
+    plr:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(v18) .. ")");
 end
-game:GetService("Players").LocalPlayer.Idled:connect(function()
+
+plr.Idled:Connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame);
-    wait();
+    task.wait();
     game:GetService("VirtualUser"):Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame);
 end);
 Sea1 = false;
