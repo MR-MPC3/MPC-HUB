@@ -370,7 +370,7 @@ local v16 = {
 };
 local v17 = v14.Options;
 local v18 = game.PlaceId;
-if (v18 == 85211729168715) then
+if (v18 == 8521172916871) then
     Sea1 = true;
 elseif (v18 == 4442272183) then
     Sea2 = true;
