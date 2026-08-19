@@ -3544,6 +3544,36 @@ v61:SetValue(_G.SelectBoss);
 v61:OnChanged(function(v253)
     _G.SelectBoss = v253;
 end);
+local BossStatus = v16.Main:AddParagraph({ Title = "Boss Status", Content = "Chưa chọn boss" })
+task.spawn(function()
+    while task.wait(0.5) do
+        pcall(function()
+            local bossName = _G.SelectBoss
+            if not bossName or bossName == "" then
+                BossStatus:SetDesc("Chưa chọn boss")
+                return
+            end
+            local isAlive = false
+            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                if v.Name == bossName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                    isAlive = true
+                    break
+                end
+            end
+            if not isAlive then
+                local repBoss = game:GetService("ReplicatedStorage"):FindFirstChild(bossName)
+                if repBoss and repBoss:FindFirstChild("Humanoid") and repBoss.Humanoid.Health > 0 then
+                    isAlive = true
+                end
+            end
+            if isAlive then
+                BossStatus:SetDesc(bossName .. "  Đang Sống")
+            else
+                BossStatus:SetDesc(bossName .. "  (Chờ hồi sinh)")
+            end
+        end)
+    end
+end)
 local v62 = v16.Main:AddToggle("ToggleAutoFarmBoss", {
     Title = "Đấm Trùm",
     Description = "",
