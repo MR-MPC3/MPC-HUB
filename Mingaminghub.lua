@@ -3017,15 +3017,20 @@ v58:OnChanged(function(v250)
     AutoFarmMasDevilFruit = v250;
 end);
 v17.ToggleMasteryFruit:SetValue(false);
-local v59 = v16.Main:AddSlider("SliderHealt", {
+local v59 = v16.Main:AddInput("InputHealth", {
     Title = "Máu Quái",
     Description = "",
-    Default = 20,
-    Min = 0,
-    Max = 100,
-    Rounding = 1,
+    Default = "20",
+    Placeholder = "%",
+    Numeric = true,
+    Finished = false, 
     Callback = function(v251)
-        KillPercent = v251;
+        local num = tonumber(v251)
+        if num then
+            KillPercent = math.clamp(num, 0, 100)
+        else
+            KillPercent = 20 
+        end
     end
 });
 v59:OnChanged(function(v252)
