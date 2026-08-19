@@ -2421,7 +2421,7 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-TweenSpeed = 300
+TweenSpeed = 250
 local CurrentTween = nil
 function Tween(targetCFrame)
     if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
