@@ -2421,24 +2421,30 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-local TweenSpeed = 300
+TweenSpeed = 300
 local CurrentTween = nil
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = game:GetService("Players").LocalPlayer
 function Tween(targetCFrame)
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
-    if _G.StopTween then 
-        if CurrentTween then CurrentTween:Cancel() end
-        return 
+    if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return
     end
-    local root = char.HumanoidRootPart
-    local dist = (targetCFrame.Position - root.Position).Magnitude
-    if dist < 1 then root.CFrame = targetCFrame; return end
-
-    if CurrentTween then CurrentTween:Cancel() end
-    local info = TweenInfo.new(dist / TweenSpeed, Enum.EasingStyle.Linear)
-    CurrentTween = TweenService:Create(root, info, { CFrame = targetCFrame })
+    local root = game.Players.LocalPlayer.Character.HumanoidRootPart
+    local distance = (targetCFrame.Position - root.Position).Magnitude
+    local speed = TweenSpeed
+    if distance < 1 then
+        root.CFrame = targetCFrame
+        return
+    end
+    if CurrentTween then
+        CurrentTween:Cancel()
+        CurrentTween = nil
+    end
+    if _G.StopTween then
+        return
+    end
+    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
+        CFrame = targetCFrame
+    })
     CurrentTween:Play()
 end
 function CancelTween(v216)
