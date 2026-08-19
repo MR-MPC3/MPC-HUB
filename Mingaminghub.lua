@@ -340,16 +340,20 @@ MinButton.Position = UDim2.fromOffset(20, 100)
 MinButton.Size = UDim2.fromOffset(50, 50)
 MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
 MinButton.AutoButtonColor = false
-MinButton.Active = true
 
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
+
 local Dragging = false
-local DragStart, StartPosition, DragInput
+local DragStart
+local StartPosition
+local DragInput
 
 MinButton.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
         Dragging = true
         DragStart = Input.Position
         StartPosition = MinButton.Position
@@ -364,7 +368,8 @@ MinButton.InputBegan:Connect(function(Input)
 end)
 
 MinButton.InputChanged:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+    if Input.UserInputType == Enum.UserInputType.MouseMovement
+        or Input.UserInputType == Enum.UserInputType.Touch then
         DragInput = Input
     end
 end)
@@ -372,6 +377,7 @@ end)
 UserInputService.InputChanged:Connect(function(Input)
     if Dragging and Input == DragInput then
         local Delta = Input.Position - DragStart
+
         MinButton.Position = UDim2.new(
             StartPosition.X.Scale,
             StartPosition.X.Offset + Delta.X,
@@ -380,19 +386,9 @@ UserInputService.InputChanged:Connect(function(Input)
         )
     end
 end)
+
 MinButton.Activated:Connect(function()
     v15:Minimize()
-    pcall(function()
-        for _, gui in pairs(CoreGui:GetChildren()) do
-            if gui:IsA("ScreenGui") and gui.Name ~= "MinGamingToggle" then
-                for _, child in pairs(gui:GetDescendants()) do
-                    if child:IsA("ImageButton") and child.Size.X.Offset <= 45 and child.Size.Y.Offset <= 45 then
-                        child.Visible = false
-                    end
-                end
-            end
-        end
-    end)
 end)
 
 local v16 = {
