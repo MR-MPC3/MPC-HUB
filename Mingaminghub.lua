@@ -377,7 +377,7 @@ elseif (v18 == 4442272183) then
 elseif (v18 == 7449423635) then
     Sea3 = true;
 else
-    game:Shutdown();
+    plr:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(pid) .. ")")
 end
 game:GetService("Players").LocalPlayer.Idled:connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame);
