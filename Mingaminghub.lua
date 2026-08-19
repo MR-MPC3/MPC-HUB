@@ -322,9 +322,21 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 })
 
+local v14 = loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
+local v15 = v14:CreateWindow({
+    Title = "Min Gaming",
+    SubTitle = "",
+    TabWidth = 160,
+    Theme = "Light",
+    Acrylic = false,
+    Size = UDim2.fromOffset(500, 320),
+    MinimizeKey = Enum.KeyCode.End
+})
+
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
+-- 1. TẠO NÚT NỔI KÉO THẢ RIÊNG CHO BẠN
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
@@ -340,20 +352,18 @@ MinButton.Position = UDim2.fromOffset(20, 100)
 MinButton.Size = UDim2.fromOffset(50, 50)
 MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
 MinButton.AutoButtonColor = false
+MinButton.Active = true
 
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
 
+-- 2. TÍNH NĂNG KÉO THẢ MƯỢT MÀ (CHUỘT VÀ CẢM ỨNG)
 local Dragging = false
-local DragStart
-local StartPosition
-local DragInput
+local DragStart, StartPosition, DragInput
 
 MinButton.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         Dragging = true
         DragStart = Input.Position
         StartPosition = MinButton.Position
@@ -368,8 +378,7 @@ MinButton.InputBegan:Connect(function(Input)
 end)
 
 MinButton.InputChanged:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseMovement
-        or Input.UserInputType == Enum.UserInputType.Touch then
+    if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
         DragInput = Input
     end
 end)
@@ -377,7 +386,6 @@ end)
 UserInputService.InputChanged:Connect(function(Input)
     if Dragging and Input == DragInput then
         local Delta = Input.Position - DragStart
-
         MinButton.Position = UDim2.new(
             StartPosition.X.Scale,
             StartPosition.X.Offset + Delta.X,
@@ -387,8 +395,16 @@ UserInputService.InputChanged:Connect(function(Input)
     end
 end)
 
+-- 3. QUẢN LÝ TRẠNG THÁI ẨN/HIỆN HOÀN TOÀN
+local IsMenuOpen = true
+
 MinButton.Activated:Connect(function()
-    v15:Minimize()
+    IsMenuOpen = not IsMenuOpen -- Đảo ngược trạng thái mở/đóng
+    
+    -- Tác động thẳng vào Root của Fluent UI để ẩn/hiện sạch sẽ
+    if v15 and v15.Root then
+        v15.Root.Visible = IsMenuOpen
+    end
 end)
 
 local v16 = {
