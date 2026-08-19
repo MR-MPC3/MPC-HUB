@@ -2790,6 +2790,7 @@ spawn(function()
                     Tween(CFrameQ);
                     if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
                         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
+                        task.wait(0.5);
                     end
                 elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
                     for v1432, v1433 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
@@ -2817,7 +2818,7 @@ spawn(function()
                     for v1434, v1435 in pairs(game:GetService("Workspace")['_WorldOrigin'].EnemySpawns:GetChildren()) do
                         if string.find(v1435.Name, NameMon) then
                             if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v1435.Position).Magnitude >= 10) then
-                                Tween(v1435.HumanoidRootPart.CFrame * Pos);
+                                Tween(v1435.CFrame * Pos);
                             end
                         end
                     end
