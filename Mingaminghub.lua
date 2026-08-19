@@ -324,17 +324,22 @@ local v15 = v14:CreateWindow({
 local CoreGui = game:GetService("CoreGui")
 local Vim = game:GetService("VirtualInputManager")
 
--- 1. ĐOẠN CODE ẨN NÚT CŨ CỦA FLUENT UI
+-- 1. ĐOẠN CODE ẨN NÚT CŨ CỦA FLUENT UI (QUÉT SÂU HƠN)
 task.spawn(function()
-    while task.wait(0.5) do -- Chạy ngầm kiểm tra mỗi 0.5 giây
-        for _, gui in pairs(CoreGui:GetChildren()) do
-            -- Bỏ qua ScreenGui của nút mới do mình tạo
-            if gui:IsA("ScreenGui") and gui.Name ~= "CustomToggleMenu" then
-                -- Quét tìm nút toggle mặc định của thư viện
-                for _, child in pairs(gui:GetChildren()) do
-                    -- Fluent UI thường dùng một ImageButton có kích thước nhỏ dưới 45x45 làm nút thu nhỏ
-                    if child:IsA("ImageButton") and child.Size.X.Offset <= 45 and child.Size.Y.Offset <= 45 then
+    while task.wait(1) do -- Chạy ngầm kiểm tra mỗi 1 giây
+        -- Dùng GetDescendants() để tìm sâu vào tận bên trong các Frame
+        for _, child in pairs(CoreGui:GetDescendants()) do
+            -- Tìm các nút dạng ảnh (ImageButton) có kích thước nhỏ
+            if child:IsA("ImageButton") then
+                local w = child.Size.X.Offset
+                local h = child.Size.Y.Offset
+                
+                -- Lọc đúng kích thước nút thu nhỏ của Fluent (thường từ 15x15 đến 45x45)
+                if w > 10 and w <= 45 and h > 10 and h <= 45 then
+                    -- Kiểm tra xem nó có nằm trong Frame không (để tránh ẩn nhầm nút của Executor như Delta)
+                    if child.Parent and child.Parent:IsA("Frame") then
                         child.Visible = false -- Ép ẩn nút cũ đi
+                        child.Active = false  -- Vô hiệu hóa luôn khả năng click
                     end
                 end
             end
@@ -347,6 +352,7 @@ local ScreenGui = Instance.new("ScreenGui")
 local ToggleBtn = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
+-- Đặt tên đặc biệt để luồng quét bên trên không đụng vào
 ScreenGui.Name = "CustomToggleMenu"
 ScreenGui.Parent = CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -360,7 +366,7 @@ ToggleBtn.Text = "Mở/Ẩn Menu"
 ToggleBtn.TextColor3 = Color3.fromRGB(3, 252, 3)
 ToggleBtn.TextSize = 14
 ToggleBtn.Active = true
-ToggleBtn.Draggable = true -- Cho phép kéo thả nút quanh màn hình
+ToggleBtn.Draggable = true -- Bạn có thể kéo nút này đi chỗ khác
 
 UICorner.Parent = ToggleBtn
 UICorner.CornerRadius = UDim.new(0, 8)
