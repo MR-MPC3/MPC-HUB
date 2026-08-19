@@ -311,8 +311,8 @@ v5:Destroy();
 --         pcall(v422);
 --     end
 -- end);
-local v14 = loadstring(game:HttpGet("https://raw.githubusercontent.com/obfalchx/testfluent/refs/heads/main/FluentTrau"))()
-local v15 = Fluent:CreateWindow({
+local v14 = loadstring(game:HttpGet("https://raw.githubusercontent.com/obfalchx/testfluent/refs/heads/main/FluentTrau"))();
+local v15 = v14:CreateWindow({
     Title = "Min Gaming",
     SubTitle = "",
     TabWidth = 160,
@@ -320,7 +320,7 @@ local v15 = Fluent:CreateWindow({
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
-})
+});
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
@@ -394,8 +394,6 @@ elseif (v19 == 4442272183) then
     Sea2 = true;
 elseif (v19 == 7449423635) then
     Sea3 = true;
-else
-    game:GetService("Players").LocalPlayer:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(v18) .. ")")
 end
 function CheckLevel()
     local v197 = game:GetService("Players").LocalPlayer.Data.Level.Value;
