@@ -373,7 +373,7 @@ local Players = game:GetService("Players");
 local plr = Players.LocalPlayer;
 local v18 = game.PlaceId;
 
-if (v18 ==  2753915549) then
+if (v18 == 85211729168715) then
     Sea1 = true;
 elseif (v18 == 4442272183) then
     Sea2 = true;
@@ -392,7 +392,7 @@ Sea1 = false;
 Sea2 = false;
 Sea3 = false;
 local v19 = game.PlaceId;
-if (v19 == 2753915549) then
+if (v19 == 85211729168715) then
     Sea1 = true;
 elseif (v19 == 4442272183) then
     Sea2 = true;
