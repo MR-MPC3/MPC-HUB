@@ -3018,10 +3018,10 @@ v58:OnChanged(function(v250)
 end);
 v17.ToggleMasteryFruit:SetValue(false);
 local v59 = v16.Main:AddInput("InputHealth", {
-    Title = "Máu Quái",
+    Title = "Máu Quái Còn Lại",
     Description = "",
     Default = "20",
-    Placeholder = "%",
+    Placeholder = "Nhập % Máu Quái",
     Numeric = true,
     Finished = false, 
     Callback = function(v251)
