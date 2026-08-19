@@ -3544,13 +3544,13 @@ v61:SetValue(_G.SelectBoss);
 v61:OnChanged(function(v253)
     _G.SelectBoss = v253;
 end);
-local BossStatus = v16.Main:AddParagraph({ Title = "Boss Status", Content = "Chưa chọn boss" })
+local BossStatus = v16.Main:AddParagraph({ Title = "Boss Status", Content = "⚪ Chưa chọn boss" })
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
             local bossName = _G.SelectBoss
             if not bossName or bossName == "" then
-                BossStatus:SetDesc("Chưa chọn boss")
+                BossStatus:SetDesc("⚪ Chưa chọn boss")
                 return
             end
             local isAlive = false
@@ -3567,9 +3567,9 @@ task.spawn(function()
                 end
             end
             if isAlive then
-                BossStatus:SetDesc(bossName .. "  (🟢 Đang Sống)")
+                BossStatus:SetDesc("🟢 " .. bossName .. " - Đang Sống")
             else
-                BossStatus:SetDesc(bossName .. "  (🔴 Chờ hồi sinh)")
+                BossStatus:SetDesc("🔴 " .. bossName .. " - Chờ hồi sinh")
             end
         end)
     end
