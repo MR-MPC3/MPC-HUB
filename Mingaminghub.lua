@@ -321,61 +321,79 @@ local v15 = v14:CreateWindow({
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
-local CoreGui = game:GetService("CoreGui")
-local Vim = game:GetService("VirtualInputManager")
+-- Nút nổi mở/đóng menu (dành cho Mobile)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MinGamingToggle"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game:GetService("CoreGui")
 
--- 1. ĐOẠN CODE ẨN NÚT CŨ CỦA FLUENT UI (QUÉT SÂU HƠN)
-task.spawn(function()
-    while task.wait(1) do -- Chạy ngầm kiểm tra mỗi 1 giây
-        -- Dùng GetDescendants() để tìm sâu vào tận bên trong các Frame
-        for _, child in pairs(CoreGui:GetDescendants()) do
-            -- Tìm các nút dạng ảnh (ImageButton) có kích thước nhỏ
-            if child:IsA("ImageButton") then
-                local w = child.Size.X.Offset
-                local h = child.Size.Y.Offset
-                
-                -- Lọc đúng kích thước nút thu nhỏ của Fluent (thường từ 15x15 đến 45x45)
-                if w > 10 and w <= 45 and h > 10 and h <= 45 then
-                    -- Kiểm tra xem nó có nằm trong Frame không (để tránh ẩn nhầm nút của Executor như Delta)
-                    if child.Parent and child.Parent:IsA("Frame") then
-                        child.Visible = false -- Ép ẩn nút cũ đi
-                        child.Active = false  -- Vô hiệu hóa luôn khả năng click
-                    end
-                end
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "ToggleMenu"
+ToggleBtn.Size = UDim2.new(0, 55, 0, 55)
+ToggleBtn.Position = UDim2.new(1, -70, 0.5, -27) -- góc phải giữa màn hình
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+ToggleBtn.Text = "☰"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 24
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = ToggleBtn
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Thickness = 1.5
+UIStroke.Parent = ToggleBtn
+
+-- Kéo thả nút được
+local UIS = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+
+ToggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ToggleBtn.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
-        end
+        end)
     end
 end)
 
--- 2. ĐOẠN CODE TẠO NÚT MỚI CHỐNG KẸT
-local ScreenGui = Instance.new("ScreenGui")
-local ToggleBtn = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
+ToggleBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
 
--- Đặt tên đặc biệt để luồng quét bên trên không đụng vào
-ScreenGui.Name = "CustomToggleMenu"
-ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
-ToggleBtn.Parent = ScreenGui
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleBtn.Position = UDim2.new(0, 15, 0, 15)
-ToggleBtn.Size = UDim2.new(0, 110, 0, 40)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.Text = "Mở/Ẩn Menu"
-ToggleBtn.TextColor3 = Color3.fromRGB(3, 252, 3)
-ToggleBtn.TextSize = 14
-ToggleBtn.Active = true
-ToggleBtn.Draggable = true -- Bạn có thể kéo nút này đi chỗ khác
-
-UICorner.Parent = ToggleBtn
-UICorner.CornerRadius = UDim.new(0, 8)
-
--- 3. XỬ LÝ CLICK: GIẢ LẬP PHÍM END
+-- Bấm nút để hiện/ẩn menu
+local menuVisible = true
 ToggleBtn.MouseButton1Click:Connect(function()
-    Vim:SendKeyEvent(true, Enum.KeyCode.End, false, game)
-    task.wait(0.05)
-    Vim:SendKeyEvent(false, Enum.KeyCode.End, false, game)
+    if v15 and v15.Root then
+        menuVisible = not menuVisible
+        v15.Root.Visible = menuVisible
+        
+        if menuVisible then
+            ToggleBtn.Text = "☰"
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        else
+            ToggleBtn.Text = "✕"
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        end
+    end
 end)
 local v16 = {
     Home = v15:AddTab({
