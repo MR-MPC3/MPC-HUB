@@ -2421,21 +2421,25 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-TweenSpeed = 350;
-function Tween(v211)
-    local v212 = (v211.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude;
-    local v213 = TweenSpeed;
-    if (v212 >= 350) then
-        v213 = TweenSpeed;
+local TweenSpeed = 300
+local CurrentTween = nil
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+function Tween(targetCFrame)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
+    if _G.StopTween then 
+        if CurrentTween then CurrentTween:Cancel() end
+        return 
     end
-    local v214 = TweenInfo.new(v212 / v213, Enum.EasingStyle.Linear);
-    local v215 = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, v214, {
-        CFrame = v211
-    });
-    v215:Play();
-    if _G.StopTween then
-        v215:Cancel();
-    end
+    local root = char.HumanoidRootPart
+    local dist = (targetCFrame.Position - root.Position).Magnitude
+    if dist < 1 then root.CFrame = targetCFrame; return end
+
+    if CurrentTween then CurrentTween:Cancel() end
+    local info = TweenInfo.new(dist / TweenSpeed, Enum.EasingStyle.Linear)
+    CurrentTween = TweenService:Create(root, info, { CFrame = targetCFrame })
+    CurrentTween:Play()
 end
 function CancelTween(v216)
     if not v216 then
