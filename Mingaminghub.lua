@@ -322,28 +322,74 @@ local v15 = v14:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 });
 
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
 MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-MinGui.Parent = game:GetService("CoreGui")
+MinGui.Parent = CoreGui
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "MinButton"
 MinButton.Parent = MinGui
 MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MinButton.BorderSizePixel = 0
-MinButton.Position = UDim2.new(0, 20, 0, 100)
+MinButton.Position = UDim2.fromOffset(20, 100)
 MinButton.Size = UDim2.fromOffset(50, 50)
 MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
 MinButton.AutoButtonColor = false
-MinButton.Draggable = true
 
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
 
-MinButton.MouseButton1Click:Connect(function()
+-- Kéo nút bằng chuột hoặc cảm ứng
+local Dragging = false
+local DragStart
+local StartPosition
+local DragInput
+
+MinButton.InputBegan:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
+        Dragging = true
+        DragStart = Input.Position
+        StartPosition = MinButton.Position
+        DragInput = Input
+
+        Input.Changed:Connect(function()
+            if Input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
+        end)
+    end
+end)
+
+MinButton.InputChanged:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseMovement
+        or Input.UserInputType == Enum.UserInputType.Touch then
+        DragInput = Input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(Input)
+    if Dragging and Input == DragInput then
+        local Delta = Input.Position - DragStart
+
+        MinButton.Position = UDim2.new(
+            StartPosition.X.Scale,
+            StartPosition.X.Offset + Delta.X,
+            StartPosition.Y.Scale,
+            StartPosition.Y.Offset + Delta.Y
+        )
+    end
+end)
+
+-- Bấm nút để ẩn / hiện Fluent
+MinButton.Activated:Connect(function()
     v15:Minimize()
 end)
 
