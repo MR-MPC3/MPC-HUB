@@ -388,10 +388,21 @@ UserInputService.InputChanged:Connect(function(Input)
     end
 end)
 
--- Bấm nút để ẩn / hiện Fluent
+-- Bấm nút để ẩn / hiện hoàn toàn Fluent UI
 MinButton.Activated:Connect(function()
-    v15:Minimize()
-end)
+    -- Cách 1: Ẩn/Hiện trực tiếp thông qua thuộc tính Gui của Window v15
+    if v15 and v15.Gui then
+        v15.Gui.Enabled = not v15.Gui.Enabled
+    else
+        -- Cách 2: Tìm và ẩn/hiện trực tiếp ScreenGui của Fluent trong hệ thống
+        local fluentGui = CoreGui:FindFirstChild("Fluent") 
+            or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Fluent")
+            
+        if fluentGui then
+            fluentGui.Enabled = not fluentGui.Enabled
+        end
+    end
+end))
 
 local v16 = {
     Home = v15:AddTab({
