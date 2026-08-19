@@ -315,12 +315,62 @@ local v14 = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/rel
 local v15 = v14:CreateWindow({
     Title = "Min Gaming",
     SubTitle = "",
-    TabWidth = 160
+    TabWidth = 160,
     Theme = "Light",
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320),
     MinimizeKey = Enum.KeyCode.End
 });
+local CoreGui = game:GetService("CoreGui")
+local Vim = game:GetService("VirtualInputManager")
+
+-- 1. ĐOẠN CODE ẨN NÚT CŨ CỦA FLUENT UI
+task.spawn(function()
+    while task.wait(0.5) do -- Chạy ngầm kiểm tra mỗi 0.5 giây
+        for _, gui in pairs(CoreGui:GetChildren()) do
+            -- Bỏ qua ScreenGui của nút mới do mình tạo
+            if gui:IsA("ScreenGui") and gui.Name ~= "CustomToggleMenu" then
+                -- Quét tìm nút toggle mặc định của thư viện
+                for _, child in pairs(gui:GetChildren()) do
+                    -- Fluent UI thường dùng một ImageButton có kích thước nhỏ dưới 45x45 làm nút thu nhỏ
+                    if child:IsA("ImageButton") and child.Size.X.Offset <= 45 and child.Size.Y.Offset <= 45 then
+                        child.Visible = false -- Ép ẩn nút cũ đi
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 2. ĐOẠN CODE TẠO NÚT MỚI CHỐNG KẸT
+local ScreenGui = Instance.new("ScreenGui")
+local ToggleBtn = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Name = "CustomToggleMenu"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleBtn.Position = UDim2.new(0, 15, 0, 15)
+ToggleBtn.Size = UDim2.new(0, 110, 0, 40)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Text = "Mở/Ẩn Menu"
+ToggleBtn.TextColor3 = Color3.fromRGB(3, 252, 3)
+ToggleBtn.TextSize = 14
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true -- Cho phép kéo thả nút quanh màn hình
+
+UICorner.Parent = ToggleBtn
+UICorner.CornerRadius = UDim.new(0, 8)
+
+-- 3. XỬ LÝ CLICK: GIẢ LẬP PHÍM END
+ToggleBtn.MouseButton1Click:Connect(function()
+    Vim:SendKeyEvent(true, Enum.KeyCode.End, false, game)
+    task.wait(0.05)
+    Vim:SendKeyEvent(false, Enum.KeyCode.End, false, game)
+end)
 local v16 = {
     Home = v15:AddTab({
         Title = "Thông Tin"
