@@ -2401,7 +2401,7 @@ function BTPZ(v209)
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
 -- Bay mượt (Heartbeat) + dừng NGAY khi tắt tính năng
-local TweenSpeed = 280
+local TweenSpeed = 320
 local TweenTarget = nil
 local TweenConn = nil
 local CurrentTween = nil
@@ -6698,6 +6698,7 @@ v87:OnChanged(function(v275)
         game:GetService("ReplicatedStorage").Remotes.CommE:FireServer("Ken", true);
     else
         game:GetService("ReplicatedStorage").Remotes.CommE:FireServer("Ken", false);
+    end
     if (v275 == false) then
         CancelTween();
     else
@@ -6726,6 +6727,7 @@ v88:OnChanged(function(v276)
             [1] = "SetSpawnPoint"
         };
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v648));
+    end
     if (v276 == false) then
         CancelTween();
     else
@@ -6929,6 +6931,7 @@ v92:OnChanged(function(v279)
         game:GetService("RunService"):Set3dRenderingEnabled(false);
     elseif (_G.WhiteScreen == false) then
         game:GetService("RunService"):Set3dRenderingEnabled(true);
+    end
     if (v279 == false) then
         CancelTween();
     else
@@ -8291,6 +8294,7 @@ v140:OnChanged(function(v356)
     AutoNextIsland = v356;
     if not v356 then
         _G.AutoNear = false;
+    end
     if (v356 == false) then
         CancelTween();
     else
@@ -8817,6 +8821,7 @@ v149:OnChanged(function(v365)
     _G.AutoUpgrade = v365;
     if _G.AutoUpgrade then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("UpgradeRace", "Buy");
+    end
     if (v365 == false) then
         CancelTween();
     else
