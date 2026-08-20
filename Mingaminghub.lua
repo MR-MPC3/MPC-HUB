@@ -2734,8 +2734,8 @@ _G.Fast_Delay = 0.5
 _G.FastAttackInput = "0.5"
 
 local FastToggle = v16.Home:AddToggle("ToggleFastAttack", {
-    Title = "Tốc Độ Đánh",
-    Description = "Bật = Tốc Đánh Bên (0.05 → 2) | Tắt = Max Tốc Đánh",
+    Title = "Tốc Đánh",
+    Description = "Tắt Thì Max Tốc Đánh",
     Default = true
 })
 FastToggle:OnChanged(function(Value)
@@ -2748,8 +2748,8 @@ FastToggle:OnChanged(function(Value)
     end
 end)
 local FastInput = v16.Home:AddInput("InputFastDelay", {
-    Title = "Nhập tốc độ (giây)",
-    Description = "Chỉ dùng khi bật Tốc Độ Đánh | Nhanh nhất 0.05 | Chậm nhất 2",
+    Title = "Nhập Tốc Đánh",
+    Description = "(0.05s -> 2s)",
     Default = "0.5",
     Numeric = true,
     Finished = false,
