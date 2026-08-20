@@ -2403,9 +2403,6 @@ end
 local TweenSpeed = 300
 local CurrentTween = nil
 _G.StopTween = false
-_G.SafeLandUntil = 0
-local SAFE_LAND_TIME = 1.25
-
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
@@ -2428,11 +2425,8 @@ function Tween(targetCFrame)
     })
     CurrentTween:Play()
 end
-
 function CancelTween()
     _G.StopTween = true
-    -- SafeLand ngắn chỉ để physics ổn định sau khi đặt xuống đất
-    _G.SafeLandUntil = tick() + 0.45
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -2443,37 +2437,24 @@ function CancelTween()
         local hum = char:FindFirstChildOfClass("Humanoid")
         local clip = root:FindFirstChild("BodyClip")
         if clip then pcall(function() clip:Destroy() end) end
-        -- Bật lại collision trước khi raycast
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = (part.Name ~= "HumanoidRootPart")
-            end
-        end
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
-        -- Raycast thẳng xuống tìm bề mặt đất gần nhất → đặt đứng chính xác
+        -- Raycast xuống đất → đặt đứng chính xác
         pcall(function()
             local params = RaycastParams.new()
             params.FilterDescendantsInstances = {char}
             params.FilterType = Enum.RaycastFilterType.Exclude
-            params.IgnoreWater = false
-            local origin = root.Position + Vector3.new(0, 10, 0)
-            local ray = workspace:Raycast(origin, Vector3.new(0, -400, 0), params)
+            local ray = workspace:Raycast(root.Position + Vector3.new(0, 10, 0), Vector3.new(0, -400, 0), params)
             if not ray then
-                -- thử lại từ cao hơn nếu lần 1 trượt
                 ray = workspace:Raycast(root.Position + Vector3.new(0, 50, 0), Vector3.new(0, -500, 0), params)
             end
             if ray and ray.Position then
-                -- hip height ~3 studs để chân chạm đất, không dính nửa thân dưới đất
-                local standY = ray.Position.Y + 3
-                root.CFrame = CFrame.new(root.Position.X, standY, root.Position.Z)
+                root.CFrame = CFrame.new(root.Position.X, ray.Position.Y + 3, root.Position.Z)
             end
         end)
         root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
         if hum then
             hum.PlatformStand = false
-            hum.Sit = false
             pcall(function() hum:ChangeState(Enum.HumanoidStateType.GettingUp) end)
         end
     end
@@ -2537,16 +2518,12 @@ spawn(function()
         return v219(...);
     end);
 end);
+-- BodyClip (chống rơi khi bay farm) — chỉ khi đang farm
 spawn(function()
     while task.wait() do
         pcall(function()
             local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not root then return end
-            if tick() < (_G.SafeLandUntil or 0) then
-                local bc = root:FindFirstChild("BodyClip")
-                if bc then pcall(function() bc:Destroy() end) end
-                return
-            end
             local farmActive = (_G.AutoEvoRace or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.Tweenfruit or _G.AutoFishCrew or _G.Auto_Saber or _G.AutoShark or _G.Auto_Warden or _G.Auto_RainbowHaki or AutoFarmRace or _G.AutoQuestRace or Auto_Law or AutoTushita or _G.AutoHolyTorch or _G.AutoTerrorshark or _G.farmpiranya or _G.Auto_MusketeerHat or _G.Auto_ObservationV2 or _G.AutoNear or _G.Auto_PoleV1 or _G.Auto_Buddy or _G.Ectoplasm or AutoEvoRace or AutoBartilo or _G.Auto_Canvander or _G.AutoLevel or _G.Auto_DualKatana or Auto_Quest_Yama_3 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or _G.Clip2 or _G.Auto_Regoku or _G.AutoBone or _G.AutoBoneNoQuest or _G.AutoBoss or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.Auto_SkullGuitar or _G.AutoFarmSwan or _G.DoughKing or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or AutoFarmRaceQuest or _G.Factory or _G.Auto_Saw or _G.AutoFrozenDimension or _G.AutoKillTrial or _G.AutoUpgrade or _G.TweenToFrozenDimension)
             if farmActive then
                 if not root:FindFirstChild("BodyClip") then
@@ -2563,31 +2540,25 @@ spawn(function()
         end)
     end
 end)
+-- Xuyên tường: CHỈ điều khiển bởi nút Đi Xuyên Tường (_G.LOf)
+-- Bật = Farm / Teleport / bay / mọi phần đều xuyên tường
+-- Tắt = không xuyên (trả lại collision)
 spawn(function()
     pcall(function()
-        local wasFarmNoclip = false
+        local wasNoclip = false
         game:GetService("RunService").Stepped:Connect(function()
             local char = game.Players.LocalPlayer.Character
             if not char then return end
-            if tick() < (_G.SafeLandUntil or 0) then
-                wasFarmNoclip = false
-                for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                        part.CanCollide = true
-                    end
-                end
-                return
-            end
-            local active = (_G.AutoEvoRace or _G.Auto_RainbowHaki or _G.Auto_SkullGuitar or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Tweenfruit or _G.Auto_Saber or _G.Auto_PoleV1 or _G.Auto_MusketeerHat or _G.AutoFishCrew or _G.AutoShark or AutoFarmRace or _G.AutoQuestRace or _G.Auto_Warden or Auto_Law or _G.Auto_DualKatana or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or AutoTushita or _G.AutoHolyTorch or _G.Auto_Buddy or _G.AutoTerrorshark or _G.farmpiranya or Auto_Quest_Yama_3 or _G.Auto_ObservationV2 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or _G.AutoNear or _G.Ectoplasm or AutoEvoRace or _G.AutoKillTrial or AutoBartilo or _G.Auto_Regoku or _G.AutoLevel or _G.Clip2 or _G.AutoBone or _G.Auto_Canvander or _G.AutoBoneNoQuest or _G.AutoBoss or _G.Auto_Saw or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.DoughKing or _G.AutoFarmSwan or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or _G.Factory or _G.AutoFrozenDimension or AutoFarmRaceQuest or _G.AutoUpgrade or _G.TweenToFrozenDimension)
-            if active then
-                wasFarmNoclip = true
+            if _G.LOf then
+                wasNoclip = true
                 for _, part in pairs(char:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.CanCollide = false
                     end
                 end
-            elseif wasFarmNoclip then
-                wasFarmNoclip = false
+            elseif wasNoclip then
+                -- vừa tắt → trả collision lại
+                wasNoclip = false
                 for _, part in pairs(char:GetDescendants()) do
                     if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
                         part.CanCollide = true
@@ -2700,7 +2671,7 @@ function AttackNoCoolDown()
         end
     end);
 end
--- Pos cố định — bỏ random để hết lắc giật
+-- Pos cố định — hết lắc giật
 Pos = CFrame.new(0, 25, 0)
 Type = 1
 function AutoHaki()
@@ -6537,7 +6508,7 @@ v90:OnChanged(function(v277)
     _G.BringMob = v277;
 end);
 v17.ToggleBringMob:SetValue(true);
--- Gom Quái: kéo mượt 400 studs, khóa Y theo FarmPos để không rơi xuyên đất
+-- Gom Quái: kéo mượt 400 studs, khóa Y, không rơi xuyên đất
 local BRING_RANGE = 400
 local BRING_STOP = 5
 local BRING_SPEED = 95
@@ -6576,7 +6547,6 @@ spawn(function()
                             mob.Humanoid.WalkSpeed = 0
                             mob.Humanoid.JumpPower = 0
                             mob.Humanoid.AutoRotate = false
-                            -- chống rơi xuyên: giữ đứng bằng BodyVelocity
                             if not hrp:FindFirstChild("BringHold") then
                                 local bv = Instance.new("BodyVelocity")
                                 bv.Name = "BringHold"
@@ -6590,11 +6560,10 @@ spawn(function()
                             local dir = (targetPos - hrp.Position)
                             local move = math.min(step, dist - BRING_STOP)
                             local nextPos = hrp.Position + dir.Unit * move
-                            -- khóa Y = targetPos.Y → không tọt xuống lòng đất
+                            -- khóa Y = FarmPos.Y → không tọt xuống đất
                             nextPos = Vector3.new(nextPos.X, targetPos.Y, nextPos.Z)
                             hrp.CFrame = CFrame.new(nextPos)
                         else
-                            -- sát điểm gom: đặt đúng FarmPos
                             hrp.CFrame = CFrame.new(targetPos)
                         end
                         hrp.AssemblyLinearVelocity = Vector3.zero
@@ -6945,29 +6914,14 @@ end);
 local v56 = v16.Player:AddSection("Khác");
 local v115 = v16.Player:AddToggle("ToggleNoClip", {
     Title = "Đi Xuyên Tường",
-    Description = "",
-    Default = true
+    Description = "Tắt mặc định. Bật = tất cả phần farm/bay đều xuyên tường",
+    Default = false
 });
 v115:OnChanged(function(v312)
     _G.LOf = v312;
 end);
-v17.ToggleNoClip:SetValue(true);
-spawn(function()
-    pcall(function()
-        game:GetService("RunService").Stepped:Connect(function()
-            -- Giữ nguyên Đi Xuyên Tường, chỉ tạm ngưng trong SafeLand sau khi tắt farm
-            if _G.LOf and tick() >= (_G.SafeLandUntil or 0) then
-                local char = game.Players.LocalPlayer.Character
-                if not char then return end
-                for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    end)
-end)
+v17.ToggleNoClip:SetValue(false);
+-- Vòng Stepped xuyên tường đã gộp ở trên (chỉ kiểm tra _G.LOf)
 local v116 = v16.Player:AddToggle("ToggleWalkonWater", {
     Title = "Đi Trên Nước",
     Description = "",
