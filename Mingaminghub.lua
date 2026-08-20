@@ -2401,7 +2401,7 @@ function BTPZ(v209)
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
 -- Bay mượt (Heartbeat) + dừng NGAY khi tắt tính năng
-local TweenSpeed = 320
+local TweenSpeed = 280
 local TweenTarget = nil
 local TweenConn = nil
 local CurrentTween = nil
