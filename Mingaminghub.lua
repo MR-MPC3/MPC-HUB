@@ -2403,48 +2403,40 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-TweenSpeed = 220
+TweenSpeed = 250
 local CurrentTween = nil
 _G.StopTween = false
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
+
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     local distance = (targetCFrame.Position - root.Position).Magnitude
-    if distance < 1.5 then
+    if distance < 2 then
         root.CFrame = targetCFrame
         return
     end
     if CurrentTween then
-        pcall(function()
-            CurrentTween:Cancel()
-        end)
+        pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
     local speed = TweenSpeed
-    if distance > 1000 then
-        speed = 400
+    local time = distance / speed
+    if time > 25 then
+        time = 25
+        speed = distance / time
     end
-    local tweenInfo = TweenInfo.new(
-        distance / speed,
-        Enum.EasingStyle.Linear
-    )
-    CurrentTween = game:GetService("TweenService"):Create(
-        root,
-        tweenInfo,
-        {
-            CFrame = targetCFrame
-        }
-    )
+    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
+        CFrame = targetCFrame
+    })
     CurrentTween:Play()
 end
-function CancelTween(force)
+function CancelTween()
     _G.StopTween = true
     if CurrentTween then
-        pcall(function()
-            CurrentTween:Cancel()
-        end)
+        pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
     local char = game.Players.LocalPlayer.Character
@@ -2453,17 +2445,13 @@ function CancelTween(force)
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
     end
-    task.wait(0.1)
+    task.wait(0.15)
     _G.StopTween = false
 end
 function Tween2(targetCFrame)
-    if not game.Players.LocalPlayer.Character then
-        return
-    end
+    if not game.Players.LocalPlayer.Character then return end
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then
-        return
-    end
+    if not root then return end
     local distance = (targetCFrame.Position - root.Position).Magnitude
     if distance < 3 then
         root.CFrame = targetCFrame
@@ -2473,20 +2461,15 @@ function Tween2(targetCFrame)
     _G.Clip2 = true
     Tween(targetCFrame)
     local start = tick()
-    while (root.Position - targetCFrame.Position).Magnitude > 5 do
-        if _G.StopTween then
-            break
-        end
-        if tick() - start > 30 then
-            break
-        end
+    while (root.Position - targetCFrame.Position).Magnitude > 6 do
+        if _G.StopTween then break end
+        if tick() - start > 28 then break end
         task.wait()
     end
     if not _G.StopTween and root.Parent then
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
     end
-
     _G.Clip2 = false
 end
 function EquipTool(v217)
