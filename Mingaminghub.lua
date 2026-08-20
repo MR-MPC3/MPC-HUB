@@ -2409,17 +2409,15 @@ function Tween(targetCFrame)
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     local distance = (targetCFrame.Position - root.Position).Magnitude
-    if distance < 3 then
+    if distance < 2 then
         root.CFrame = targetCFrame
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
         return
     end
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
-    local time = math.clamp(distance / TweenSpeed, 0.05, 8)
+    local time = distance / TweenSpeed
     local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
     CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
         CFrame = targetCFrame
@@ -2428,6 +2426,7 @@ function Tween(targetCFrame)
 end
 function CancelTween()
     _G.StopTween = true
+
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -2438,7 +2437,7 @@ function CancelTween()
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
     end
-    task.wait(0.05)
+    task.wait(0.15)
     _G.StopTween = false
 end
 function Tween2(targetCFrame)
@@ -2630,8 +2629,34 @@ function AttackNoCoolDown()
         end
     end);
 end
--- Fixed stable attack offset (removed random fly/jitter)
-Pos = CFrame.new(0, 25, 0)
+Type = 1
+Pos = CFrame.new(0, 40, 0)
+local baseOffsets = {
+    Vector3.new(0, 40, 0),
+    Vector3.new(-40, 40, 0),
+    Vector3.new(40, 40, 0),
+    Vector3.new(0, 40, 40),
+    Vector3.new(0, 40, -40)
+}
+spawn(function()
+    while task.wait() do
+        local base = baseOffsets[Type] or baseOffsets[1]
+        local randomOffset = Vector3.new(
+            math.random(-15, 15) / 10,
+            math.random(-5, 5) / 10,
+            math.random(-15, 15) / 10
+        )
+        Pos = CFrame.new(base + randomOffset)
+    end
+end)
+spawn(function()
+    while true do
+        for i = 1, 5 do
+            Type = i
+            task.wait(0.3 + math.random(5, 15) / 100)
+        end
+    end
+end)
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
@@ -2752,9 +2777,10 @@ local v49 = v16.Main:AddToggle("ToggleLevel", {
 });
 v49:OnChanged(function(v237)
     _G.AutoLevel = v237;
-    if not v237 then
-        bringmob = false
-        CancelTween()
+    if (v237 == false) then
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleLevel:SetValue(false);
@@ -2775,22 +2801,21 @@ spawn(function()
                         if (v1433:FindFirstChild("Humanoid") and v1433:FindFirstChild("HumanoidRootPart") and (v1433.Humanoid.Health > 0)) then
                             if (v1433.Name == Ms) then
                                 repeat
-                                    task.wait(_G.Fast_Delay or 0.1)
-                                    if not _G.AutoLevel then break end
-                                    AttackNoCoolDown()
-                                    bringmob = true
-                                    AutoHaki()
-                                    EquipTool(SelectWeapon)
-                                    Tween(v1433.HumanoidRootPart.CFrame * Pos)
-                                    v1433.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                                    v1433.HumanoidRootPart.Transparency = 1
-                                    v1433.Humanoid.JumpPower = 0
-                                    v1433.Humanoid.WalkSpeed = 0
-                                    v1433.HumanoidRootPart.CanCollide = false
-                                    FarmPos = v1433.HumanoidRootPart.CFrame
-                                    MonFarm = v1433.Name
+                                    wait(_G.Fast_Delay);
+                                    AttackNoCoolDown();
+                                    bringmob = true;
+                                    AutoHaki();
+                                    EquipTool(SelectWeapon);
+                                    Tween(v1433.HumanoidRootPart.CFrame * Pos);
+                                    v1433.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                    v1433.HumanoidRootPart.Transparency = 1;
+                                    v1433.Humanoid.JumpPower = 0;
+                                    v1433.Humanoid.WalkSpeed = 0;
+                                    v1433.HumanoidRootPart.CanCollide = false;
+                                    FarmPos = v1433.HumanoidRootPart.CFrame;
+                                    MonFarm = v1433.Name;
                                 until not _G.AutoLevel or not v1433.Parent or (v1433.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(v1433.Name) or (game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
-                                bringmob = false
+                                bringmob = false;
                             end
                         end
                     end
@@ -2813,9 +2838,10 @@ local v50 = v16.Main:AddToggle("ToggleMobAura", {
 });
 v50:OnChanged(function(v238)
     _G.AutoNear = v238;
-    if not v238 then
-        bringmob = false
-        CancelTween()
+    if (v238 == false) then
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleMobAura:SetValue(false);
@@ -2828,22 +2854,21 @@ spawn(function()
                         if v839.Name then
                             if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v839:FindFirstChild("HumanoidRootPart").Position).Magnitude <= 5000) then
                                 repeat
-                                    task.wait(_G.Fast_Delay or 0.1)
-                                    if not _G.AutoNear then break end
-                                    AttackNoCoolDown()
-                                    bringmob = true
-                                    AutoHaki()
-                                    EquipTool(SelectWeapon)
-                                    Tween(v839.HumanoidRootPart.CFrame * Pos)
-                                    v839.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                                    v839.HumanoidRootPart.Transparency = 1
-                                    v839.Humanoid.JumpPower = 0
-                                    v839.Humanoid.WalkSpeed = 0
-                                    v839.HumanoidRootPart.CanCollide = false
-                                    FarmPos = v839.HumanoidRootPart.CFrame
-                                    MonFarm = v839.Name
+                                    wait(_G.Fast_Delay);
+                                    AttackNoCoolDown();
+                                    bringmob = true;
+                                    AutoHaki();
+                                    EquipTool(SelectWeapon);
+                                    Tween(v839.HumanoidRootPart.CFrame * Pos);
+                                    v839.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                    v839.HumanoidRootPart.Transparency = 1;
+                                    v839.Humanoid.JumpPower = 0;
+                                    v839.Humanoid.WalkSpeed = 0;
+                                    v839.HumanoidRootPart.CanCollide = false;
+                                    FarmPos = v839.HumanoidRootPart.CFrame;
+                                    MonFarm = v839.Name;
                                 until not _G.AutoNear or not v839.Parent or (v839.Humanoid.Health <= 0) or not game.Workspace.Enemies:FindFirstChild(v839.Name)
-                                bringmob = false
+                                bringmob = false;
                             end
                         end
                     end
@@ -6465,7 +6490,7 @@ v90:OnChanged(function(v277)
 end);
 v17.ToggleBringMob:SetValue(true);
 spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.15) do 
         if not (_G.BringMob and bringmob and MonFarm and FarmPos) then
             continue
         end
@@ -6483,23 +6508,20 @@ spawn(function()
                 then
                     local hrp = mob.HumanoidRootPart
                     local dist = (hrp.Position - farmPos.Position).Magnitude
-                    if dist <= 350 then
+                    if dist <= 400 then
                         hrp.CanCollide = false
                         if mob:FindFirstChild("Head") then
                             mob.Head.CanCollide = false
                         end
-                        if hrp.Size.Magnitude < 50 then
-                            hrp.Size = Vector3.new(60, 60, 60)
-                            hrp.Transparency = 1
-                        end
+                        hrp.Size = Vector3.new(60, 60, 60)
+                        hrp.Transparency = 1
                         mob.Humanoid.WalkSpeed = 0
                         mob.Humanoid.JumpPower = 0
-                        -- Only teleport if still far (reduces jitter)
-                        if dist > 8 then
-                            hrp.CFrame = farmPos
-                            hrp.AssemblyLinearVelocity = Vector3.zero
-                            hrp.AssemblyAngularVelocity = Vector3.zero
+                        local animator = mob.Humanoid:FindFirstChildOfClass("Animator")
+                        if animator then
+                            animator:Destroy()
                         end
+                        hrp.CFrame = farmPos
                     end
                 end
             end
@@ -9308,3 +9330,4 @@ v14:Notify({
     Content = "Tải Xong",
     Duration = 10
 });
+ 
