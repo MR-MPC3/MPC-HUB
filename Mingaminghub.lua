@@ -2724,38 +2724,6 @@ v16.Home:AddButton({
         setclipboard("https://discord.gg/25ms")
     end
 })
-_G.FastAttack = true
-_G.Fast_Delay = 0.5
-_G.FastAttackInput = "0.5"
-
-local FastToggle = v16.Home:AddToggle("ToggleFastAttack", {
-    Title = "Tốc Đánh",
-    Description = "Tắt Thì Max Tốc Đánh",
-    Default = true
-})
-FastToggle:OnChanged(function(Value)
-    _G.FastAttack = Value
-    if Value then
-        local delay = tonumber(_G.FastAttackInput) or 0.5
-        _G.Fast_Delay = math.clamp(delay, 0.05, 2)
-    else
-        _G.Fast_Delay =  1e-9
-    end
-end)
-local FastInput = v16.Home:AddInput("InputFastDelay", {
-    Title = "Nhập Tốc Đánh",
-    Description = "(0.05s -> 2s)",
-    Default = "0.5",
-    Numeric = true,
-    Finished = false,
-    Callback = function(Value)
-        _G.FastAttackInput = Value
-        if _G.FastAttack then
-            local delay = tonumber(Value) or 0.5
-            _G.Fast_Delay = math.clamp(delay, 0.05, 2)
-        end
-    end
-})
 local v48 = v16.Main:AddDropdown("DropdownSelectWeapon", {
     Title = "Vũ Khí",
     Description = "",
@@ -6481,6 +6449,37 @@ spawn(function()
 end);
 local v89 = require(game.ReplicatedStorage.Util.CameraShaker);
 v89:Stop();
+_G.FastAttack = true
+_G.Fast_Delay = 0.5
+_G.FastAttackInput = "0.5"
+local FastToggle = v16.Setting:AddToggle("ToggleFastAttack", {
+    Title = "Tốc Đánh",
+    Description = "Tắt Thì Max Tốc Đánh",
+    Default = true
+})
+FastToggle:OnChanged(function(Value)
+    _G.FastAttack = Value
+    if Value then
+        local delay = tonumber(_G.FastAttackInput) or 0.5
+        _G.Fast_Delay = math.clamp(delay, 0.05, 2)
+    else
+        _G.Fast_Delay = 1e-9
+    end
+end)
+local FastInput = v16.Setting:AddInput("InputFastDelay", {
+    Title = "Nhập Tốc Đánh",
+    Description = "(0.05s -> 2s)",
+    Default = "0.5",
+    Numeric = true,
+    Finished = false,
+    Callback = function(Value)
+        _G.FastAttackInput = Value
+        if _G.FastAttack then
+            local delay = tonumber(Value) or 0.5
+            _G.Fast_Delay = math.clamp(delay, 0.05, 2)
+        end
+    end
+})
 local v90 = v16.Setting:AddToggle("ToggleBringMob", {
     Title = "Gom Quái",
     Description = "",
