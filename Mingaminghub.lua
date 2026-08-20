@@ -2421,40 +2421,58 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-TweenSpeed = 215
+TweenSpeed = 300
 local CurrentTween = nil
+_G.StopTween = false
 function Tween(targetCFrame)
-    if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
-    local root = game.Players.LocalPlayer.Character.HumanoidRootPart
+    if _G.StopTween then return end
+    if not game.Players.LocalPlayer.Character then return end
+    local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
     local distance = (targetCFrame.Position - root.Position).Magnitude
-    local speed = TweenSpeed
-    if distance < 1 then
+    if distance < 1.5 then
         root.CFrame = targetCFrame
         return
     end
     if CurrentTween then
-        CurrentTween:Cancel()
+        pcall(function()
+            CurrentTween:Cancel()
+        end)
         CurrentTween = nil
     end
-    if _G.StopTween then
-        return
+    local speed = TweenSpeed
+    if distance > 1000 then
+        speed = 400
     end
-    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
-        CFrame = targetCFrame
-    })
+    local tweenInfo = TweenInfo.new(
+        distance / speed,
+        Enum.EasingStyle.Linear
+    )
+    CurrentTween = game:GetService("TweenService"):Create(
+        root,
+        tweenInfo,
+        {
+            CFrame = targetCFrame
+        }
+    )
     CurrentTween:Play()
 end
-function CancelTween(v216)
-    if not v216 then
-        _G.StopTween = true;
-        wait();
-        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-        wait();
-        _G.StopTween = false;
+function CancelTween(force)
+    _G.StopTween = true
+    if CurrentTween then
+        pcall(function()
+            CurrentTween:Cancel()
+        end)
+        CurrentTween = nil
     end
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local root = char.HumanoidRootPart
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+    task.wait(0.1)
+    _G.StopTween = false
 end
 function EquipTool(v217)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(v217) then
@@ -2497,7 +2515,7 @@ spawn(function()
                     local v887 = Instance.new("BodyVelocity");
                     v887.Name = "BodyClip";
                     v887.Parent = game:GetService("Players").LocalPlayer.Character.HumanoidRootPart;
-                    v887.MaxForce = Vector3.new(100000, 100000, 100000);
+                    v887.MaxForce = Vector3.new(0, 100000, 0);
                     v887.Velocity = Vector3.new(0, 0, 0);
                 end
             else
