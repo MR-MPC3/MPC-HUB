@@ -2421,9 +2421,6 @@ function Tween(targetCFrame)
         CurrentTween = nil
     end
     local speed = TweenSpeed
-    if distance > 1000 then
-        speed = 300
-    end
     local time = distance / speed
     if time > 30 then
         time = 30
@@ -2437,6 +2434,7 @@ function Tween(targetCFrame)
 end
 function CancelTween()
     _G.StopTween = true
+
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -2468,10 +2466,12 @@ function Tween2(targetCFrame)
         if tick() - start > 28 then break end
         task.wait()
     end
+
     if not _G.StopTween and root.Parent then
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
     end
+
     _G.Clip2 = false
 end
 function EquipTool(v217)
