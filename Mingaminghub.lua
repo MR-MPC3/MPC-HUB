@@ -2400,9 +2400,12 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-local TweenSpeed = 275
+local TweenSpeed = 300
 local CurrentTween = nil
 _G.StopTween = false
+_G.SafeLandUntil = 0
+local SAFE_LAND_TIME = 1.25
+
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
@@ -2420,19 +2423,16 @@ function Tween(targetCFrame)
         CurrentTween = nil
     end
     local time = math.clamp(distance / TweenSpeed, 0.05, 8)
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
+    CurrentTween = game:GetService("TweenService"):Create(root, TweenInfo.new(time, Enum.EasingStyle.Linear), {
         CFrame = targetCFrame
     })
     CurrentTween:Play()
 end
--- Khi tắt farm: ép đứng vững / không xuyên trong khoảng này (giây)
-_G.SafeLandUntil = 0
-local SAFE_LAND_TIME = 1.25
 
 function CancelTween()
     _G.StopTween = true
-    _G.SafeLandUntil = tick() + SAFE_LAND_TIME
+    -- SafeLand ngắn chỉ để physics ổn định sau khi đặt xuống đất
+    _G.SafeLandUntil = tick() + 0.45
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -2442,9 +2442,8 @@ function CancelTween()
         local root = char.HumanoidRootPart
         local hum = char:FindFirstChildOfClass("Humanoid")
         local clip = root:FindFirstChild("BodyClip")
-        if clip then
-            pcall(function() clip:Destroy() end)
-        end
+        if clip then pcall(function() clip:Destroy() end) end
+        -- Bật lại collision trước khi raycast
         for _, part in pairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = (part.Name ~= "HumanoidRootPart")
@@ -2452,24 +2451,33 @@ function CancelTween()
         end
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
+        -- Raycast thẳng xuống tìm bề mặt đất gần nhất → đặt đứng chính xác
         pcall(function()
-            local origin = root.Position + Vector3.new(0, 8, 0)
             local params = RaycastParams.new()
             params.FilterDescendantsInstances = {char}
             params.FilterType = Enum.RaycastFilterType.Exclude
-            local ray = workspace:Raycast(origin, Vector3.new(0, -250, 0), params)
+            params.IgnoreWater = false
+            local origin = root.Position + Vector3.new(0, 10, 0)
+            local ray = workspace:Raycast(origin, Vector3.new(0, -400, 0), params)
+            if not ray then
+                -- thử lại từ cao hơn nếu lần 1 trượt
+                ray = workspace:Raycast(root.Position + Vector3.new(0, 50, 0), Vector3.new(0, -500, 0), params)
+            end
             if ray and ray.Position then
-                root.CFrame = CFrame.new(ray.Position + Vector3.new(0, 3.2, 0))
+                -- hip height ~3 studs để chân chạm đất, không dính nửa thân dưới đất
+                local standY = ray.Position.Y + 3
+                root.CFrame = CFrame.new(root.Position.X, standY, root.Position.Z)
             end
         end)
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
         if hum then
             hum.PlatformStand = false
-            pcall(function()
-                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-            end)
+            hum.Sit = false
+            pcall(function() hum:ChangeState(Enum.HumanoidStateType.GettingUp) end)
         end
     end
-    task.delay(0.12, function()
+    task.delay(0.1, function()
         _G.StopTween = false
     end)
 end
@@ -2532,9 +2540,8 @@ end);
 spawn(function()
     while task.wait() do
         pcall(function()
-            local root = game:GetService("Players").LocalPlayer.Character and game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not root then return end
-            -- SafeLand: không giữ BodyClip
             if tick() < (_G.SafeLandUntil or 0) then
                 local bc = root:FindFirstChild("BodyClip")
                 if bc then pcall(function() bc:Destroy() end) end
@@ -2551,9 +2558,7 @@ spawn(function()
                 end
             else
                 local bc = root:FindFirstChild("BodyClip")
-                if bc then
-                    pcall(function() bc:Destroy() end)
-                end
+                if bc then pcall(function() bc:Destroy() end) end
             end
         end)
     end
@@ -2562,9 +2567,8 @@ spawn(function()
     pcall(function()
         local wasFarmNoclip = false
         game:GetService("RunService").Stepped:Connect(function()
-            local char = game:GetService("Players").LocalPlayer.Character
+            local char = game.Players.LocalPlayer.Character
             if not char then return end
-            -- đang trong thời gian SafeLand sau khi tắt farm → ép đứng, không xuyên
             if tick() < (_G.SafeLandUntil or 0) then
                 wasFarmNoclip = false
                 for _, part in pairs(char:GetDescendants()) do
@@ -2696,8 +2700,9 @@ function AttackNoCoolDown()
         end
     end);
 end
--- Fixed stable offset (no random fly / jitter)
+-- Pos cố định — bỏ random để hết lắc giật
 Pos = CFrame.new(0, 25, 0)
+Type = 1
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
@@ -2817,12 +2822,12 @@ local v49 = v16.Main:AddToggle("ToggleLevel", {
     Default = false
 });
 v49:OnChanged(function(v237)
-    _G.AutoLevel = v237
-    if not v237 then
+    _G.AutoLevel = v237;
+    if v237 then
+        _G.StopTween = false
+    else
         bringmob = false
         CancelTween()
-    else
-        _G.StopTween = false
     end
 end);
 v17.ToggleLevel:SetValue(false);
@@ -2843,22 +2848,21 @@ spawn(function()
                         if (v1433:FindFirstChild("Humanoid") and v1433:FindFirstChild("HumanoidRootPart") and (v1433.Humanoid.Health > 0)) then
                             if (v1433.Name == Ms) then
                                 repeat
-                                    task.wait(_G.Fast_Delay or 0.1)
-                                    if not _G.AutoLevel then break end
-                                    AttackNoCoolDown()
-                                    bringmob = true
-                                    AutoHaki()
-                                    EquipTool(SelectWeapon)
-                                    Tween(v1433.HumanoidRootPart.CFrame * Pos)
-                                    v1433.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                                    v1433.HumanoidRootPart.Transparency = 1
-                                    v1433.Humanoid.JumpPower = 0
-                                    v1433.Humanoid.WalkSpeed = 0
-                                    v1433.HumanoidRootPart.CanCollide = false
-                                    FarmPos = v1433.HumanoidRootPart.CFrame
-                                    MonFarm = v1433.Name
+                                    wait(_G.Fast_Delay);
+                                    AttackNoCoolDown();
+                                    bringmob = true;
+                                    AutoHaki();
+                                    EquipTool(SelectWeapon);
+                                    Tween(v1433.HumanoidRootPart.CFrame * Pos);
+                                    v1433.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                    v1433.HumanoidRootPart.Transparency = 1;
+                                    v1433.Humanoid.JumpPower = 0;
+                                    v1433.Humanoid.WalkSpeed = 0;
+                                    v1433.HumanoidRootPart.CanCollide = false;
+                                    FarmPos = v1433.HumanoidRootPart.CFrame;
+                                    MonFarm = v1433.Name;
                                 until not _G.AutoLevel or not v1433.Parent or (v1433.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(v1433.Name) or (game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
-                                bringmob = false
+                                bringmob = false;
                             end
                         end
                     end
@@ -2880,12 +2884,12 @@ local v50 = v16.Main:AddToggle("ToggleMobAura", {
     Default = false
 });
 v50:OnChanged(function(v238)
-    _G.AutoNear = v238
-    if not v238 then
+    _G.AutoNear = v238;
+    if v238 then
+        _G.StopTween = false
+    else
         bringmob = false
         CancelTween()
-    else
-        _G.StopTween = false
     end
 end);
 v17.ToggleMobAura:SetValue(false);
@@ -2898,22 +2902,21 @@ spawn(function()
                         if v839.Name then
                             if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v839:FindFirstChild("HumanoidRootPart").Position).Magnitude <= 5000) then
                                 repeat
-                                    task.wait(_G.Fast_Delay or 0.1)
-                                    if not _G.AutoNear then break end
-                                    AttackNoCoolDown()
-                                    bringmob = true
-                                    AutoHaki()
-                                    EquipTool(SelectWeapon)
-                                    Tween(v839.HumanoidRootPart.CFrame * Pos)
-                                    v839.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                                    v839.HumanoidRootPart.Transparency = 1
-                                    v839.Humanoid.JumpPower = 0
-                                    v839.Humanoid.WalkSpeed = 0
-                                    v839.HumanoidRootPart.CanCollide = false
-                                    FarmPos = v839.HumanoidRootPart.CFrame
-                                    MonFarm = v839.Name
+                                    wait(_G.Fast_Delay);
+                                    AttackNoCoolDown();
+                                    bringmob = true;
+                                    AutoHaki();
+                                    EquipTool(SelectWeapon);
+                                    Tween(v839.HumanoidRootPart.CFrame * Pos);
+                                    v839.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                    v839.HumanoidRootPart.Transparency = 1;
+                                    v839.Humanoid.JumpPower = 0;
+                                    v839.Humanoid.WalkSpeed = 0;
+                                    v839.HumanoidRootPart.CanCollide = false;
+                                    FarmPos = v839.HumanoidRootPart.CFrame;
+                                    MonFarm = v839.Name;
                                 until not _G.AutoNear or not v839.Parent or (v839.Humanoid.Health <= 0) or not game.Workspace.Enemies:FindFirstChild(v839.Name)
-                                bringmob = false
+                                bringmob = false;
                             end
                         end
                     end
@@ -6534,63 +6537,72 @@ v90:OnChanged(function(v277)
     _G.BringMob = v277;
 end);
 v17.ToggleBringMob:SetValue(true);
--- ===== Gom Quái: kéo mượt về chỗ farm (không dịch chuyển tức thì) =====
+-- Gom Quái: kéo mượt 400 studs, khóa Y theo FarmPos để không rơi xuyên đất
 local BRING_RANGE = 400
 local BRING_STOP = 5
-local BRING_SPEED = 95 -- studs/giây — kéo mượt, không giật
-local function BringMobsToFarm(dt)
-    if not (_G.BringMob and bringmob and MonFarm and FarmPos) then return end
-    local myChar = game.Players.LocalPlayer.Character
-    if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
-    local targetPos = FarmPos.Position
-    local monName = MonFarm
-    pcall(function()
-        sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-    end)
-    local step = BRING_SPEED * math.clamp(dt or 0.03, 0.01, 0.08)
-    for _, mob in pairs(workspace.Enemies:GetChildren()) do
-        if mob.Name == monName
-            and mob:FindFirstChild("Humanoid")
-            and mob:FindFirstChild("HumanoidRootPart")
-            and mob.Humanoid.Health > 0
-        then
-            local hrp = mob.HumanoidRootPart
-            local dist = (hrp.Position - targetPos).Magnitude
-            if dist <= BRING_RANGE then
-                -- quái xuyên vật thể khi đang bị kéo
-                hrp.CanCollide = false
-                if mob:FindFirstChild("Head") then
-                    mob.Head.CanCollide = false
-                end
-                if not mob:GetAttribute("Brought") then
-                    hrp.Size = Vector3.new(50, 50, 50)
-                    hrp.Transparency = 1
-                    mob.Humanoid.WalkSpeed = 0
-                    mob.Humanoid.JumpPower = 0
-                    mob.Humanoid.AutoRotate = false
-                    mob:SetAttribute("Brought", true)
-                end
-                if dist > BRING_STOP then
-                    local dir = (targetPos - hrp.Position).Unit
-                    local move = math.min(step, dist - BRING_STOP)
-                    hrp.CFrame = CFrame.new(hrp.Position + dir * move)
-                    hrp.AssemblyLinearVelocity = Vector3.zero
-                    hrp.AssemblyAngularVelocity = Vector3.zero
-                else
-                    hrp.AssemblyLinearVelocity = Vector3.zero
-                    hrp.AssemblyAngularVelocity = Vector3.zero
-                end
-            end
-        end
-    end
-end
+local BRING_SPEED = 95
 spawn(function()
     local last = tick()
     while true do
         local now = tick()
-        local dt = now - last
+        local dt = math.clamp(now - last, 0.01, 0.08)
         last = now
-        pcall(BringMobsToFarm, dt)
+        pcall(function()
+            if not (_G.BringMob and bringmob and MonFarm and FarmPos) then return end
+            local myChar = game.Players.LocalPlayer.Character
+            if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
+            local targetPos = FarmPos.Position
+            local monName = MonFarm
+            pcall(function()
+                sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+            end)
+            local step = BRING_SPEED * dt
+            for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                if mob.Name == monName
+                    and mob:FindFirstChild("Humanoid")
+                    and mob:FindFirstChild("HumanoidRootPart")
+                    and mob.Humanoid.Health > 0
+                then
+                    local hrp = mob.HumanoidRootPart
+                    local dist = (hrp.Position - targetPos).Magnitude
+                    if dist <= BRING_RANGE then
+                        hrp.CanCollide = false
+                        if mob:FindFirstChild("Head") then
+                            mob.Head.CanCollide = false
+                        end
+                        if not mob:GetAttribute("Brought") then
+                            hrp.Size = Vector3.new(50, 50, 50)
+                            hrp.Transparency = 1
+                            mob.Humanoid.WalkSpeed = 0
+                            mob.Humanoid.JumpPower = 0
+                            mob.Humanoid.AutoRotate = false
+                            -- chống rơi xuyên: giữ đứng bằng BodyVelocity
+                            if not hrp:FindFirstChild("BringHold") then
+                                local bv = Instance.new("BodyVelocity")
+                                bv.Name = "BringHold"
+                                bv.MaxForce = Vector3.new(0, 1e5, 0)
+                                bv.Velocity = Vector3.new(0, 0, 0)
+                                bv.Parent = hrp
+                            end
+                            mob:SetAttribute("Brought", true)
+                        end
+                        if dist > BRING_STOP then
+                            local dir = (targetPos - hrp.Position)
+                            local move = math.min(step, dist - BRING_STOP)
+                            local nextPos = hrp.Position + dir.Unit * move
+                            -- khóa Y = targetPos.Y → không tọt xuống lòng đất
+                            nextPos = Vector3.new(nextPos.X, targetPos.Y, nextPos.Z)
+                            hrp.CFrame = CFrame.new(nextPos)
+                        else
+                            -- sát điểm gom: đặt đúng FarmPos
+                            hrp.CFrame = CFrame.new(targetPos)
+                        end
+                        hrp.AssemblyLinearVelocity = Vector3.zero
+                        hrp.AssemblyAngularVelocity = Vector3.zero
+                    end
+                end
+            end
+        end)
         task.wait(0.03)
     end
 end)
@@ -6943,7 +6955,7 @@ v17.ToggleNoClip:SetValue(true);
 spawn(function()
     pcall(function()
         game:GetService("RunService").Stepped:Connect(function()
-            -- Giữ nguyên chức năng Đi Xuyên Tường, chỉ tạm ngưng trong SafeLand sau khi tắt farm
+            -- Giữ nguyên Đi Xuyên Tường, chỉ tạm ngưng trong SafeLand sau khi tắt farm
             if _G.LOf and tick() >= (_G.SafeLandUntil or 0) then
                 local char = game.Players.LocalPlayer.Character
                 if not char then return end
