@@ -6508,7 +6508,7 @@ spawn(function()
                 then
                     local hrp = mob.HumanoidRootPart
                     local dist = (hrp.Position - farmPos.Position).Magnitude
-                    if dist <= 400 then
+                    if dist <= 500 then
                         hrp.CanCollide = false
                         if mob:FindFirstChild("Head") then
                             mob.Head.CanCollide = false
