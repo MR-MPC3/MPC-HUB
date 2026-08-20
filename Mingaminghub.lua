@@ -2400,88 +2400,46 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
--- Bay mượt (Heartbeat) + dừng NGAY khi tắt tính năng
-local TweenSpeed = 320
-local TweenTarget = nil
-local TweenConn = nil
+local TweenSpeed = 270
 local CurrentTween = nil
 _G.StopTween = false
-
-local function StopFlyNow()
-    TweenTarget = nil
+function Tween(targetCFrame)
+    if _G.StopTween then return end
+    if not game.Players.LocalPlayer.Character then return end
+    local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local distance = (targetCFrame.Position - root.Position).Magnitude
+    if distance < 2 then
+        root.CFrame = targetCFrame
+        return
+    end
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
-    if TweenConn then
-        pcall(function() TweenConn:Disconnect() end)
-        TweenConn = nil
-    end
-    local char = game.Players.LocalPlayer.Character
-    if char then
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.AssemblyLinearVelocity = Vector3.zero
-            root.AssemblyAngularVelocity = Vector3.zero
-            pcall(function()
-                root.CFrame = CFrame.new(root.Position) * (root.CFrame - root.CFrame.Position)
-            end)
-        end
-    end
+    local time = distance / TweenSpeed
+    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
+        CFrame = targetCFrame
+    })
+    CurrentTween:Play()
 end
-
-function Tween(targetCFrame)
-    if _G.StopTween or not targetCFrame then return end
-    local char = game.Players.LocalPlayer.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    local distance = (targetCFrame.Position - root.Position).Magnitude
-    if distance < 1.5 then
-        root.CFrame = targetCFrame
-        root.AssemblyLinearVelocity = Vector3.zero
-        TweenTarget = nil
-        return
-    end
-    TweenTarget = targetCFrame
-    if TweenConn then return end
-    TweenConn = game:GetService("RunService").Heartbeat:Connect(function(dt)
-        if _G.StopTween then
-            StopFlyNow()
-            return
-        end
-        if not TweenTarget then return end
-        local c = game.Players.LocalPlayer.Character
-        if not c then StopFlyNow() return end
-        local r = c:FindFirstChild("HumanoidRootPart")
-        if not r then StopFlyNow() return end
-        local target = TweenTarget
-        local pos = r.Position
-        local goal = target.Position
-        local dist = (goal - pos).Magnitude
-        if dist < 1.5 then
-            r.CFrame = target
-            r.AssemblyLinearVelocity = Vector3.zero
-            TweenTarget = nil
-            return
-        end
-        local step = math.min(TweenSpeed * dt, dist)
-        local dir = (goal - pos).Unit
-        r.CFrame = CFrame.new(pos + dir * step) * (target - target.Position)
-        r.AssemblyLinearVelocity = Vector3.zero
-        r.AssemblyAngularVelocity = Vector3.zero
-    end)
-end
-
 function CancelTween()
     _G.StopTween = true
-    StopFlyNow()
-end
 
-function AllowTween()
+    if CurrentTween then
+        pcall(function() CurrentTween:Cancel() end)
+        CurrentTween = nil
+    end
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local root = char.HumanoidRootPart
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+    task.wait(0.15)
     _G.StopTween = false
 end
-
 function Tween2(targetCFrame)
     if not game.Players.LocalPlayer.Character then return end
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -2489,13 +2447,12 @@ function Tween2(targetCFrame)
     local distance = (targetCFrame.Position - root.Position).Magnitude
     if distance < 3 then
         root.CFrame = targetCFrame
-        root.AssemblyLinearVelocity = Vector3.zero
         return
     end
     _G.StopTween = false
     _G.Clip2 = true
     Tween(targetCFrame)
-    while root.Parent and (root.Position - targetCFrame.Position).Magnitude > 6 do
+    while (root.Position - targetCFrame.Position).Magnitude > 6 do
         if _G.StopTween then break end
         task.wait()
     end
@@ -2503,7 +2460,7 @@ function Tween2(targetCFrame)
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
     end
-    TweenTarget = nil
+
     _G.Clip2 = false
 end
 function EquipTool(v217)
@@ -2672,9 +2629,34 @@ function AttackNoCoolDown()
         end
     end);
 end
--- Vị trí đánh cố định phía trên quái (không random / không giật)
 Type = 1
-Pos = CFrame.new(0, 30, 0)
+Pos = CFrame.new(0, 40, 0)
+local baseOffsets = {
+    Vector3.new(0, 40, 0),
+    Vector3.new(-40, 40, 0),
+    Vector3.new(40, 40, 0),
+    Vector3.new(0, 40, 40),
+    Vector3.new(0, 40, -40)
+}
+spawn(function()
+    while task.wait() do
+        local base = baseOffsets[Type] or baseOffsets[1]
+        local randomOffset = Vector3.new(
+            math.random(-15, 15) / 10,
+            math.random(-5, 5) / 10,
+            math.random(-15, 15) / 10
+        )
+        Pos = CFrame.new(base + randomOffset)
+    end
+end)
+spawn(function()
+    while true do
+        for i = 1, 5 do
+            Type = i
+            task.wait(0.3 + math.random(5, 15) / 100)
+        end
+    end
+end)
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
@@ -2756,11 +2738,6 @@ local v48 = v16.Main:AddDropdown("DropdownSelectWeapon", {
 v48:SetValue("Melee");
 v48:OnChanged(function(v236)
     ChooseWeapon = v236;
-    if (v236 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 task.spawn(function()
     while wait() do
@@ -2801,9 +2778,9 @@ local v49 = v16.Main:AddToggle("ToggleLevel", {
 v49:OnChanged(function(v237)
     _G.AutoLevel = v237;
     if (v237 == false) then
-        CancelTween();
-    else
-        AllowTween();
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleLevel:SetValue(false);
@@ -2824,14 +2801,11 @@ spawn(function()
                         if (v1433:FindFirstChild("Humanoid") and v1433:FindFirstChild("HumanoidRootPart") and (v1433.Humanoid.Health > 0)) then
                             if (v1433.Name == Ms) then
                                 repeat
-                                    if not _G.AutoLevel then break end
                                     wait(_G.Fast_Delay);
-                                    if not _G.AutoLevel then break end
                                     AttackNoCoolDown();
                                     bringmob = true;
                                     AutoHaki();
                                     EquipTool(SelectWeapon);
-                                    if not _G.AutoLevel then break end
                                     Tween(v1433.HumanoidRootPart.CFrame * Pos);
                                     v1433.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
                                     v1433.HumanoidRootPart.Transparency = 1;
@@ -2865,9 +2839,9 @@ local v50 = v16.Main:AddToggle("ToggleMobAura", {
 v50:OnChanged(function(v238)
     _G.AutoNear = v238;
     if (v238 == false) then
-        CancelTween();
-    else
-        AllowTween();
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleMobAura:SetValue(false);
@@ -2910,11 +2884,6 @@ local v51 = v16.Main:AddToggle("ToggleCastleRaid", {
 });
 v51:OnChanged(function(v239)
     _G.CastleRaid = v239;
-    if (v239 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleCastleRaid:SetValue(false);
 spawn(function()
@@ -2952,11 +2921,6 @@ local v52 = v16.Main:AddToggle("ToggleHakiFortress", {
 });
 v52:OnChanged(function(v240)
     _G.EnableHakiFortress = v240;
-    if (v240 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleHakiFortress:SetValue(false);
 local function v53(v241, v242)
@@ -3008,11 +2972,6 @@ local v55 = v16.Main:AddToggle("ToggleCollectChest", {
 });
 v55:OnChanged(function(v248)
     _G.AutoCollectChest = v248;
-    if (v248 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -3052,11 +3011,6 @@ local v57 = v16.Main:AddDropdown("DropdownMastery", {
 v57:SetValue(TypeMastery);
 v57:OnChanged(function(v249)
     TypeMastery = v249;
-    if (v249 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local v58 = v16.Main:AddToggle("ToggleMasteryFruit", {
     Title = "Cày Trái",
@@ -3065,11 +3019,6 @@ local v58 = v16.Main:AddToggle("ToggleMasteryFruit", {
 });
 v58:OnChanged(function(v250)
     AutoFarmMasDevilFruit = v250;
-    if (v250 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleMasteryFruit:SetValue(false);
 local v59 = v16.Main:AddInput("InputHealth", {
@@ -3090,11 +3039,6 @@ local v59 = v16.Main:AddInput("InputHealth", {
 });
 v59:OnChanged(function(v252)
     KillPercent = v252;
-    if (v252 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v59:SetValue(20);
 spawn(function()
@@ -3204,9 +3148,9 @@ if Sea3 then
     v486:OnChanged(function(v571)
         _G.AutoBone = v571;
         if (v571 == false) then
-            CancelTween();
-        else
-            AllowTween();
+            wait();
+            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+            wait();
         end
     end);
     v17.ToggleBone:SetValue(false);
@@ -3323,11 +3267,6 @@ if Sea3 then
     });
     v489:OnChanged(function(v574)
         _G.AutoRandomBone = v574;
-        if (v574 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleRandomBone:SetValue(false);
     spawn(function()
@@ -3374,7 +3313,6 @@ if Sea3 then
     v492:OnChanged(function(v575)
         _G.CakePrince = v575;
         if v575 then
-            AllowTween();
             if v493 then
                 v493 = false;
                 local v895 = CFrame.new(- 2003.932861328125, 380.4824523925781, - 12561.0185546875);
@@ -3382,7 +3320,9 @@ if Sea3 then
             end
         else
             v493 = true;
-            CancelTween();
+            wait();
+            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+            wait();
         end
     end);
     v17.ToggleCake:SetValue(false);
@@ -3446,9 +3386,9 @@ if Sea3 then
     v494:OnChanged(function(v576)
         _G.DoughKing = v576;
         if (v576 == false) then
-            CancelTween();
-        else
-            AllowTween();
+            wait();
+            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+            wait();
         end
     end);
     v17.ToggleDoughKing:SetValue(false);
@@ -3485,11 +3425,6 @@ if Sea3 then
     });
     v495:OnChanged(function(v577)
         _G.SpawnCakePrince = v577;
-        if (v577 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleSpawnCake:SetValue(true);
 end
@@ -3517,11 +3452,6 @@ if Sea2 then
     });
     v497:OnChanged(function(v578)
         _G.Ectoplasm = v578;
-        if (v578 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleVatChatKiDi:SetValue(false);
     spawn(function()
@@ -3617,11 +3547,6 @@ local v61 = v16.Main:AddDropdown("DropdownBoss", {
 v61:SetValue(_G.SelectBoss);
 v61:OnChanged(function(v253)
     _G.SelectBoss = v253;
-    if (v253 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local BossStatus = v16.Main:AddParagraph({ Title = "Boss Status", Content = "Chưa chọn boss" })
 task.spawn(function()
@@ -3660,11 +3585,6 @@ local v62 = v16.Main:AddToggle("ToggleAutoFarmBoss", {
 });
 v62:OnChanged(function(v254)
     _G.AutoBoss = v254;
-    if (v254 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoFarmBoss:SetValue(false);
 spawn(function()
@@ -3738,11 +3658,6 @@ local v64 = v16.Main:AddDropdown("DropdownMaterial", {
 v64:SetValue(SelectMaterial);
 v64:OnChanged(function(v255)
     SelectMaterial = v255;
-    if (v255 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local v65 = v16.Main:AddToggle("ToggleMaterial", {
     Title = "Cày Nguyên Liệu",
@@ -3752,9 +3667,9 @@ local v65 = v16.Main:AddToggle("ToggleMaterial", {
 v65:OnChanged(function(v256)
     _G.AutoMaterial = v256;
     if (v256 == false) then
-        CancelTween();
-    else
-        AllowTween();
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleMaterial:SetValue(false);
@@ -3871,11 +3786,6 @@ if Sea3 then
     });
     v501:OnChanged(function(v580)
         _G.TweenToKitsune = v580;
-        if (v580 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleTPKitsune:SetValue(false);
     spawn(function()
@@ -3904,11 +3814,6 @@ if Sea3 then
     });
     v502:OnChanged(function(v582)
         _G.CollectAzure = v582;
-        if (v582 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleCollectAzure:SetValue(false);
     spawn(function()
@@ -3957,11 +3862,6 @@ if Sea3 then
     v17.AutoFindPrehistoric:SetValue(false);
     v510:OnChanged(function(v584)
         _G.AutoFindPrehistoric = v584;
-        if (v584 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     local v511 = {};
     local v512 = false;
@@ -4056,11 +3956,6 @@ if Sea3 then
     v17.AutoFindMirage:SetValue(false);
     v514:OnChanged(function(v595)
         _G.AutoFindMirage = v595;
-        if (v595 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     local v511 = {};
     local v512 = false;
@@ -4155,11 +4050,6 @@ if Sea3 then
     v17.AutoFindFrozen:SetValue(false);
     v515:OnChanged(function(v606)
         _G.AutoFindFrozen = v606;
-        if (v606 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     local v511 = {};
     local v512 = false;
@@ -4253,11 +4143,6 @@ if Sea3 then
     });
     v516:OnChanged(function(v617)
         _G.AutoComeTiki = v617;
-        if (v617 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v505.RenderStepped:Connect(function()
         if not _G.AutoComeTiki then
@@ -4300,11 +4185,6 @@ if Sea3 then
     });
     v517:OnChanged(function(v622)
         _G.AutoComeHydra = v622;
-        if (v622 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v505.RenderStepped:Connect(function()
         if not _G.AutoComeHydra then
@@ -4373,11 +4253,6 @@ if Sea3 then
     v519:SetValue(selectedBoat);
     v519:OnChanged(function(v627)
         selectedBoat = v627;
-        if (v627 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     local function v520(v628)
         local v629 = {
@@ -4431,11 +4306,6 @@ if Sea3 then
     });
     v522:OnChanged(function(v630)
         _G.AutoTerrorshark = v630;
-        if (v630 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleTerrorshark:SetValue(false);
     spawn(function()
@@ -4474,11 +4344,6 @@ if Sea3 then
     });
     v523:OnChanged(function(v631)
         _G.farmpiranya = v631;
-        if (v631 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.TogglePiranha:SetValue(false);
     spawn(function()
@@ -4517,11 +4382,6 @@ if Sea3 then
     });
     v524:OnChanged(function(v632)
         _G.AutoShark = v632;
-        if (v632 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleShark:SetValue(false);
     spawn(function()
@@ -4564,11 +4424,6 @@ if Sea3 then
     });
     v525:OnChanged(function(v633)
         _G.AutoFishCrew = v633;
-        if (v633 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleFishCrew:SetValue(false);
     spawn(function()
@@ -4611,11 +4466,6 @@ if Sea3 then
     });
     v526:OnChanged(function(v634)
         _G.Ship = v634;
-        if (v634 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleShip:SetValue(false);
     function CheckPirateBoat()
@@ -4659,11 +4509,6 @@ if Sea3 then
     });
     v527:OnChanged(function(v636)
         _G.GhostShip = v636;
-        if (v636 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleGhostShip:SetValue(false);
     function CheckPirateBoat()
@@ -4802,11 +4647,6 @@ if Sea3 then
     });
     v530:OnChanged(function(v638)
         _G.AutoElite = v638;
-        if (v638 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleElite:SetValue(false);
     spawn(function()
@@ -4926,11 +4766,6 @@ local v66 = v16.Sea:AddToggle("ToggleTpAdvanced", {
 });
 v66:OnChanged(function(v257)
     _G.AutoTpAdvanced = v257;
-    if (v257 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -4952,11 +4787,6 @@ local v67 = v16.Sea:AddToggle("ToggleTweenGear", {
 });
 v67:OnChanged(function(v258)
     _G.TweenToGear = v258;
-    if (v258 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleTweenGear:SetValue(false);
 spawn(function()
@@ -4983,11 +4813,6 @@ local v68 = v16.Sea:AddToggle("Togglelockmoon", {
 });
 v68:OnChanged(function(v259)
     _G.AutoLockMoon = v259;
-    if (v259 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.Togglelockmoon:SetValue(false);
 spawn(function()
@@ -5017,11 +4842,6 @@ local v69 = v16.ITM:AddToggle("ToggleAutoSaber", {
 });
 v69:OnChanged(function(v260)
     _G.Auto_Saber = v260;
-    if (v260 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoSaber:SetValue(false);
 spawn(function()
@@ -5132,11 +4952,6 @@ local v70 = v16.ITM:AddToggle("ToggleAutoPoleV1", {
 });
 v70:OnChanged(function(v261)
     _G.Auto_PoleV1 = v261;
-    if (v261 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoPoleV1:SetValue(false);
 local v71 = CFrame.new(- 7748.0185546875, 5606.80615234375, - 2305.898681640625);
@@ -5179,11 +4994,6 @@ local v72 = v16.ITM:AddToggle("ToggleAutoSaw", {
 });
 v72:OnChanged(function(v262)
     _G.Auto_Saw = v262;
-    if (v262 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoSaw:SetValue(false);
 local v71 = CFrame.new(- 690.33081054688, 15.09425163269, 1582.2380371094);
@@ -5226,11 +5036,6 @@ local v73 = v16.ITM:AddToggle("ToggleAutoWarden", {
 });
 v73:OnChanged(function(v263)
     _G.Auto_Warden = v263;
-    if (v263 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoWarden:SetValue(false);
 local v74 = CFrame.new(5186.14697265625, 24.86684226989746, 832.1885375976562);
@@ -5274,11 +5079,6 @@ if Sea3 then
     });
     v533:OnChanged(function(v640)
         AutoHallowSycthe = v640;
-        if (v640 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleHallow:SetValue(false);
     spawn(function()
@@ -5335,11 +5135,6 @@ if Sea3 then
     });
     v534:OnChanged(function(v641)
         _G.AutoYama = v641;
-        if (v641 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleYama:SetValue(false);
     spawn(function()
@@ -5361,11 +5156,6 @@ if Sea3 then
     });
     v535:OnChanged(function(v642)
         AutoTushita = v642;
-        if (v642 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleTushita:SetValue(false);
     spawn(function()
@@ -5405,11 +5195,6 @@ if Sea3 then
     });
     v536:OnChanged(function(v643)
         _G.Auto_Holy_Torch = v643;
-        if (v643 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleHoly:SetValue(false);
     spawn(function()
@@ -5453,11 +5238,6 @@ local v75 = v16.ITM:AddToggle("ToggleAutoCanvander", {
 });
 v75:OnChanged(function(v264)
     _G.Auto_Canvander = v264;
-    if (v264 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoCanvander:SetValue(false);
 local v71 = CFrame.new(5311.07421875, 426.0243835449219, 165.12762451171875);
@@ -5500,11 +5280,6 @@ local v76 = v16.ITM:AddToggle("ToggleAutoMusketeerHat", {
 });
 v76:OnChanged(function(v265)
     _G.Auto_MusketeerHat = v265;
-    if (v265 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoMusketeerHat:SetValue(false);
 spawn(function()
@@ -5589,11 +5364,6 @@ local v77 = v16.ITM:AddToggle("ToggleAutoObservationV2", {
 });
 v77:OnChanged(function(v266)
     _G.Auto_ObservationV2 = v266;
-    if (v266 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoObservationV2:SetValue(false);
 spawn(function()
@@ -5642,11 +5412,6 @@ local v78 = v16.ITM:AddToggle("ToggleAutoRainbowHaki", {
 });
 v78:OnChanged(function(v267)
     _G.Auto_RainbowHaki = v267;
-    if (v267 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoRainbowHaki:SetValue(false);
 spawn(function()
@@ -5772,11 +5537,6 @@ local v79 = v16.ITM:AddToggle("ToggleAutoSkullGuitar", {
 });
 v79:OnChanged(function(v268)
     _G.Auto_SkullGuitar = v268;
-    if (v268 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoSkullGuitar:SetValue(false);
 spawn(function()
@@ -5900,11 +5660,6 @@ local v80 = v16.ITM:AddToggle("ToggleAutoBuddy", {
 });
 v80:OnChanged(function(v269)
     _G.Auto_Buddy = v269;
-    if (v269 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoBuddy:SetValue(false);
 local v81 = CFrame.new(- 731.2034301757812, 381.5658874511719, - 11198.4951171875);
@@ -5947,11 +5702,6 @@ local v82 = v16.ITM:AddToggle("ToggleAutoDualKatana", {
 });
 v82:OnChanged(function(v270)
     _G.Auto_DualKatana = v270;
-    if (v270 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoDualKatana:SetValue(false);
 spawn(function()
@@ -6382,11 +6132,6 @@ if Sea2 then
     });
     v537:OnChanged(function(v644)
         _G.Factory = v644;
-        if (v644 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleFactory:SetValue(false);
     spawn(function()
@@ -6432,11 +6177,6 @@ local v83 = v16.ITM:AddToggle("ToggleAutoFarmSwan", {
 });
 v83:OnChanged(function(v271)
     _G.Auto_FarmSwan = v271;
-    if (v271 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoFarmSwan:SetValue(false);
 spawn(function()
@@ -6476,11 +6216,6 @@ local v84 = v16.ITM:AddToggle("ToggleAutoRengoku", {
 });
 v84:OnChanged(function(v272)
     _G.Auto_Regoku = v272;
-    if (v272 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoRengoku:SetValue(false);
 spawn(function()
@@ -6524,11 +6259,6 @@ if (Sea2 or Sea3) then
     });
     v538:OnChanged(function(v645)
         _G.Auto_Buy_Enchancement = v645;
-        if (v645 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleHakiColor:SetValue(false);
     spawn(function()
@@ -6551,11 +6281,6 @@ if Sea2 then
     });
     v539:OnChanged(function(v646)
         _G.BuyLengendSword = v646;
-        if (v646 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleSwordLengend:SetValue(false);
     spawn(function()
@@ -6582,11 +6307,6 @@ if Sea2 then
     });
     v540:OnChanged(function(v647)
         _G.AutoEvoRace = v647;
-        if (v647 == false) then
-            CancelTween();
-        else
-            AllowTween();
-        end
     end);
     v17.ToggleEvoRace:SetValue(false);
     spawn(function()
@@ -6646,11 +6366,6 @@ local v85 = v16.Setting:AddToggle("ToggleAutoT", {
 });
 v85:OnChanged(function(v273)
     _G.AutoT = v273;
-    if (v273 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoT:SetValue(false);
 spawn(function()
@@ -6669,11 +6384,6 @@ local v86 = v16.Setting:AddToggle("ToggleAutoY", {
 });
 v86:OnChanged(function(v274)
     _G.AutoY = v274;
-    if (v274 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoY:SetValue(false);
 spawn(function()
@@ -6699,11 +6409,6 @@ v87:OnChanged(function(v275)
     else
         game:GetService("ReplicatedStorage").Remotes.CommE:FireServer("Ken", false);
     end
-    if (v275 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoKen:SetValue(false);
 spawn(function()
@@ -6727,11 +6432,6 @@ v88:OnChanged(function(v276)
             [1] = "SetSpawnPoint"
         };
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v648));
-    end
-    if (v276 == false) then
-        CancelTween();
-    else
-        AllowTween();
     end
 end);
 v17.ToggleSaveSpawn:SetValue(false);
@@ -6789,22 +6489,9 @@ v90:OnChanged(function(v277)
     _G.BringMob = v277;
 end);
 v17.ToggleBringMob:SetValue(true);
--- Gom quái: kéo mượt (không teleport), khóa Y = FarmPos.Y, BodyVelocity chống rơi, CanCollide = false
-local BringSetup = {}
 spawn(function()
-    while task.wait(0.03) do
+    while task.wait(0.15) do 
         if not (_G.BringMob and bringmob and MonFarm and FarmPos) then
-            -- dọn BodyVelocity khi tắt
-            for mob, _ in pairs(BringSetup) do
-                if mob and mob.Parent then
-                    local h = mob:FindFirstChild("HumanoidRootPart")
-                    if h then
-                        local bv = h:FindFirstChild("BringHold")
-                        if bv then bv:Destroy() end
-                    end
-                end
-            end
-            BringSetup = {}
             continue
         end
         pcall(function()
@@ -6813,8 +6500,6 @@ spawn(function()
             local myChar = game.Players.LocalPlayer.Character
             if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
             sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-            local farmY = farmPos.Position.Y
-            local speed = 95 -- studs/s
             for _, mob in pairs(workspace.Enemies:GetChildren()) do
                 if mob.Name == monName
                     and mob:FindFirstChild("Humanoid")
@@ -6824,79 +6509,20 @@ spawn(function()
                     local hrp = mob.HumanoidRootPart
                     local dist = (hrp.Position - farmPos.Position).Magnitude
                     if dist <= 400 then
-                        -- Setup 1 lần mỗi con (Size, WalkSpeed, CanCollide...)
-                        if not BringSetup[mob] then
-                            hrp.CanCollide = false
-                            if mob:FindFirstChild("Head") then
-                                mob.Head.CanCollide = false
-                            end
-                            hrp.Size = Vector3.new(60, 60, 60)
-                            hrp.Transparency = 1
-                            mob.Humanoid.WalkSpeed = 0
-                            mob.Humanoid.JumpPower = 0
-                            mob.Humanoid.PlatformStand = true
-                            local animator = mob.Humanoid:FindFirstChildOfClass("Animator")
-                            if animator then
-                                animator:Destroy()
-                            end
-                            local oldBV = hrp:FindFirstChild("BringHold")
-                            if oldBV then oldBV:Destroy() end
-                            local bv = Instance.new("BodyVelocity")
-                            bv.Name = "BringHold"
-                            bv.MaxForce = Vector3.new(0, 9e9, 0) -- chỉ giữ trục Y chống rơi
-                            bv.Velocity = Vector3.new(0, 0, 0)
-                            bv.Parent = hrp
-                            BringSetup[mob] = true
-                        end
-                        -- đảm bảo vẫn xuyên tường
                         hrp.CanCollide = false
                         if mob:FindFirstChild("Head") then
                             mob.Head.CanCollide = false
                         end
-                        if dist <= 5 then
-                            -- gần điểm gom: đặt đúng FarmPos
-                            hrp.CFrame = farmPos
-                            hrp.AssemblyLinearVelocity = Vector3.zero
-                            local bv = hrp:FindFirstChild("BringHold")
-                            if bv then
-                                bv.Velocity = Vector3.new(0, 0, 0)
-                            end
-                        else
-                            -- kéo mượt về chỗ farm, khóa Y = FarmPos.Y
-                            local current = hrp.Position
-                            local target = Vector3.new(farmPos.Position.X, farmY, farmPos.Position.Z)
-                            local dir = (target - current)
-                            local distXZ = Vector3.new(dir.X, 0, dir.Z).Magnitude
-                            if distXZ > 0.1 then
-                                local move = dir.Unit * math.min(speed * 0.03, distXZ)
-                                local newPos = Vector3.new(current.X + move.X, farmY, current.Z + move.Z)
-                                hrp.CFrame = CFrame.new(newPos) * (hrp.CFrame - hrp.CFrame.Position)
-                            else
-                                hrp.CFrame = CFrame.new(target) * (hrp.CFrame - hrp.CFrame.Position)
-                            end
-                            local bv = hrp:FindFirstChild("BringHold")
-                            if bv then
-                                bv.Velocity = Vector3.new(0, 0, 0)
-                            end
-                            -- chặn velocity rơi
-                            if hrp.AssemblyLinearVelocity.Y < -1 then
-                                hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
-                            end
+                        hrp.Size = Vector3.new(60, 60, 60)
+                        hrp.Transparency = 1
+                        mob.Humanoid.WalkSpeed = 0
+                        mob.Humanoid.JumpPower = 0
+                        local animator = mob.Humanoid:FindFirstChildOfClass("Animator")
+                        if animator then
+                            animator:Destroy()
                         end
+                        hrp.CFrame = farmPos
                     end
-                end
-            end
-            -- dọn setup cho mob đã chết / mất
-            for mob, _ in pairs(BringSetup) do
-                if not mob or not mob.Parent or not mob:FindFirstChild("Humanoid") or mob.Humanoid.Health <= 0 then
-                    if mob and mob.Parent then
-                        local h = mob:FindFirstChild("HumanoidRootPart")
-                        if h then
-                            local bv = h:FindFirstChild("BringHold")
-                            if bv then bv:Destroy() end
-                        end
-                    end
-                    BringSetup[mob] = nil
                 end
             end
         end)
@@ -6932,11 +6558,6 @@ v92:OnChanged(function(v279)
     elseif (_G.WhiteScreen == false) then
         game:GetService("RunService"):Set3dRenderingEnabled(true);
     end
-    if (v279 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleWhite:SetValue(false);
 local v93 = v16.Setting:AddSection("Kĩ Năng Thông Thạo");
@@ -6947,11 +6568,6 @@ local v94 = v16.Setting:AddToggle("ToggleZ", {
 });
 v94:OnChanged(function(v280)
     SkillZ = v280;
-    if (v280 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleZ:SetValue(true);
 local v95 = v16.Setting:AddToggle("ToggleX", {
@@ -6961,11 +6577,6 @@ local v95 = v16.Setting:AddToggle("ToggleX", {
 });
 v95:OnChanged(function(v281)
     SkillX = v281;
-    if (v281 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleX:SetValue(true);
 local v96 = v16.Setting:AddToggle("ToggleC", {
@@ -6975,11 +6586,6 @@ local v96 = v16.Setting:AddToggle("ToggleC", {
 });
 v96:OnChanged(function(v282)
     SkillC = v282;
-    if (v282 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleC:SetValue(true);
 local v97 = v16.Setting:AddToggle("ToggleV", {
@@ -6989,11 +6595,6 @@ local v97 = v16.Setting:AddToggle("ToggleV", {
 });
 v97:OnChanged(function(v283)
     SkillV = v283;
-    if (v283 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleV:SetValue(true);
 local v98 = v16.Setting:AddToggle("ToggleF", {
@@ -7003,11 +6604,6 @@ local v98 = v16.Setting:AddToggle("ToggleF", {
 });
 v98:OnChanged(function(v284)
     SkillF = v284;
-    if (v284 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleF:SetValue(true);
 local v99 = v16.Status:AddParagraph({
@@ -7104,11 +6700,6 @@ local v106 = v16.Status:AddToggle("MyToggle", {
 });
 v106:OnChanged(function(v302)
     _G.Join = v302;
-    if (v302 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -7124,11 +6715,6 @@ local v107 = v16.Stats:AddToggle("ToggleMelee", {
 });
 v107:OnChanged(function(v303)
     _G.Auto_Stats_Melee = v303;
-    if (v303 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleMelee:SetValue(false);
 local v108 = v16.Stats:AddToggle("ToggleDe", {
@@ -7138,11 +6724,6 @@ local v108 = v16.Stats:AddToggle("ToggleDe", {
 });
 v108:OnChanged(function(v304)
     _G.Auto_Stats_Defense = v304;
-    if (v304 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleDe:SetValue(false);
 local v109 = v16.Stats:AddToggle("ToggleSword", {
@@ -7152,11 +6733,6 @@ local v109 = v16.Stats:AddToggle("ToggleSword", {
 });
 v109:OnChanged(function(v305)
     _G.Auto_Stats_Sword = v305;
-    if (v305 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleSword:SetValue(false);
 local v110 = v16.Stats:AddToggle("ToggleGun", {
@@ -7166,11 +6742,6 @@ local v110 = v16.Stats:AddToggle("ToggleGun", {
 });
 v110:OnChanged(function(v306)
     _G.Auto_Stats_Gun = v306;
-    if (v306 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleGun:SetValue(false);
 local v111 = v16.Stats:AddToggle("ToggleFruit", {
@@ -7180,11 +6751,6 @@ local v111 = v16.Stats:AddToggle("ToggleFruit", {
 });
 v111:OnChanged(function(v307)
     _G.Auto_Stats_Devil_Fruit = v307;
-    if (v307 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleFruit:SetValue(false);
 spawn(function()
@@ -7261,11 +6827,6 @@ local v113 = v16.Player:AddDropdown("SelectedPly", {
 v113:SetValue(_G.SelectPly);
 v113:OnChanged(function(v310)
     _G.SelectPly = v310;
-    if (v310 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v16.Player:AddButton({
     Title = "Tải Lại Người Chơi",
@@ -7285,9 +6846,10 @@ local v114 = v16.Player:AddToggle("ToggleTeleport", {
 v114:OnChanged(function(v311)
     _G.TeleportPly = v311;
     if (v311 == false) then
-        CancelTween();
-    else
-        AllowTween();
+        wait();
+        AutoHaki();
+        Tween2(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleTeleport:SetValue(false);
@@ -7306,12 +6868,12 @@ local v56 = v16.Player:AddSection("Khác");
 local v115 = v16.Player:AddToggle("ToggleNoClip", {
     Title = "Đi Xuyên Tường",
     Description = "",
-    Default = false
+    Default = true
 });
 v115:OnChanged(function(v312)
     _G.LOf = v312;
 end);
-v17.ToggleNoClip:SetValue(false);
+v17.ToggleNoClip:SetValue(true);
 spawn(function()
     pcall(function()
         game:GetService("RunService").Stepped:Connect(function()
@@ -7373,11 +6935,6 @@ local v119 = v16.Teleport:AddToggle("ToggleAutoSea2", {
 });
 v119:OnChanged(function(v315)
     _G.Auto_Sea2 = v315;
-    if (v315 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoSea2:SetValue(false);
 spawn(function()
@@ -7435,11 +6992,6 @@ local v120 = v16.Teleport:AddToggle("ToggleAutoSea3", {
 });
 v120:OnChanged(function(v316)
     _G.Auto_Sea3 = v316;
-    if (v316 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutoSea3:SetValue(false);
 spawn(function()
@@ -7576,11 +7128,6 @@ local v121 = v16.Teleport:AddDropdown("DropdownIsland", {
 v121:SetValue(_G.SelectIsland);
 v121:OnChanged(function(v317)
     _G.SelectIsland = v317;
-    if (v317 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v16.Teleport:AddButton({
     Title = "Bay Đến Đảo",
@@ -7717,11 +7264,6 @@ local v123 = v16.Fruit:AddDropdown("DropdownFruit", {
 v123:SetValue(_G.SelectFruit);
 v123:OnChanged(function(v337)
     _G.SelectFruit = v337;
-    if (v337 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local v111 = v16.Fruit:AddToggle("ToggleFruit", {
     Title = "Mua Trái Chọn",
@@ -7749,11 +7291,6 @@ local v124 = v16.Fruit:AddDropdown("DropdownPermanentFruit", {
 v124:SetValue(_G.PermanentFruit);
 v124:OnChanged(function(v339)
     _G.PermanentFruit = v339;
-    if (v339 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local v125 = v16.Fruit:AddToggle("TogglePermanentFruit", {
     Title = "Đổi Trái Vĩnh Viễn",
@@ -7903,11 +7440,6 @@ local v127 = v16.Fruit:AddToggle("ToggleRandomFruit", {
 });
 v127:OnChanged(function(v342)
     _G.Random_Auto = v342;
-    if (v342 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleRandomFruit:SetValue(false);
 spawn(function()
@@ -7926,11 +7458,6 @@ local v128 = v16.Fruit:AddToggle("ToggleCollectTP", {
 });
 v128:OnChanged(function(v343)
     _G.CollectFruitTP = v343;
-    if (v343 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleCollectTP:SetValue(false);
 spawn(function()
@@ -7951,11 +7478,6 @@ local v129 = v16.Fruit:AddToggle("ToggleCollect", {
 });
 v129:OnChanged(function(v344)
     _G.Tweenfruit = v344;
-    if (v344 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleCollect:SetValue(false);
 spawn(function()
@@ -8209,11 +7731,6 @@ local v137 = v16.Raid:AddDropdown("DropdownRaid", {
 v137:SetValue(SelectChip);
 v137:OnChanged(function(v353)
     SelectChip = v353;
-    if (v353 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local v138 = v16.Raid:AddToggle("ToggleBuy", {
     Title = "Mua Chip",
@@ -8222,11 +7739,6 @@ local v138 = v16.Raid:AddToggle("ToggleBuy", {
 });
 v138:OnChanged(function(v354)
     _G.Auto_Buy_Chips_Dungeon = v354;
-    if (v354 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleBuy:SetValue(false);
 spawn(function()
@@ -8250,11 +7762,6 @@ local v139 = v16.Raid:AddToggle("ToggleStart", {
 });
 v139:OnChanged(function(v355)
     _G.Auto_StartRaid = v355;
-    if (v355 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleStart:SetValue(false);
 spawn(function()
@@ -8294,11 +7801,6 @@ v140:OnChanged(function(v356)
     AutoNextIsland = v356;
     if not v356 then
         _G.AutoNear = false;
-    end
-    if (v356 == false) then
-        CancelTween();
-    else
-        AllowTween();
     end
 end);
 v17.ToggleNextIsland:SetValue(false);
@@ -8354,11 +7856,6 @@ local v141 = v16.Raid:AddToggle("ToggleAwake", {
 });
 v141:OnChanged(function(v358)
     AutoAwakenAbilities = v358;
-    if (v358 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAwake:SetValue(false);
 spawn(function()
@@ -8377,11 +7874,6 @@ local v142 = v16.Raid:AddToggle("ToggleGetFruit", {
 });
 v142:OnChanged(function(v359)
     _G.Autofruit = v359;
-    if (v359 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -8502,11 +7994,6 @@ local v143 = v16.Raid:AddToggle("ToggleLaw", {
 });
 v143:OnChanged(function(v360)
     Auto_Law = v360;
-    if (v360 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleLaw:SetValue(false);
 spawn(function()
@@ -8614,11 +8101,6 @@ local v145 = v16.Race:AddToggle("ToggleAutotrial", {
 });
 v145:OnChanged(function(v362)
     _G.AutoQuestRace = v362;
-    if (v362 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleAutotrial:SetValue(false);
 spawn(function()
@@ -8745,11 +8227,6 @@ local v146 = v16.Race:AddToggle("ToggleKillTrial", {
 });
 v146:OnChanged(function(v363)
     _G.AutoKillTrial = v363;
-    if (v363 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleKillTrial:SetValue(false);
 spawn(function()
@@ -8784,11 +8261,6 @@ local v147 = v16.Race:AddToggle("ToggleFarmRace", {
 local v148 = false;
 v147:OnChanged(function(v364)
     v148 = v364;
-    if (v364 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleFarmRace:SetValue(false);
 spawn(function()
@@ -8821,11 +8293,6 @@ v149:OnChanged(function(v365)
     _G.AutoUpgrade = v365;
     if _G.AutoUpgrade then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("UpgradeRace", "Buy");
-    end
-    if (v365 == false) then
-        CancelTween();
-    else
-        AllowTween();
     end
 end);
 v17.ToggleUpgrade:SetValue(false);
@@ -9323,11 +8790,6 @@ local v155 = v16.Sea:AddToggle("ToggleTPFrozenDimension", {
 });
 v155:OnChanged(function(v385)
     _G.TweenToFrozenDimension = v385;
-    if (v385 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v155:SetValue(false);
 spawn(function()
@@ -9409,11 +8871,6 @@ v158:OnChanged(function(v388)
                     local v876 = game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RF/DragonHunter"):InvokeServer(unpack(v875));
                 end
             end);
-    if (v388 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
         end);
     end
 end);
@@ -9453,11 +8910,6 @@ local v160 = v16.Sea:AddToggle("ToggleHydraTree", {
 });
 v160:OnChanged(function(v389)
     _G.AutoHydraTree = v389;
-    if (v389 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local function v161(v390)
     local v391 = game:GetService("VirtualInputManager");
@@ -9544,11 +8996,6 @@ local v164 = v16.Sea:AddToggle("ToggleCollectFireFlowers", {
 });
 v164:OnChanged(function(v396)
     _G.AutoCollectFireFlowers = v396;
-    if (v396 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -9599,11 +9046,6 @@ v165:OnChanged(function(v397)
                 game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(v817));
                 wait();
             end
-    if (v397 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
         end);
     end
 end);
@@ -9618,11 +9060,6 @@ local v167 = v16.Sea:AddToggle("ToggleTrialTeleport", {
 });
 v167:OnChanged(function(v398)
     _G.AutoTrialTeleport = v398;
-    if (v398 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -9657,11 +9094,6 @@ local v170 = v16.Sea:AddToggle("ToggleTPVolcano", {
 });
 v170:OnChanged(function(v399)
     _G.TweenToPrehistoric = v399;
-    if (v399 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 v17.ToggleTPVolcano:SetValue(false);
 spawn(function()
@@ -9691,11 +9123,6 @@ local v171 = v16.Sea:AddToggle("ToggleDefendVolcano", {
 });
 v171:OnChanged(function(v401)
     _G.AutoDefendVolcano = v401;
-    if (v401 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 local v107 = v16.Sea:AddToggle("ToggleMelee", {
     Title = "Dùng Melee",
@@ -9857,11 +9284,6 @@ local v176 = v16.Sea:AddToggle("ToggleCollectBone", {
 });
 v176:OnChanged(function(v414)
     _G.AutoCollectBone = v414;
-    if (v414 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
@@ -9881,11 +9303,6 @@ local v177 = v16.Sea:AddToggle("ToggleCollectEgg", {
 });
 v177:OnChanged(function(v415)
     _G.AutoCollectEgg = v415;
-    if (v415 == false) then
-        CancelTween();
-    else
-        AllowTween();
-    end
 end);
 spawn(function()
     while wait() do
