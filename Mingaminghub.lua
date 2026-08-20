@@ -3577,9 +3577,9 @@ task.spawn(function()
                 end
             end
             if isAlive then
-                BossStatus:SetDesc("🟢 " .. bossName .. " - Đang Sống")
+                BossStatus:SetDesc(bossName .. ": 🟢 - Đang Sống")
             else
-                BossStatus:SetDesc("🔴 " .. bossName .. " - Chờ hồi sinh")
+                BossStatus:SetDesc(bossName .. ": 🔴 - Chờ Hồi Sinh")
             end
         end)
     end
