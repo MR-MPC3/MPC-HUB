@@ -2400,32 +2400,38 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-local TweenSpeed = 270
+local TweenSpeed = 300
 local CurrentTween = nil
 _G.StopTween = false
+_G.SafeLandUntil = 0
+local SAFE_LAND_TIME = 1.25
+
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     local distance = (targetCFrame.Position - root.Position).Magnitude
-    if distance < 2 then
+    if distance < 3 then
         root.CFrame = targetCFrame
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
         return
     end
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
-    local time = distance / TweenSpeed
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
+    local time = math.clamp(distance / TweenSpeed, 0.05, 8)
+    CurrentTween = game:GetService("TweenService"):Create(root, TweenInfo.new(time, Enum.EasingStyle.Linear), {
         CFrame = targetCFrame
     })
     CurrentTween:Play()
 end
+
 function CancelTween()
     _G.StopTween = true
+    _G.SafeLandUntil = tick() + SAFE_LAND_TIME
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -2433,13 +2439,31 @@ function CancelTween()
     local char = game.Players.LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         local root = char.HumanoidRootPart
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local clip = root:FindFirstChild("BodyClip")
+        if clip then pcall(function() clip:Destroy() end) end
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = (part.Name ~= "HumanoidRootPart")
+            end
+        end
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
-        -- đứng yên ngay tại chỗ, không bay thêm
-        root.CFrame = root.CFrame
+        pcall(function()
+            local params = RaycastParams.new()
+            params.FilterDescendantsInstances = {char}
+            params.FilterType = Enum.RaycastFilterType.Exclude
+            local ray = workspace:Raycast(root.Position + Vector3.new(0, 8, 0), Vector3.new(0, -250, 0), params)
+            if ray and ray.Position then
+                root.CFrame = CFrame.new(ray.Position + Vector3.new(0, 3.2, 0))
+            end
+        end)
+        if hum then
+            hum.PlatformStand = false
+            pcall(function() hum:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+        end
     end
-    -- reset flag sau rất ngắn để Tween sau vẫn chạy được
-    task.delay(0.05, function()
+    task.delay(0.12, function()
         _G.StopTween = false
     end)
 end
@@ -2502,33 +2526,63 @@ end);
 spawn(function()
     while task.wait() do
         pcall(function()
-            if (_G.AutoEvoRace or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.Tweenfruit or _G.AutoFishCrew or _G.Auto_Saber or _G.AutoShark or _G.Auto_Warden or _G.Auto_RainbowHaki or AutoFarmRace or _G.AutoQuestRace or Auto_Law or AutoTushita or _G.AutoHolyTorch or _G.AutoTerrorshark or _G.farmpiranya or _G.Auto_MusketeerHat or _G.Auto_ObservationV2 or _G.AutoNear or _G.Auto_PoleV1 or _G.Auto_Buddy or _G.Ectoplasm or AutoEvoRace or AutoBartilo or _G.Auto_Canvander or _G.AutoLevel or _G.Auto_DualKatana or Auto_Quest_Yama_3 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or _G.Clip2 or _G.Auto_Regoku or _G.AutoBone or _G.AutoBoneNoQuest or _G.AutoBoss or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.Auto_SkullGuitar or _G.AutoFarmSwan or _G.DoughKing or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or AutoFarmRaceQuest or _G.Factory or _G.Auto_Saw or _G.AutoFrozenDimension or _G.AutoKillTrial or _G.AutoUpgrade or _G.TweenToFrozenDimension) then
-                if not game:GetService("Players").LocalPlayer.Character.HumanoidRootPart:FindFirstChild("BodyClip") then
-                    local v887 = Instance.new("BodyVelocity");
-                    v887.Name = "BodyClip";
-                    v887.Parent = game:GetService("Players").LocalPlayer.Character.HumanoidRootPart;
-                    v887.MaxForce = Vector3.new(0, 100000, 0);
-                    v887.Velocity = Vector3.new(0, 0, 0);
+            local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            if tick() < (_G.SafeLandUntil or 0) then
+                local bc = root:FindFirstChild("BodyClip")
+                if bc then pcall(function() bc:Destroy() end) end
+                return
+            end
+            local farmActive = (_G.AutoEvoRace or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.Tweenfruit or _G.AutoFishCrew or _G.Auto_Saber or _G.AutoShark or _G.Auto_Warden or _G.Auto_RainbowHaki or AutoFarmRace or _G.AutoQuestRace or Auto_Law or AutoTushita or _G.AutoHolyTorch or _G.AutoTerrorshark or _G.farmpiranya or _G.Auto_MusketeerHat or _G.Auto_ObservationV2 or _G.AutoNear or _G.Auto_PoleV1 or _G.Auto_Buddy or _G.Ectoplasm or AutoEvoRace or AutoBartilo or _G.Auto_Canvander or _G.AutoLevel or _G.Auto_DualKatana or Auto_Quest_Yama_3 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or _G.Clip2 or _G.Auto_Regoku or _G.AutoBone or _G.AutoBoneNoQuest or _G.AutoBoss or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.Auto_SkullGuitar or _G.AutoFarmSwan or _G.DoughKing or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or AutoFarmRaceQuest or _G.Factory or _G.Auto_Saw or _G.AutoFrozenDimension or _G.AutoKillTrial or _G.AutoUpgrade or _G.TweenToFrozenDimension)
+            if farmActive then
+                if not root:FindFirstChild("BodyClip") then
+                    local v887 = Instance.new("BodyVelocity")
+                    v887.Name = "BodyClip"
+                    v887.Parent = root
+                    v887.MaxForce = Vector3.new(0, 100000, 0)
+                    v887.Velocity = Vector3.new(0, 0, 0)
                 end
             else
-                game:GetService("Players").LocalPlayer.Character.HumanoidRootPart:FindFirstChild("BodyClip"):Destroy();
+                local bc = root:FindFirstChild("BodyClip")
+                if bc then pcall(function() bc:Destroy() end) end
             end
-        end);
+        end)
     end
-end);
+end)
 spawn(function()
     pcall(function()
+        local wasFarmNoclip = false
         game:GetService("RunService").Stepped:Connect(function()
-            if (_G.AutoEvoRace or _G.Auto_RainbowHaki or _G.Auto_SkullGuitar or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Tweenfruit or _G.Auto_Saber or _G.Auto_PoleV1 or _G.Auto_MusketeerHat or _G.AutoFishCrew or _G.AutoShark or AutoFarmRace or _G.AutoQuestRace or _G.Auto_Warden or Auto_Law or _G.Auto_DualKatana or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or AutoTushita or _G.AutoHolyTorch or _G.Auto_Buddy or _G.AutoTerrorshark or _G.farmpiranya or Auto_Quest_Yama_3 or _G.Auto_ObservationV2 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or _G.AutoNear or _G.Ectoplasm or AutoEvoRace or _G.AutoKillTrial or AutoBartilo or _G.Auto_Regoku or _G.AutoLevel or _G.Clip2 or _G.AutoBone or _G.Auto_Canvander or _G.AutoBoneNoQuest or _G.AutoBoss or _G.Auto_Saw or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.DoughKing or _G.AutoFarmSwan or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or _G.Factory or _G.AutoFrozenDimension or AutoFarmRaceQuest or _G.AutoUpgrade or _G.TweenToFrozenDimension) then
-                for v834, v835 in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
-                    if v835:IsA("BasePart") then
-                        v835.CanCollide = false;
+            local char = game.Players.LocalPlayer.Character
+            if not char then return end
+            if tick() < (_G.SafeLandUntil or 0) then
+                wasFarmNoclip = false
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.CanCollide = true
+                    end
+                end
+                return
+            end
+            local active = (_G.AutoEvoRace or _G.Auto_RainbowHaki or _G.Auto_SkullGuitar or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Tweenfruit or _G.Auto_Saber or _G.Auto_PoleV1 or _G.Auto_MusketeerHat or _G.AutoFishCrew or _G.AutoShark or AutoFarmRace or _G.AutoQuestRace or _G.Auto_Warden or Auto_Law or _G.Auto_DualKatana or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or AutoTushita or _G.AutoHolyTorch or _G.Auto_Buddy or _G.AutoTerrorshark or _G.farmpiranya or Auto_Quest_Yama_3 or _G.Auto_ObservationV2 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or _G.AutoNear or _G.Ectoplasm or AutoEvoRace or _G.AutoKillTrial or AutoBartilo or _G.Auto_Regoku or _G.AutoLevel or _G.Clip2 or _G.AutoBone or _G.Auto_Canvander or _G.AutoBoneNoQuest or _G.AutoBoss or _G.Auto_Saw or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.DoughKing or _G.AutoFarmSwan or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or _G.Factory or _G.AutoFrozenDimension or AutoFarmRaceQuest or _G.AutoUpgrade or _G.TweenToFrozenDimension)
+            if active then
+                wasFarmNoclip = true
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            elseif wasFarmNoclip then
+                wasFarmNoclip = false
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.CanCollide = true
                     end
                 end
             end
-        end);
-    end);
-end);
+        end)
+    end)
+end)
 task.spawn(function()
     if game.Players.LocalPlayer.Character:FindFirstChild("Stun") then
         game.Players.LocalPlayer.Character.Stun.Changed:connect(function()
@@ -2632,9 +2686,9 @@ function AttackNoCoolDown()
         end
     end);
 end
--- Vị trí đánh cố định phía trên quái (không random / không giật)
+-- Pos cố định — bỏ random để hết lắc giật
+Pos = CFrame.new(0, 25, 0)
 Type = 1
-Pos = CFrame.new(0, 30, 0)
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
@@ -2755,8 +2809,11 @@ local v49 = v16.Main:AddToggle("ToggleLevel", {
 });
 v49:OnChanged(function(v237)
     _G.AutoLevel = v237;
-    if (v237 == false) then
-        CancelTween();
+    if v237 then
+        _G.StopTween = false
+    else
+        bringmob = false
+        CancelTween()
     end
 end);
 v17.ToggleLevel:SetValue(false);
@@ -2814,8 +2871,11 @@ local v50 = v16.Main:AddToggle("ToggleMobAura", {
 });
 v50:OnChanged(function(v238)
     _G.AutoNear = v238;
-    if (v238 == false) then
-        CancelTween();
+    if v238 then
+        _G.StopTween = false
+    else
+        bringmob = false
+        CancelTween()
     end
 end);
 v17.ToggleMobAura:SetValue(false);
@@ -3122,8 +3182,10 @@ if Sea3 then
     v486:OnChanged(function(v571)
         _G.AutoBone = v571;
         if (v571 == false) then
-        CancelTween();
-    end
+            wait();
+            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+            wait();
+        end
     end);
     v17.ToggleBone:SetValue(false);
     local v487 = CFrame.new(- 9515.75, 174.8521728515625, 6079.40625);
@@ -3358,8 +3420,10 @@ if Sea3 then
     v494:OnChanged(function(v576)
         _G.DoughKing = v576;
         if (v576 == false) then
-        CancelTween();
-    end
+            wait();
+            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+            wait();
+        end
     end);
     v17.ToggleDoughKing:SetValue(false);
     spawn(function()
@@ -3637,7 +3701,9 @@ local v65 = v16.Main:AddToggle("ToggleMaterial", {
 v65:OnChanged(function(v256)
     _G.AutoMaterial = v256;
     if (v256 == false) then
-        CancelTween();
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
 end);
 v17.ToggleMaterial:SetValue(false);
@@ -6457,32 +6523,26 @@ v90:OnChanged(function(v277)
     _G.BringMob = v277;
 end);
 v17.ToggleBringMob:SetValue(true);
--- Gom quái: kéo mượt (không teleport), khóa Y = FarmPos.Y, BodyVelocity chống rơi, CanCollide = false
-local BringSetup = {}
+-- Gom Quái: kéo mượt 400 studs (không teleport)
+local BRING_RANGE = 400
+local BRING_STOP = 5
+local BRING_SPEED = 95
 spawn(function()
-    while task.wait(0.03) do
-        if not (_G.BringMob and bringmob and MonFarm and FarmPos) then
-            -- dọn BodyVelocity khi tắt
-            for mob, _ in pairs(BringSetup) do
-                if mob and mob.Parent then
-                    local h = mob:FindFirstChild("HumanoidRootPart")
-                    if h then
-                        local bv = h:FindFirstChild("BringHold")
-                        if bv then bv:Destroy() end
-                    end
-                end
-            end
-            BringSetup = {}
-            continue
-        end
+    local last = tick()
+    while true do
+        local now = tick()
+        local dt = math.clamp(now - last, 0.01, 0.08)
+        last = now
         pcall(function()
-            local farmPos = FarmPos
-            local monName = MonFarm
+            if not (_G.BringMob and bringmob and MonFarm and FarmPos) then return end
             local myChar = game.Players.LocalPlayer.Character
             if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
-            sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-            local farmY = farmPos.Position.Y
-            local speed = 95 -- studs/s
+            local targetPos = FarmPos.Position
+            local monName = MonFarm
+            pcall(function()
+                sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+            end)
+            local step = BRING_SPEED * dt
             for _, mob in pairs(workspace.Enemies:GetChildren()) do
                 if mob.Name == monName
                     and mob:FindFirstChild("Humanoid")
@@ -6490,84 +6550,34 @@ spawn(function()
                     and mob.Humanoid.Health > 0
                 then
                     local hrp = mob.HumanoidRootPart
-                    local dist = (hrp.Position - farmPos.Position).Magnitude
-                    if dist <= 400 then
-                        -- Setup 1 lần mỗi con (Size, WalkSpeed, CanCollide...)
-                        if not BringSetup[mob] then
-                            hrp.CanCollide = false
-                            if mob:FindFirstChild("Head") then
-                                mob.Head.CanCollide = false
-                            end
-                            hrp.Size = Vector3.new(60, 60, 60)
-                            hrp.Transparency = 1
-                            mob.Humanoid.WalkSpeed = 0
-                            mob.Humanoid.JumpPower = 0
-                            mob.Humanoid.PlatformStand = true
-                            local animator = mob.Humanoid:FindFirstChildOfClass("Animator")
-                            if animator then
-                                animator:Destroy()
-                            end
-                            local oldBV = hrp:FindFirstChild("BringHold")
-                            if oldBV then oldBV:Destroy() end
-                            local bv = Instance.new("BodyVelocity")
-                            bv.Name = "BringHold"
-                            bv.MaxForce = Vector3.new(0, 9e9, 0) -- chỉ giữ trục Y chống rơi
-                            bv.Velocity = Vector3.new(0, 0, 0)
-                            bv.Parent = hrp
-                            BringSetup[mob] = true
-                        end
-                        -- đảm bảo vẫn xuyên tường
+                    local dist = (hrp.Position - targetPos).Magnitude
+                    if dist <= BRING_RANGE then
                         hrp.CanCollide = false
                         if mob:FindFirstChild("Head") then
                             mob.Head.CanCollide = false
                         end
-                        if dist <= 5 then
-                            -- gần điểm gom: đặt đúng FarmPos
-                            hrp.CFrame = farmPos
+                        if not mob:GetAttribute("Brought") then
+                            hrp.Size = Vector3.new(50, 50, 50)
+                            hrp.Transparency = 1
+                            mob.Humanoid.WalkSpeed = 0
+                            mob.Humanoid.JumpPower = 0
+                            mob.Humanoid.AutoRotate = false
+                            mob:SetAttribute("Brought", true)
+                        end
+                        if dist > BRING_STOP then
+                            local dir = (targetPos - hrp.Position).Unit
+                            hrp.CFrame = CFrame.new(hrp.Position + dir * math.min(step, dist - BRING_STOP))
                             hrp.AssemblyLinearVelocity = Vector3.zero
-                            local bv = hrp:FindFirstChild("BringHold")
-                            if bv then
-                                bv.Velocity = Vector3.new(0, 0, 0)
-                            end
+                            hrp.AssemblyAngularVelocity = Vector3.zero
                         else
-                            -- kéo mượt về chỗ farm, khóa Y = FarmPos.Y
-                            local current = hrp.Position
-                            local target = Vector3.new(farmPos.Position.X, farmY, farmPos.Position.Z)
-                            local dir = (target - current)
-                            local distXZ = Vector3.new(dir.X, 0, dir.Z).Magnitude
-                            if distXZ > 0.1 then
-                                local move = dir.Unit * math.min(speed * 0.03, distXZ)
-                                local newPos = Vector3.new(current.X + move.X, farmY, current.Z + move.Z)
-                                hrp.CFrame = CFrame.new(newPos) * (hrp.CFrame - hrp.CFrame.Position)
-                            else
-                                hrp.CFrame = CFrame.new(target) * (hrp.CFrame - hrp.CFrame.Position)
-                            end
-                            local bv = hrp:FindFirstChild("BringHold")
-                            if bv then
-                                bv.Velocity = Vector3.new(0, 0, 0)
-                            end
-                            -- chặn velocity rơi
-                            if hrp.AssemblyLinearVelocity.Y < -1 then
-                                hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
-                            end
+                            hrp.AssemblyLinearVelocity = Vector3.zero
+                            hrp.AssemblyAngularVelocity = Vector3.zero
                         end
                     end
-                end
-            end
-            -- dọn setup cho mob đã chết / mất
-            for mob, _ in pairs(BringSetup) do
-                if not mob or not mob.Parent or not mob:FindFirstChild("Humanoid") or mob.Humanoid.Health <= 0 then
-                    if mob and mob.Parent then
-                        local h = mob:FindFirstChild("HumanoidRootPart")
-                        if h then
-                            local bv = h:FindFirstChild("BringHold")
-                            if bv then bv:Destroy() end
-                        end
-                    end
-                    BringSetup[mob] = nil
                 end
             end
         end)
+        task.wait(0.03)
     end
 end)
 local v91 = v16.Setting:AddToggle("ToggleRemoveNotify", {
@@ -6910,25 +6920,28 @@ local v56 = v16.Player:AddSection("Khác");
 local v115 = v16.Player:AddToggle("ToggleNoClip", {
     Title = "Đi Xuyên Tường",
     Description = "",
-    Default = false
+    Default = true
 });
 v115:OnChanged(function(v312)
     _G.LOf = v312;
 end);
-v17.ToggleNoClip:SetValue(false);
+v17.ToggleNoClip:SetValue(true);
 spawn(function()
     pcall(function()
         game:GetService("RunService").Stepped:Connect(function()
-            if _G.LOf then
-                for v868, v869 in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                    if v869:IsA("BasePart") then
-                        v869.CanCollide = false;
+            -- Giữ nguyên Đi Xuyên Tường, chỉ tạm ngưng trong SafeLand sau khi tắt farm
+            if _G.LOf and tick() >= (_G.SafeLandUntil or 0) then
+                local char = game.Players.LocalPlayer.Character
+                if not char then return end
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
                     end
                 end
             end
-        end);
-    end);
-end);
+        end)
+    end)
+end)
 local v116 = v16.Player:AddToggle("ToggleWalkonWater", {
     Title = "Đi Trên Nước",
     Description = "",
