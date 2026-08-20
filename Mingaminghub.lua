@@ -3729,9 +3729,9 @@ if Sea3 then
     });
     function UpdateKitsune()
         if game:GetService("Workspace").Map:FindFirstChild("KitsuneIsland") then
-            v499:SetDesc("Đảo Cáo : ✅️");
+            v499:SetDesc("Đảo Cáo : 🟢");
         else
-            v499:SetDesc("Đảo Cáo : ❌️");
+            v499:SetDesc("Đảo Cáo : 🔴");
         end
     end
     spawn(function()
@@ -4639,9 +4639,9 @@ if Sea3 then
         while wait() do
             pcall(function()
                 if (game:GetService("ReplicatedStorage"):FindFirstChild("Diablo") or game:GetService("ReplicatedStorage"):FindFirstChild("Deandre") or game:GetService("ReplicatedStorage"):FindFirstChild("Urban") or game:GetService("Workspace").Enemies:FindFirstChild("Diablo") or game:GetService("Workspace").Enemies:FindFirstChild("Deandre") or game:GetService("Workspace").Enemies:FindFirstChild("Urban")) then
-                    v529:SetDesc("Elite Boss: ✅️ | Killed:  " .. game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("EliteHunter", "Progress"));
+                    v529:SetDesc("Elite Boss: 🟢 | Killed:  " .. game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("EliteHunter", "Progress"));
                 else
-                    v529:SetDesc("Elite Boss: ❌️ | Killed: " .. game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("EliteHunter", "Progress"));
+                    v529:SetDesc("Elite Boss: 🔴 | Killed: " .. game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("EliteHunter", "Progress"));
                 end
             end);
         end
@@ -4725,9 +4725,9 @@ if Sea3 then
         while task.wait() do
             pcall(function()
                 if game.Workspace.Map:FindFirstChild("MysticIsland") then
-                    MirageStatus = "✅️";
+                    MirageStatus = "🟢";
                 else
-                    MirageStatus = "❌️";
+                    MirageStatus = "🔴";
                 end
             end);
         end
@@ -6639,9 +6639,9 @@ spawn(function()
     pcall(function()
         while wait() do
             if game:GetService("Workspace").Map:FindFirstChild("FrozenDimension") then
-                v104:SetDesc("✅");
+                v104:SetDesc("🟢");
             else
-                v104:SetDesc("❌");
+                v104:SetDesc("🔴");
             end
         end
     end);
