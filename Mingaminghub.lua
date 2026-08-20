@@ -2,7 +2,7 @@
 
 
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
-shared.LoaderKeyFrames = 
+shared.LoaderKeyFrames = {
     [1] = {
         1,
         10
@@ -2620,6 +2620,7 @@ function AttackNoCoolDown()
         return;
     end
     pcall(function()
+        local delay = _G.Fast_Delay or 0.5
         local v477 = game:GetService("ReplicatedStorage");
         local v478 = v477:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack");
         local v479 = v477:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit");
@@ -2627,7 +2628,7 @@ function AttackNoCoolDown()
             v478:FireServer(delay);
             v479:FireServer(v230, v228);
         else
-            task.wait(dela);
+            task.wait(delay);
         end
     end);
 end
@@ -2745,7 +2746,7 @@ FastToggle:OnChanged(function(Value)
     else
         _G.Fast_Delay =  1e-9
     end
-end
+end)
 local FastInput = v16.Home:AddInput("InputFastDelay", {
     Title = "Nhập tốc độ (giây)",
     Description = "Chỉ dùng khi bật Tốc Độ Đánh | Nhanh nhất 0.05 | Chậm nhất 2",
