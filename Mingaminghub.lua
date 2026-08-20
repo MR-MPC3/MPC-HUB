@@ -6463,8 +6463,14 @@ v90:OnChanged(function(v277)
     _G.BringMob = v277;
 end);
 v17.ToggleBringMob:SetValue(true);
+local PULL_SPEED = 85 
+local lastTime = os.clock()
 spawn(function()
-    while task.wait(0.15) do 
+    while task.wait(0.016) do -- 0.016s tương đương tần số 60 FPS
+        local currentTime = os.clock()
+        local dt = currentTime - lastTime
+        lastTime = currentTime
+
         if not (_G.BringMob and bringmob and MonFarm and FarmPos) then
             continue
         end
@@ -6482,20 +6488,17 @@ spawn(function()
                 then
                     local hrp = mob.HumanoidRootPart
                     local dist = (hrp.Position - farmPos.Position).Magnitude
-                    if dist <= 500 then
+                    if dist <= 500 and dist > 1.5 then
                         hrp.CanCollide = false
                         if mob:FindFirstChild("Head") then
                             mob.Head.CanCollide = false
                         end
-                        hrp.Size = Vector3.new(60, 60, 60)
+                        hrp.Size = Vector3.new(80, 80, 80)
                         hrp.Transparency = 1
-                        mob.Humanoid.WalkSpeed = 0
-                        mob.Humanoid.JumpPower = 0
-                        local animator = mob.Humanoid:FindFirstChildOfClass("Animator")
-                        if animator then
-                            animator:Destroy()
-                        end
-                        hrp.CFrame = farmPos
+                        local stepDistance = math.min(dist, PULL_SPEED * dt)
+                        local direction = (farmPos.Position - hrp.Position).Unit
+                        local newPosition = hrp.Position + (direction * stepDistance)
+                        hrp.CFrame = CFrame.new(newPosition, farmPos.Position)
                     end
                 end
             end
