@@ -2426,7 +2426,6 @@ function Tween(targetCFrame)
 end
 function CancelTween()
     _G.StopTween = true
-
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -2436,9 +2435,13 @@ function CancelTween()
         local root = char.HumanoidRootPart
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
+        -- đứng yên ngay tại chỗ, không bay thêm
+        root.CFrame = root.CFrame
     end
-    task.wait(0.15)
-    _G.StopTween = false
+    -- reset flag sau rất ngắn để Tween sau vẫn chạy được
+    task.delay(0.05, function()
+        _G.StopTween = false
+    end)
 end
 function Tween2(targetCFrame)
     if not game.Players.LocalPlayer.Character then return end
@@ -2629,34 +2632,9 @@ function AttackNoCoolDown()
         end
     end);
 end
+-- Vị trí đánh cố định phía trên quái (không random / không giật)
 Type = 1
-Pos = CFrame.new(0, 40, 0)
-local baseOffsets = {
-    Vector3.new(0, 40, 0),
-    Vector3.new(-40, 40, 0),
-    Vector3.new(40, 40, 0),
-    Vector3.new(0, 40, 40),
-    Vector3.new(0, 40, -40)
-}
-spawn(function()
-    while task.wait() do
-        local base = baseOffsets[Type] or baseOffsets[1]
-        local randomOffset = Vector3.new(
-            math.random(-15, 15) / 10,
-            math.random(-5, 5) / 10,
-            math.random(-15, 15) / 10
-        )
-        Pos = CFrame.new(base + randomOffset)
-    end
-end)
-spawn(function()
-    while true do
-        for i = 1, 5 do
-            Type = i
-            task.wait(0.3 + math.random(5, 15) / 100)
-        end
-    end
-end)
+Pos = CFrame.new(0, 30, 0)
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
@@ -2778,9 +2756,7 @@ local v49 = v16.Main:AddToggle("ToggleLevel", {
 v49:OnChanged(function(v237)
     _G.AutoLevel = v237;
     if (v237 == false) then
-        wait();
-        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-        wait();
+        CancelTween();
     end
 end);
 v17.ToggleLevel:SetValue(false);
@@ -2839,9 +2815,7 @@ local v50 = v16.Main:AddToggle("ToggleMobAura", {
 v50:OnChanged(function(v238)
     _G.AutoNear = v238;
     if (v238 == false) then
-        wait();
-        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-        wait();
+        CancelTween();
     end
 end);
 v17.ToggleMobAura:SetValue(false);
@@ -3148,10 +3122,8 @@ if Sea3 then
     v486:OnChanged(function(v571)
         _G.AutoBone = v571;
         if (v571 == false) then
-            wait();
-            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-            wait();
-        end
+        CancelTween();
+    end
     end);
     v17.ToggleBone:SetValue(false);
     local v487 = CFrame.new(- 9515.75, 174.8521728515625, 6079.40625);
@@ -3386,10 +3358,8 @@ if Sea3 then
     v494:OnChanged(function(v576)
         _G.DoughKing = v576;
         if (v576 == false) then
-            wait();
-            Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-            wait();
-        end
+        CancelTween();
+    end
     end);
     v17.ToggleDoughKing:SetValue(false);
     spawn(function()
@@ -3667,9 +3637,7 @@ local v65 = v16.Main:AddToggle("ToggleMaterial", {
 v65:OnChanged(function(v256)
     _G.AutoMaterial = v256;
     if (v256 == false) then
-        wait();
-        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-        wait();
+        CancelTween();
     end
 end);
 v17.ToggleMaterial:SetValue(false);
