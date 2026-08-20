@@ -6924,61 +6924,53 @@ v119:OnChanged(function(v315)
 end);
 v17.ToggleAutoSea2:SetValue(false);
 spawn(function()
-    while wait() do
+    while task.wait() do
         if _G.Auto_Sea2 then
             pcall(function()
-                local v800 = game:GetService("Players").LocalPlayer.Data.Level.Value;
-                if ((v800 >= 700) and Sea1) the
-                    if ((game:GetService("Workspace").Map.Ice.Door.CanCollide == false) and (game:GetService("Workspace").Map.Ice.Door.Transparency == 1)) then
-                        local v1346 = CFrame.new(4849.29883, 5.65138149, 719.611877);
-                        repeat
-                            Tween(v1346);
-                            wait();
-                        until ((v1346.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3) or (_G.Auto_Sea2 == false)
-                        wait(1.1);
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("DressrosaQuestProgress", "Detective");
-                        wait(0.5);
-                        EquipTool("Key");
-                        repeat
-                            Tween(CFrame.new(1347.7124, 37.3751602, - 1325.6488));
-                            wait();
-                        until ((Vector3.new(1347.7124, 37.3751602, - 1325.6488) - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3) or (_G.Auto_Sea2 == false)
-                        wait(0.5);
-                    elseif ((game:GetService("Workspace").Map.Ice.Door.CanCollide == false) and (game:GetService("Workspace").Map.Ice.Door.Transparency == 1)) then
+                local level = game:GetService("Players").LocalPlayer.Data.Level.Value
+                if level >= 700 and Sea1 then
+                    local door = game:GetService("Workspace").Map.Ice.Door
+                    if door.CanCollide == true or door.Transparency < 1 then
+                        local detectiveCF = CFrame.new(4849.29883, 5.65138149, 719.611877)
+                        Tween(detectiveCF)
+                        repeat task.wait() until (detectiveCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 or not _G.Auto_Sea2
+                        task.wait(1)
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("DressrosaQuestProgress", "Detective")
+                        task.wait(0.5)
+                        EquipTool("Key")
+                        local keyCF = CFrame.new(1347.7124, 37.3751602, -1325.6488)
+                        Tween(keyCF)
+                        repeat task.wait() until (keyCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 or not _G.Auto_Sea2
+                        task.wait(0.5)
+                    else
                         if game:GetService("Workspace").Enemies:FindFirstChild("Ice Admiral") then
-                            for v1680, v1681 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                if (v1681.Name == "Ice Admiral") then
-                                    if (not v1681.Humanoid.Health <= 0) then
-                                        if (v1681:FindFirstChild("Humanoid") and v1681:FindFirstChild("HumanoidRootPart") and (v1681.Humanoid.Health > 0)) then
-                                            OldCFrameSecond = v1681.HumanoidRootPart.CFrame;
-                                            repeat
-                                                task.wait(_G.Fast_Delay);
-                                                AutoHaki();
-                                                EquipTool(SelectWeapon);
-                                                v1681.HumanoidRootPart.CanCollide = false;
-                                                v1681.Humanoid.WalkSpeed = 0;
-                                                v1681.Head.CanCollide = false;
-                                                v1681.HumanoidRootPart.Size = Vector3.new(50, 50, 50);
-                                                v1681.HumanoidRootPart.CFrame = OldCFrameSecond;
-                                                Tween(v1681.HumanoidRootPart.CFrame * Pos);
-                                                AttackNoCoolDown();
-                                                sethiddenproperty(game:GetService("Players").LocalPlayer, "SimulationRadius", math.huge);
-                                            until not _G.Auto_Sea2 or not v1681.Parent or (v1681.Humanoid.Health <= 0)
-                                        end
-                                    else
-                                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelDressrosa");
-                                    end
+                            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if v.Name == "Ice Admiral" and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                                    local oldCF = v.HumanoidRootPart.CFrame
+                                    repeat
+                                        task.wait(_G.Fast_Delay or 0.1)
+                                        AutoHaki()
+                                        EquipTool(SelectWeapon)
+                                        v.HumanoidRootPart.CanCollide = false
+                                        v.Humanoid.WalkSpeed = 0
+                                        v.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+                                        v.HumanoidRootPart.CFrame = oldCF
+                                        Tween(v.HumanoidRootPart.CFrame * Pos)
+                                        AttackNoCoolDown()
+                                        sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+                                    until not _G.Auto_Sea2 or not v.Parent or v.Humanoid.Health <= 0
+                                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelDressrosa")
                                 end
                             end
                         elseif game:GetService("ReplicatedStorage"):FindFirstChild("Ice Admiral") then
-                            Tween(game:GetService("ReplicatedStorage"):FindFirstChild("Ice Admiral").HumanoidRootPart.CFrame * CFrame.new(5, 10, 7));
+                            Tween(game:GetService("ReplicatedStorage")["Ice Admiral"].HumanoidRootPart.CFrame * CFrame.new(5, 10, 7))
                         end
                     end
                 end
-            end);
+            end)
         end
     end
-end);
+end)
 local v120 = v16.Teleport:AddToggle("ToggleAutoSea3", {
     Title = "Nhiệm Vụ Qua Biển 3",
     Description = "",
@@ -6989,64 +6981,68 @@ v120:OnChanged(function(v316)
 end);
 v17.ToggleAutoSea3:SetValue(false);
 spawn(function()
-    while wait() do
+    while task.wait() do
         if _G.Auto_Sea3 then
             pcall(function()
-                if ((game:GetService("Players").LocalPlayer.Data.Level.Value >= 1500) and World2) then
-                    _G.AutoLevel = false;
-                    if (game:GetService("ReplicatedStorage").Remotes['CommF_']:InvokeServer("ZQuestProgress", "General") == 0) then
-                        Tween(CFrame.new(- 1926.3221435547, 12.819851875305, 1738.3092041016));
-                        if ((CFrame.new(- 1926.3221435547, 12.819851875305, 1738.3092041016).Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 10) then
-                            wait(1.5);
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "Begin");
-                        end
-                        wait(1.8);
+                local level = game:GetService("Players").LocalPlayer.Data.Level.Value
+                if level >= 1500 and Sea2 then
+                    _G.AutoLevel = false
+                    if game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "General") == 0 then
+                        local startCF = CFrame.new(-1926.3221435547, 12.819851875305, 1738.3092041016)
+                        Tween(startCF)
+                        repeat task.wait() until (startCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 10 or not _G.Auto_Sea3
+                        task.wait(1.5)
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "Begin")
+                        task.wait(1.8)
                         if game:GetService("Workspace").Enemies:FindFirstChild("rip_indra") then
-                            for v1578, v1579 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                if (v1579.Name == "rip_indra") then
-                                    OldCFrameThird = v1579.HumanoidRootPart.CFrame;
+                            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if v.Name == "rip_indra" and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
+                                    local oldCF = v.HumanoidRootPart.CFrame
                                     repeat
-                                        task.wait(_G.Fast_Delay);
-                                        AutoHaki();
-                                        EquipTool(SelectWeapon);
-                                        Tween(v1579.HumanoidRootPart.CFrame * Pos);
-                                        v1579.HumanoidRootPart.CFrame = OldCFrameThird;
-                                        v1579.HumanoidRootPart.Size = Vector3.new(50, 50, 50);
-                                        v1579.HumanoidRootPart.CanCollide = false;
-                                        v1579.Humanoid.WalkSpeed = 0;
-                                        AttackNoCoolDown();
-                                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou");
-                                    until (_G.AutoSea3 == false) or (v1579.Humanoid.Health <= 0) or not v1579.Parent
+                                        task.wait(_G.Fast_Delay or 0.1)
+                                        AutoHaki()
+                                        EquipTool(SelectWeapon)
+                                        Tween(v.HumanoidRootPart.CFrame * Pos)
+                                        v.HumanoidRootPart.CFrame = oldCF
+                                        v.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+                                        v.HumanoidRootPart.CanCollide = false
+                                        v.Humanoid.WalkSpeed = 0
+                                        AttackNoCoolDown()
+                                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou")
+                                    until not _G.Auto_Sea3 or v.Humanoid.Health <= 0 or not v.Parent
                                 end
                             end
-                        elseif (not game:GetService("Workspace").Enemies:FindFirstChild("rip_indra") and ((CFrame.new(- 26880.93359375, 22.848554611206, 473.18951416016).Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 1000)) then
-                            Tween(CFrame.new(- 26880.93359375, 22.848554611206, 473.18951416016));
+                        else
+                            local indraCF = CFrame.new(-26880.93359375, 22.848554611206, 473.18951416016)
+                            if (indraCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 1000 then
+                                Tween(indraCF)
+                            end
                         end
                     end
                 end
-            end);
+            end)
         end
     end
-end);
+end)
 v16.Teleport:AddButton({
-    Title = "Biến 1",
+    Title = "Biển 1",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelMain");
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelMain")
     end
 });
 v16.Teleport:AddButton({
-    Title = "Biến 2",
+    Title = "Biển 2",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelDressrosa");
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelDressrosa")
     end
 });
 v16.Teleport:AddButton({
     Title = "Biển 3",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou");
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou")
     end
 });
 local v56 = v16.Teleport:AddSection("Đảo");
