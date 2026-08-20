@@ -2403,7 +2403,7 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-TweenSpeed = 250
+local TweenSpeed = 250
 local CurrentTween = nil
 _G.StopTween = false
 function Tween(targetCFrame)
@@ -2420,12 +2420,7 @@ function Tween(targetCFrame)
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
-    local speed = TweenSpeed
-    local time = distance / speed
-    if time > 30 then
-        time = 30
-        speed = distance / time
-    end
+    local time = distance / TweenSpeed
     local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
     CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
         CFrame = targetCFrame
@@ -2460,13 +2455,10 @@ function Tween2(targetCFrame)
     _G.StopTween = false
     _G.Clip2 = true
     Tween(targetCFrame)
-    local start = tick()
     while (root.Position - targetCFrame.Position).Magnitude > 6 do
         if _G.StopTween then break end
-        if tick() - start > 28 then break end
         task.wait()
     end
-
     if not _G.StopTween and root.Parent then
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
