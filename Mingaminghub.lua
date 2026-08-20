@@ -2421,7 +2421,7 @@ function BTPZ(v209)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
 end
-TweenSpeed = 300
+TweenSpeed = 220
 local CurrentTween = nil
 _G.StopTween = false
 function Tween(targetCFrame)
