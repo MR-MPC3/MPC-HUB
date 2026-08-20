@@ -2632,36 +2632,34 @@ function AttackNoCoolDown()
         end
     end);
 end
-Type = 1;
+Type = 1
+Pos = CFrame.new(0, 40, 0)
+local baseOffsets = {
+    Vector3.new(0, 40, 0),
+    Vector3.new(-40, 40, 0),
+    Vector3.new(40, 40, 0),
+    Vector3.new(0, 40, 40),
+    Vector3.new(0, 40, -40)
+}
 spawn(function()
-    while wait() do
-        if (Type == 1) then
-            Pos = CFrame.new(0, 40, 0);
-        elseif (Type == 2) then
-            Pos = CFrame.new(- 40, 40, 0);
-        elseif (Type == 3) then
-            Pos = CFrame.new(40, 40, 0);
-        elseif (Type == 4) then
-            Pos = CFrame.new(0, 40, 40);
-        elseif (Type == 5) then
-            Pos = CFrame.new(0, 40, - 40);
+    while task.wait() do
+        local base = baseOffsets[Type] or baseOffsets[1]
+        local randomOffset = Vector3.new(
+            math.random(-15, 15) / 10,
+            math.random(-5, 5) / 10,
+            math.random(-15, 15) / 10
+        )
+        Pos = CFrame.new(base + randomOffset)
+    end
+end)
+spawn(function()
+    while true do
+        for i = 1, 5 do
+            Type = i
+            task.wait(0.3 + math.random(5, 15) / 100)
         end
     end
-end);
-spawn(function()
-    while wait() do
-        Type = 1;
-        wait(0.2);
-        Type = 2;
-        wait(0.2);
-        Type = 3;
-        wait(0.2);
-        Type = 4;
-        wait(0.2);
-        Type = 5;
-        wait(0.2);
-    end
-end);
+end)
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
