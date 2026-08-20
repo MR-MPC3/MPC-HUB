@@ -6463,10 +6463,13 @@ v90:OnChanged(function(v277)
     _G.BringMob = v277;
 end);
 v17.ToggleBringMob:SetValue(true);
+
+-- Cấu hình tốc độ kéo quái (Studs/giây)
 local PULL_SPEED = 85 
 local lastTime = os.clock()
+
 spawn(function()
-    while task.wait(0.016) do -- 0.016s tương đương tần số 60 FPS
+    while task.wait(0.016) do -- Tần số 60 FPS
         local currentTime = os.clock()
         local dt = currentTime - lastTime
         lastTime = currentTime
@@ -6474,12 +6477,15 @@ spawn(function()
         if not (_G.BringMob and bringmob and MonFarm and FarmPos) then
             continue
         end
+
         pcall(function()
             local farmPos = FarmPos
             local monName = MonFarm
             local myChar = game.Players.LocalPlayer.Character
             if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
+            
             sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+            
             for _, mob in pairs(workspace.Enemies:GetChildren()) do
                 if mob.Name == monName
                     and mob:FindFirstChild("Humanoid")
@@ -6488,17 +6494,29 @@ spawn(function()
                 then
                     local hrp = mob.HumanoidRootPart
                     local dist = (hrp.Position - farmPos.Position).Magnitude
+                    
                     if dist <= 500 and dist > 1.5 then
+                        -- Tắt va chạm
                         hrp.CanCollide = false
                         if mob:FindFirstChild("Head") then
                             mob.Head.CanCollide = false
                         end
+                        
+                        -- CHỐNG RƠI / GIỮ NGUYÊN VẬT LÝ: Triệt tiêu trọng lực giúp quái không bị chìm
+                        hrp.AssemblyLinearVelocity = Vector3.zero
+                        hrp.AssemblyAngularVelocity = Vector3.zero
+                        
+                        -- Mở rộng Hitbox 80x80x80
                         hrp.Size = Vector3.new(80, 80, 80)
                         hrp.Transparency = 1
+                        
+                        -- TÍNH HƯỚNG DI CHUYỂN 3D CHUẨN (Tự điều chỉnh độ cao Y theo đường đi)
                         local stepDistance = math.min(dist, PULL_SPEED * dt)
                         local direction = (farmPos.Position - hrp.Position).Unit
-                        local newPosition = hrp.Position + (direction * stepDistance)
-                        hrp.CFrame = CFrame.new(newPosition, farmPos.Position)
+                        local nextPos = hrp.Position + (direction * stepDistance)
+                        
+                        -- Lướt chéo trực tiếp tới FarmPos (Dù quái ở trên cao hay dưới thấp)
+                        hrp.CFrame = CFrame.new(nextPos, farmPos.Position)
                     end
                 end
             end
