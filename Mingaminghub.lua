@@ -2,7 +2,7 @@
 
 
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
-shared.LoaderKeyFrames = {
+shared.LoaderKeyFrames = 
     [1] = {
         1,
         10
@@ -2624,10 +2624,10 @@ function AttackNoCoolDown()
         local v478 = v477:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack");
         local v479 = v477:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit");
         if (# v228 > 0) then
-            v478:FireServer(1e-9);
+            v478:FireServer(delay);
             v479:FireServer(v230, v228);
         else
-            task.wait(1e-9);
+            task.wait(dela);
         end
     end);
 end
@@ -2725,21 +2725,41 @@ v16.Home:AddButton({
     Title = "Discord",
     Description = "Giao Lưu",
     Callback = function()
-        setclipboard("https://discord.gg/25ms");
+        setclipboard("https://discord.gg/25ms")
     end
-});
-_G.FastAttackStrix_Mode = "Super Fast Attack";
-spawn(function()
-    while wait() do
-        if _G.FastAttackStrix_Mode then
-            pcall(function()
-                if (_G.FastAttackStrix_Mode == "Super Fast Attack") then
-                    _G.Fast_Delay = 1e-9;
-                end
-            end);
+})
+_G.FastAttack = true
+_G.Fast_Delay = 0.5
+_G.FastAttackInput = "0.5"
+
+local FastToggle = v16.Home:AddToggle("ToggleFastAttack", {
+    Title = "Tốc Độ Đánh",
+    Description = "Bật = Tốc Đánh Bên (0.05 → 2) | Tắt = Max Tốc Đánh",
+    Default = true
+})
+FastToggle:OnChanged(function(Value)
+    _G.FastAttack = Value
+    if Value then
+        local delay = tonumber(_G.FastAttackInput) or 0.5
+        _G.Fast_Delay = math.clamp(delay, 0.05, 2)
+    else
+        _G.Fast_Delay =  1e-9
+    end
+end
+local FastInput = v16.Home:AddInput("InputFastDelay", {
+    Title = "Nhập tốc độ (giây)",
+    Description = "Chỉ dùng khi bật Tốc Độ Đánh | Nhanh nhất 0.05 | Chậm nhất 2",
+    Default = "0.5",
+    Numeric = true,
+    Finished = false,
+    Callback = function(Value)
+        _G.FastAttackInput = Value
+        if _G.FastAttack then
+            local delay = tonumber(Value) or 0.5
+            _G.Fast_Delay = math.clamp(delay, 0.05, 2)
         end
     end
-end);
+})
 local v48 = v16.Main:AddDropdown("DropdownSelectWeapon", {
     Title = "Vũ Khí",
     Description = "",
