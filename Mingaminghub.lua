@@ -2398,24 +2398,6 @@ function UpdateGeaESP()
         end);
     end
 end
-function Tween2(v204)
-    local v205 = (v204.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude;
-    local v206 = 350;
-    if (v205 >= 350) then
-        v206 = 350;
-    end
-    local v207 = TweenInfo.new(v205 / v206, Enum.EasingStyle.Linear);
-    local v208 = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, v207, {
-        CFrame = v204
-    });
-    v208:Play();
-    if _G.CancelTween2 then
-        v208:Cancel();
-    end
-    _G.Clip2 = true;
-    wait(v205 / v206);
-    _G.Clip2 = false;
-end
 function BTPZ(v209)
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v209;
     task.wait();
@@ -2473,6 +2455,39 @@ function CancelTween(force)
     end
     task.wait(0.1)
     _G.StopTween = false
+end
+function Tween2(targetCFrame)
+    if not game.Players.LocalPlayer.Character then
+        return
+    end
+    local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        return
+    end
+    local distance = (targetCFrame.Position - root.Position).Magnitude
+    if distance < 3 then
+        root.CFrame = targetCFrame
+        return
+    end
+    _G.StopTween = false
+    _G.Clip2 = true
+    Tween(targetCFrame)
+    local start = tick()
+    while (root.Position - targetCFrame.Position).Magnitude > 5 do
+        if _G.StopTween then
+            break
+        end
+        if tick() - start > 30 then
+            break
+        end
+        task.wait()
+    end
+    if not _G.StopTween and root.Parent then
+        root.CFrame = targetCFrame
+        root.AssemblyLinearVelocity = Vector3.zero
+    end
+
+    _G.Clip2 = false
 end
 function EquipTool(v217)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(v217) then
