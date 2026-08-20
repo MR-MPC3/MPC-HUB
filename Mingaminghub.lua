@@ -2724,6 +2724,38 @@ v16.Home:AddButton({
         setclipboard("https://discord.gg/25ms")
     end
 })
+_G.FastAttack = true
+_G.Fast_Delay = 0.5
+_G.FastAttackInput = "0.5"
+
+local FastToggle = v16.Home:AddToggle("ToggleFastAttack", {
+    Title = "Tốc Đánh",
+    Description = "Tắt Thì Max Tốc Đánh",
+    Default = true
+})
+FastToggle:OnChanged(function(Value)
+    _G.FastAttack = Value
+    if Value then
+        local delay = tonumber(_G.FastAttackInput) or 0.5
+        _G.Fast_Delay = math.clamp(delay, 0.05, 2)
+    else
+        _G.Fast_Delay =  1e-9
+    end
+end)
+local FastInput = v16.Home:AddInput("InputFastDelay", {
+    Title = "Nhập Tốc Đánh",
+    Description = "(0.05s -> 2s)",
+    Default = "0.5",
+    Numeric = true,
+    Finished = false,
+    Callback = function(Value)
+        _G.FastAttackInput = Value
+        if _G.FastAttack then
+            local delay = tonumber(Value) or 0.5
+            _G.Fast_Delay = math.clamp(delay, 0.05, 2)
+        end
+    end
+})
 local v48 = v16.Main:AddDropdown("DropdownSelectWeapon", {
     Title = "Vũ Khí",
     Description = "",
@@ -6449,37 +6481,6 @@ spawn(function()
 end);
 local v89 = require(game.ReplicatedStorage.Util.CameraShaker);
 v89:Stop();
-_G.FastAttack = true
-_G.Fast_Delay = 0.5
-_G.FastAttackInput = "0.5"
-local FastToggle = v16.Setting:AddToggle("ToggleFastAttack", {
-    Title = "Tốc Đánh",
-    Description = "Tắt Thì Max Tốc Đánh",
-    Default = true
-})
-FastToggle:OnChanged(function(Value)
-    _G.FastAttack = Value
-    if Value then
-        local delay = tonumber(_G.FastAttackInput) or 0.5
-        _G.Fast_Delay = math.clamp(delay, 0.05, 2)
-    else
-        _G.Fast_Delay = 1e-9
-    end
-end)
-local FastInput = v16.Setting:AddInput("InputFastDelay", {
-    Title = "Nhập Tốc Đánh",
-    Description = "(0.05s -> 2s)",
-    Default = "0.5",
-    Numeric = true,
-    Finished = false,
-    Callback = function(Value)
-        _G.FastAttackInput = Value
-        if _G.FastAttack then
-            local delay = tonumber(Value) or 0.5
-            _G.Fast_Delay = math.clamp(delay, 0.05, 2)
-        end
-    end
-})
 local v90 = v16.Setting:AddToggle("ToggleBringMob", {
     Title = "Gom Quái",
     Description = "",
@@ -6490,44 +6491,45 @@ v90:OnChanged(function(v277)
 end);
 v17.ToggleBringMob:SetValue(true);
 spawn(function()
-    while task.wait(0.15) do 
-        if not (_G.BringMob and bringmob and MonFarm and FarmPos) then
-            continue
-        end
+    while wait() do
         pcall(function()
-            local farmPos = FarmPos
-            local monName = MonFarm
-            local myChar = game.Players.LocalPlayer.Character
-            if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
-            sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-            for _, mob in pairs(workspace.Enemies:GetChildren()) do
-                if mob.Name == monName
-                    and mob:FindFirstChild("Humanoid")
-                    and mob:FindFirstChild("HumanoidRootPart")
-                    and mob.Humanoid.Health > 0
-                then
-                    local hrp = mob.HumanoidRootPart
-                    local dist = (hrp.Position - farmPos.Position).Magnitude
-                    if dist <= 400 then
-                        hrp.CanCollide = false
-                        if mob:FindFirstChild("Head") then
-                            mob.Head.CanCollide = false
+            for v733, v734 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                if (_G.BringMob and bringmob) then
+                    if ((v734.Name == MonFarm) and v734:FindFirstChild("Humanoid") and (v734.Humanoid.Health > 0)) then
+                        if (v734.Name == "Factory Staff") then
+                            if ((v734.HumanoidRootPart.Position - FarmPos.Position).Magnitude <= 1000000000) then
+                                v734.Head.CanCollide = false;
+                                v734.HumanoidRootPart.CanCollide = false;
+                                v734.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                v734.HumanoidRootPart.CFrame = FarmPos;
+                                if v734.Humanoid:FindFirstChild("Animator") then
+                                    v734.Humanoid.Animator:Destroy();
+                                end
+                                sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge);
+                            end
+                        elseif (v734.Name == MonFarm) then
+                            if ((v734.HumanoidRootPart.Position - FarmPos.Position).Magnitude <= 1000000000) then
+                                v734.HumanoidRootPart.CFrame = FarmPos;
+                                v734.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                v734.HumanoidRootPart.Transparency = 1;
+                                v734.Humanoid.JumpPower = 0;
+                                v734.Humanoid.WalkSpeed = 0;
+                                if v734.Humanoid:FindFirstChild("Animator") then
+                                    v734.Humanoid.Animator:Destroy();
+                                end
+                                v734.HumanoidRootPart.CanCollide = false;
+                                v734.Head.CanCollide = false;
+                                v734.Humanoid:ChangeState(11);
+                                v734.Humanoid:ChangeState(14);
+                                sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge);
+                            end
                         end
-                        hrp.Size = Vector3.new(60, 60, 60)
-                        hrp.Transparency = 1
-                        mob.Humanoid.WalkSpeed = 0
-                        mob.Humanoid.JumpPower = 0
-                        local animator = mob.Humanoid:FindFirstChildOfClass("Animator")
-                        if animator then
-                            animator:Destroy()
-                        end
-                        hrp.CFrame = farmPos
                     end
                 end
             end
-        end)
+        end);
     end
-end)
+end);
 local v91 = v16.Setting:AddToggle("ToggleRemoveNotify", {
     Title = "Xóa Thông Báo",
     Description = "",
