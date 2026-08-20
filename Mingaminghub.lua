@@ -2409,7 +2409,6 @@ _G.StopTween = false
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
-
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     local distance = (targetCFrame.Position - root.Position).Magnitude
@@ -2422,9 +2421,12 @@ function Tween(targetCFrame)
         CurrentTween = nil
     end
     local speed = TweenSpeed
+    if distance > 1000 then
+        speed = 300
+    end
     local time = distance / speed
-    if time > 25 then
-        time = 25
+    if time > 30 then
+        time = 30
         speed = distance / time
     end
     local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
@@ -2474,9 +2476,9 @@ function Tween2(targetCFrame)
 end
 function EquipTool(v217)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(v217) then
-        local v570 = game.Players.LocalPlayer.Backpack:FindFirstChild(v217);
-        wait();
-        game.Players.LocalPlayer.Character.Humanoid:EquipTool(v570);
+        local v570 = game.Players.LocalPlayer.Backpack:FindFirstChild(v217)
+        task.wait()
+        game.Players.LocalPlayer.Character.Humanoid:EquipTool(v570)
     end
 end
 spawn(function()
