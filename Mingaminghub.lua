@@ -6928,7 +6928,7 @@ spawn(function()
         if _G.Auto_Sea2 then
             pcall(function()
                 local v800 = game:GetService("Players").LocalPlayer.Data.Level.Value;
-                if ((v800 >= 700) and World1) then
+                if ((v800 >= 700) and Sea1) the
                     if ((game:GetService("Workspace").Map.Ice.Door.CanCollide == false) and (game:GetService("Workspace").Map.Ice.Door.Transparency == 1)) then
                         local v1346 = CFrame.new(4849.29883, 5.65138149, 719.611877);
                         repeat
@@ -6990,7 +6990,7 @@ end);
 v17.ToggleAutoSea3:SetValue(false);
 spawn(function()
     while wait() do
-        if _G.AutoSea3 then
+        if _G.Auto_Sea3 then
             pcall(function()
                 if ((game:GetService("Players").LocalPlayer.Data.Level.Value >= 1500) and World2) then
                     _G.AutoLevel = false;
@@ -7207,8 +7207,6 @@ v16.Teleport:AddButton({
             Tween2(CFrame.new(- 13274.528320313, 531.82073974609, - 7579.22265625));
         elseif (_G.SelectIsland == "Mansion") then
             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 12468.5380859375, 375.0094299316406, - 7554.62548828125));
-        elseif (_G.SelectIsland == "Castle On The Sea") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
         elseif (_G.SelectIsland == "Haunted Castle") then
             Tween2(CFrame.new(- 9515.3720703125, 164.00624084473, 5786.0610351562));
         elseif (_G.SelectIsland == "Ice Cream Island") then
