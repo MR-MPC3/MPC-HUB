@@ -6461,8 +6461,10 @@ spawn(function()
     while wait() do
         if _G.CollectFruitTP then
             for _, child in pairs(game.Workspace:GetChildren()) do
-                if string.find(fruitChildTP.Name, "Fruit") then
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = fruitChildTP.Handle.CFrame;
+                if string.find(child.Name, "Fruit") and child:FindFirstChild("Handle") then
+                    pcall(function()
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = child.Handle.CFrame
+                    end)
                 end
             end
         end
@@ -6481,8 +6483,10 @@ spawn(function()
     while wait() do
         if _G.Tweenfruit then
             for _, child in pairs(game.Workspace:GetChildren()) do
-                if string.find(fruitChildTween.Name, "Fruit") then
-                    Tween(fruitChildTween.Handle.CFrame);
+                if string.find(child.Name, "Fruit") and child:FindFirstChild("Handle") then
+                    pcall(function()
+                        Tween(child.Handle.CFrame)
+                    end)
                 end
             end
         end
@@ -6505,11 +6509,7 @@ local toggleEspFruit = Tabs.Fruit:AddToggle("ToggleEspFruit", {
     Default = false
 });
 toggleEspFruit:OnChanged(function(value)
-    DevilFruitESP = value;
-    while DevilFruitESP do
-        wait();
-        UpdateDevilChams();
-    end
+    DevilFruitESP = value
 end);
 Options.ToggleEspFruit:SetValue(false);
 local toggleEspIsland = Tabs.Fruit:AddToggle("ToggleEspIsland", {
@@ -6518,11 +6518,7 @@ local toggleEspIsland = Tabs.Fruit:AddToggle("ToggleEspIsland", {
     Default = false
 });
 toggleEspIsland:OnChanged(function(value)
-    IslandESP = value;
-    while IslandESP do
-        wait();
-        UpdateIslandESP();
-    end
+    IslandESP = value
 end);
 Options.ToggleEspIsland:SetValue(false);
 local toggleEspFlower = Tabs.Fruit:AddToggle("ToggleEspFlower", {
@@ -6538,19 +6534,25 @@ Options.ToggleEspFlower:SetValue(false);
 spawn(function()
     while wait() do
         if FlowerESP then
-            UpdateFlowerChams();
+            UpdateFlowerChams()
         end
         if DevilFruitESP then
-            UpdateDevilChams();
+            UpdateDevilChams()
         end
         if ChestESP then
-            UpdateChestChams();
+            UpdateChestChams()
         end
         if ESPPlayer then
-            UpdatePlayerChams();
+            UpdatePlayerChams()
         end
         if RealFruitESP then
-            UpdateRealFruitChams();
+            UpdateRealFruitChams()
+        end
+        if MirageIslandESP then
+            UpdateIslandMirageESP()
+        end
+        if IslandESP then
+            UpdateIslandESP()
         end
     end
 end);
@@ -6560,118 +6562,20 @@ local toggleEspRealFruit = Tabs.Fruit:AddToggle("ToggleEspRealFruit", {
     Default = false
 });
 toggleEspRealFruit:OnChanged(function(value)
-    RealFruitEsp = value;
-    while RealFruitEsp do
-        wait();
-        UpdateRealFruitEsp();
-    end
+    RealFruitESP = value
 end);
 Options.ToggleEspRealFruit:SetValue(false);
-function UpdateRealFruitEsp()
-    for _, npc in pairs(game.Workspace.AppleSpawner:GetChildren()) do
-        if npc:IsA("Tool") then
-            if RealFruitEsp then
-                if not npc.Handle:FindFirstChild("NameEsp" .. Number) then
-                    local billboard = Instance.new("BillboardGui", npc.Handle);
-billboard.Name = "NameEsp" .. Number ;
-                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
-                    billboard.Size = UDim2.new(1, 200, 1, 30);
-                    billboard.Adornee = npc.Handle;
-                    billboard.AlwaysOnTop = true;
-                    local textLabel = Instance.new("TextLabel", billboard);
-                    textLabel.Font = Enum.Font.GothamSemibold;
-                    textLabel.TextSize = 14;
-                    textLabel.TextWrapped = true;
-                    textLabel.Size = UDim2.new(1, 0, 1, 0);
-                    textLabel.TextYAlignment = Enum.TextYAlignment.Top;
-                    textLabel.BackgroundTransparency = 1;
-                    textLabel.TextStrokeTransparency = 0.5;
-                    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0);
-                    textLabel.Text = npc.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - npc.Handle.Position).Magnitude / 3) .. " Distance" ;
-                else
-                    npc.Handle["NameEsp" .. Number ].TextLabel.Text = npc.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - npc.Handle.Position).Magnitude / 3) .. " Distance" ;
-                end
-            elseif npc.Handle:FindFirstChild("NameEsp" .. Number) then
-                npc.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
-            end
-        end
-    end
-    for _, monster in pairs(game.Workspace.PineappleSpawner:GetChildren()) do
-        if monster:IsA("Tool") then
-            if RealFruitEsp then
-                if not monster.Handle:FindFirstChild("NameEsp" .. Number) then
-                    local billboard = Instance.new("BillboardGui", monster.Handle);
-billboard.Name = "NameEsp" .. Number ;
-                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
-                    billboard.Size = UDim2.new(1, 200, 1, 30);
-                    billboard.Adornee = monster.Handle;
-                    billboard.AlwaysOnTop = true;
-                    local textLabel = Instance.new("TextLabel", billboard);
-                    textLabel.Font = Enum.Font.GothamSemibold;
-                    textLabel.TextSize = 14;
-                    textLabel.TextWrapped = true;
-                    textLabel.Size = UDim2.new(1, 0, 1, 0);
-                    textLabel.TextYAlignment = Enum.TextYAlignment.Top;
-                    textLabel.BackgroundTransparency = 1;
-                    textLabel.TextStrokeTransparency = 0.5;
-                    textLabel.TextColor3 = Color3.fromRGB(255, 174, 0);
-                    textLabel.Text = monster.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - monster.Handle.Position).Magnitude / 3) .. " Distance" ;
-                else
-                    monster.Handle["NameEsp" .. Number ].TextLabel.Text = monster.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - monster.Handle.Position).Magnitude / 3) .. " Distance" ;
-                end
-            elseif monster.Handle:FindFirstChild("NameEsp" .. Number) then
-                monster.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
-            end
-        end
-    end
-    for _, questData in pairs(game.Workspace.BananaSpawner:GetChildren()) do
-        if questData:IsA("Tool") then
-            if RealFruitEsp then
-                if not questData.Handle:FindFirstChild("NameEsp" .. Number) then
-                    local billboard = Instance.new("BillboardGui", questData.Handle);
-billboard.Name = "NameEsp" .. Number ;
-                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
-                    billboard.Size = UDim2.new(1, 200, 1, 30);
-                    billboard.Adornee = questData.Handle;
-                    billboard.AlwaysOnTop = true;
-                    local textLabel = Instance.new("TextLabel", billboard);
-                    textLabel.Font = Enum.Font.GothamSemibold;
-                    textLabel.TextSize = 14;
-                    textLabel.TextWrapped = true;
-                    textLabel.Size = UDim2.new(1, 0, 1, 0);
-                    textLabel.TextYAlignment = Enum.TextYAlignment.Top;
-                    textLabel.BackgroundTransparency = 1;
-                    textLabel.TextStrokeTransparency = 0.5;
-                    textLabel.TextColor3 = Color3.fromRGB(251, 255, 0);
-                    textLabel.Text = questData.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - questData.Handle.Position).Magnitude / 3) .. " Distance" ;
-                else
-                    questData.Handle["NameEsp" .. Number ].TextLabel.Text = questData.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - questData.Handle.Position).Magnitude / 3) .. " Distance" ;
-                end
-            elseif questData.Handle:FindFirstChild("NameEsp" .. Number) then
-                questData.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
-            end
-        end
-    end
-end
+
 local toggleEspMirageIsland = Tabs.Fruit:AddToggle("ToggleIslandMirageEsp", {
     Title = "Đảo Bí Ẩn",
     Description = "",
     Default = false
 });
 toggleEspMirageIsland:OnChanged(function(value)
-    IslandMirageEsp = value;
-    while IslandMirageEsp do
-        wait();
-        UpdateIslandMirageESP();
-    end
+    MirageIslandESP = value
 end);
 Options.ToggleIslandMirageEsp:SetValue(false);
-            elseif data:FindFirstChild("NameEsp") then
-                data:FindFirstChild("NameEsp"):Destroy();
-            end
-        end);
-    end
-end
+
 local raidChipList = {
     "Flame",
     "Ice",
@@ -7069,122 +6973,61 @@ toggleAutoTrial:OnChanged(function(value)
 end);
 Options.ToggleAutotrial:SetValue(false);
 spawn(function()
-    pcall(function()
-        while wait() do
-            if _G.AutoQuestRace then
-                if (game:GetService("Players").LocalPlayer.Data.Race.Value == "Human") then
-                    for _, descendant in pairs(game.Workspace.Enemies:GetDescendants()) do
-                        if (trialEnemy:FindFirstChild("Humanoid") and trialEnemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            pcall(function()
-                                repeat
-                                    wait();
-                                    enemy.Humanoid.Health = 0;
-                                    enemy.HumanoidRootPart.CanCollide = false;
-                                    sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge);
-                                until not _G.AutoQuestRace or not enemy.Parent or (enemy.Humanoid.Health <= 0)
-                            end);
-                        end
+    while wait() do
+        if not _G.AutoQuestRace then continue end
+        pcall(function()
+            local race = game:GetService("Players").LocalPlayer.Data.Race.Value
+            if race == "Human" or race == "Ghoul" then
+                for _, mob in pairs(game.Workspace.Enemies:GetDescendants()) do
+                    if mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                        pcall(function()
+                            mob.Humanoid.Health = 0
+                            mob.HumanoidRootPart.CanCollide = false
+                            sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+                        end)
                     end
-                elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Skypiea") then
-                    for _, skyTrialPart in pairs(game:GetService("Workspace").Map.SkyTrial.Model:GetDescendants()) do
-                        if (enemy.Name == "snowisland_Cylinder.081") then
-                            BTPZ(skyTrialPart.CFrame * CFrame.new(0, 0, 0));
-                        end
-                    end
-                elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Fishman") then
-                    for _, seaBeastPart in pairs(game:GetService("Workspace").SeaBeasts.SeaBeast1:GetDescendants()) do
-                        if (enemy.Name == "HumanoidRootPart") then
-                            Tween(seaBeastPart.CFrame * Pos);
-                            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                                if trialMeleeTool:IsA("Tool") then
-                                    if (trialMeleeTool.ToolTip == "Melee") then
-                                        game.Players.LocalPlayer.Character.Humanoid:EquipTool(trialMeleeTool);
-                                    end
-                                end
-                            end
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                                if trialFruitTool:IsA("Tool") then
-                                    if (trialFruitTool.ToolTip == "Blox Fruit") then
-                                        game.Players.LocalPlayer.Character.Humanoid:EquipTool(trialFruitTool);
-                                    end
-                                end
-                            end
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait();
-                            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                                if trialSwordTool:IsA("Tool") then
-                                    if (trialSwordTool.ToolTip == "Sword") then
-                                        game.Players.LocalPlayer.Character.Humanoid:EquipTool(trialSwordTool);
-                                    end
-                                end
-                            end
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait();
-                            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                                if trialGunTool:IsA("Tool") then
-                                    if (trialGunTool.ToolTip == "Gun") then
-                                        game.Players.LocalPlayer.Character.Humanoid:EquipTool(trialGunTool);
-                                    end
-                                end
-                            end
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            wait(0.2);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(true, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                            game:GetService("VirtualInputManager"):SendKeyEvent(false, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart);
-                        end
-                    end
-                elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Cyborg") then
-                    Tween(CFrame.new(28654, 14898.7832, - 30, 1, 0, 0, 0, 1, 0, 0, 0, 1));
-                elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Ghoul") then
-                    for _, descendant in pairs(game.Workspace.Enemies:GetDescendants()) do
-                        if (ghoulTrialEnemy:FindFirstChild("Humanoid") and ghoulTrialEnemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            pcall(function()
-                                repeat
-                                    wait();
-                                    enemy.Humanoid.Health = 0;
-                                    enemy.HumanoidRootPart.CanCollide = false;
-                                    sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge);
-                                until not _G.AutoQuestRace or not enemy.Parent or (enemy.Humanoid.Health <= 0)
-                            end);
-                        end
-                    end
-                elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Mink") then
-                    for _, minkStartPoint in pairs(game:GetService("Workspace"):GetDescendants()) do
-                        if (enemy.Name == "StartPoint") then
-                            Tween(minkStartPoint.CFrame * CFrame.new(0, 10, 0));
+                end
+            elseif race == "Skypiea" then
+                local skyTrial = game:GetService("Workspace").Map:FindFirstChild("SkyTrial")
+                if skyTrial and skyTrial:FindFirstChild("Model") then
+                    for _, part in pairs(skyTrial.Model:GetDescendants()) do
+                        if part.Name == "snowisland_Cylinder.081" then
+                            BTPZ(part.CFrame)
                         end
                     end
                 end
+            elseif race == "Fishman" then
+                local seaBeast = game:GetService("Workspace").SeaBeasts:FindFirstChild("SeaBeast1")
+                if seaBeast then
+                    local root = seaBeast:FindFirstChild("HumanoidRootPart", true)
+                    if root then
+                        Tween(root.CFrame * Pos)
+                        for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                            if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Blox Fruit" or tool.ToolTip == "Sword" or tool.ToolTip == "Gun") then
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+                                local vim = game:GetService("VirtualInputManager")
+                                for _, key in ipairs({122, 120, 99}) do
+                                    vim:SendKeyEvent(true, key, false, game)
+                                    vim:SendKeyEvent(false, key, false, game)
+                                    wait(0.2)
+                                end
+                            end
+                        end
+                    end
+                end
+            elseif race == "Cyborg" then
+                Tween(CFrame.new(28654, 14898.7832, -30))
+            elseif race == "Mink" then
+                for _, part in pairs(game:GetService("Workspace"):GetDescendants()) do
+                    if part.Name == "StartPoint" then
+                        Tween(part.CFrame * CFrame.new(0, 10, 0))
+                    end
+                end
             end
-        end
-    end);
+        end)
+    end
 end);
+
 local toggleKillTrial = Tabs.Race:AddToggle("ToggleKillTrial", {
     Title = "Đấm Người Chơi Trong Trial",
     Description = "",
@@ -7198,23 +7041,25 @@ spawn(function()
     while wait() do
         pcall(function()
             if _G.AutoKillTrial then
-                for _, otherPlayer in pairs(game:GetService("Players"):GetChildren()) do
-                    if (otherPlayer.Name and (otherPlayer.Name ~= game.Players.LocalPlayer.Name) and ((otherPlayer.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 100)) then
-                        if (otherPlayer.Character.Humanoid.Health > 0) then
-                            repeat
-                                wait(_G.Fast_Delay);
-                                EquipTool(SelectWeapon);
-                                AutoHaki();
-                                Tween(otherPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5));
-                                otherPlayer.Character.HumanoidRootPart.CanCollide = false;
-                                otherPlayer.Character.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
-                                AttackNoCoolDown();
-                            until not _G.AutoKillTrial or not enemy.Parent or (otherPlayer.Character.Humanoid.Health <= 0)
+                for _, otherPlayer in pairs(game:GetService("Players"):GetPlayers()) do
+                    if otherPlayer ~= game.Players.LocalPlayer and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") and otherPlayer.Character:FindFirstChild("Humanoid") then
+                        if (otherPlayer.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 100 then
+                            if otherPlayer.Character.Humanoid.Health > 0 then
+                                repeat
+                                    wait(_G.Fast_Delay or 0.1)
+                                    EquipTool(SelectWeapon)
+                                    AutoHaki()
+                                    Tween(otherPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5))
+                                    otherPlayer.Character.HumanoidRootPart.CanCollide = false
+                                    otherPlayer.Character.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                                    AttackNoCoolDown()
+                                until not _G.AutoKillTrial or not otherPlayer.Character or otherPlayer.Character.Humanoid.Health <= 0
+                            end
                         end
                     end
                 end
             end
-        end);
+        end)
     end
 end);
 local _section = Tabs.Race:AddSection("Huấn Luyện");
@@ -7682,10 +7527,10 @@ spawn(function()
     while wait() do
         if _G.AutoRejoin then
             getgenv().rejoin = game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(promptChild)
-                if ((enemy.Name == "ErrorPrompt") and promptChild:FindFirstChild("MessageArea") and promptChild.MessageArea:FindFirstChild("ErrorFrame")) then
-                    game:GetService("TeleportService"):Teleport(game.PlaceId);
+                if (promptChild.Name == "ErrorPrompt" and promptChild:FindFirstChild("MessageArea") and promptChild.MessageArea:FindFirstChild("ErrorFrame")) then
+                    game:GetService("TeleportService"):Teleport(game.PlaceId)
                 end
-            end);
+            end)
         end
     end
 end);
@@ -7732,9 +7577,9 @@ local BannedUserIds = {
 spawn(function()
     while wait() do
         if _G.AntiBand then
-            for _, player in pairs(game:GetService(\"Players\"):GetPlayers()) do
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
                 if table.find(BannedUserIds, player.UserId) then
-                    Hop();
+                    Hop()
                 end
             end
         end
