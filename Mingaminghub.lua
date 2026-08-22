@@ -314,20 +314,10 @@ LoaderGui:Destroy();
 --         pcall(checkHookTamper);
 --     end
 -- end);
-local Fluent
-local okFluent, errFluent = pcall(function()
-    Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
-if not okFluent or not Fluent then
-    warn("[Min Gaming] Không tải được Fluent UI: " .. tostring(errFluent))
-    -- Thử mirror dự phòng
-    pcall(function()
-        Fluent = loadstring(game:HttpGet("https://github.com/MR-MPC3/Fluent/raw/master/main.lua"))()
-    end)
-end
-if not Fluent then
-    error("[Min Gaming] Fluent UI load failed. Kiểm tra executor có HttpGet + loadstring không.")
-end
+assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
 
 local Window = Fluent:CreateWindow({
     Title = "Min Gaming",
@@ -461,21 +451,30 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local plr = Players.LocalPlayer
+
+----------------------------------------------------------------
+-- Code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
+----------------------------------------------------------------
+local Options = Fluent.Options;
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Xác định Sea (hỗ trợ cả PlaceId mới + PlaceId công khai cũ)
+-- Xác định Sea bằng PlaceId chuẩn hiện tại
 local Sea1, Sea2, Sea3 = false, false, false
-if PlaceId == 85211729168715 or PlaceId == 2753915549 then
+
+if PlaceId == 85211729168715 then
     Sea1 = true
-elseif PlaceId == 79091703265657 or PlaceId == 4442272183 then
+elseif PlaceId == 79091703265657 then
     Sea2 = true
-elseif PlaceId == 100117331123089 or PlaceId == 7449423635 then
+elseif PlaceId == 100117331123089 then
     Sea3 = true
 else
-    -- Không kick để UI vẫn hiện; chỉ cảnh báo
-    warn("[Min Gaming] PlaceId lạ: " .. tostring(PlaceId) .. " — vẫn tiếp tục chạy")
-    -- Mặc định Sea1 để tránh nil
-    Sea1 = true
+    -- Đá người chơi nếu vào sai game hoặc map không hợp lệ
+    plr:Kick("[Min Gaming] PlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits (Sea 1, 2, 3).")
+    return
 end
 
 ----------------------------------------------------------------
