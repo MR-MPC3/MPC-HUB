@@ -1010,17 +1010,26 @@ function MaterialMon()
         end
     end
 end
-----------------------------------------------------------------
--- ESP System (Dùng biến plr + Players có sẵn từ Script gốc)
-----------------------------------------------------------------
+------------------------------------------------------------------
+-- ESP System (Tối ưu performance + Tương thích UI 100%)
+------------------------------------------------------------------
 local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
 local EspTag = "NameEsp" .. math.random(1, 1000000)
 
-----------------------------------------------------------------
--- Helper Functions
-----------------------------------------------------------------
+-- Static Data: Đưa ra ngoài để tránh khởi tạo lại bảng mỗi 0.5s gây rác RAM
+local FruitSpawners = {
+    {name = "AppleSpawner", color = Color3.fromRGB(255, 60, 60)},
+    {name = "PineappleSpawner", color = Color3.fromRGB(255, 180, 0)},
+    {name = "BananaSpawner", color = Color3.fromRGB(255, 255, 50)}
+}
+
+------------------------------------------------------------------
+-- Helper Functions (Dùng nội bộ)
+------------------------------------------------------------------
 local function Round(num)
-    return math.floor(tonumber(num) + 0.5)
+    return math.floor(tonumber(num or 0) + 0.5)
 end
 
 local function GetMyHeadPos()
@@ -1081,17 +1090,16 @@ local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
     end
 end
 
-----------------------------------------------------------------
--- Main Update Functions
-----------------------------------------------------------------
-local function UpdatePlayerChams()
+------------------------------------------------------------------
+-- Main Functions (Global Scope - Bắt buộc để UI gọi được)
+------------------------------------------------------------------
+function UpdatePlayerChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
     for _, player in pairs(Players:GetPlayers()) do
         pcall(function()
             if player == plr then return end
-
             local char = player.Character
             local head = char and char:FindFirstChild("Head")
             local humanoid = char and char:FindFirstChildOfClass("Humanoid")
@@ -1108,7 +1116,7 @@ local function UpdatePlayerChams()
     end
 end
 
-local function UpdateWorkspaceObjectsESP()
+function UpdateWorkspaceObjectsESP()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
@@ -1144,13 +1152,7 @@ local function UpdateWorkspaceObjectsESP()
     end
 end
 
-local FruitSpawners = {
-    {name = "AppleSpawner", color = Color3.fromRGB(255, 60, 60)},
-    {name = "PineappleSpawner", color = Color3.fromRGB(255, 180, 0)},
-    {name = "BananaSpawner", color = Color3.fromRGB(255, 255, 50)}
-}
-
-local function UpdateRealFruitChams()
+function UpdateRealFruitChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
@@ -1167,14 +1169,13 @@ local function UpdateRealFruitChams()
     end
 end
 
-local function UpdateIslandESP()
+function UpdateIslandESP()
     local myHeadPos = GetMyHeadPos()
     local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
     if not locations or not myHeadPos then return end
 
     for _, island in pairs(locations:GetChildren()) do
         pcall(function()
-            -- Bỏ qua Sea và Mirage Island để tránh xung đột nút toggle
             if island.Name ~= "Sea" and island.Name ~= "Mirage Island" then
                 local part = GetTargetPart(island)
                 if part then
@@ -1186,7 +1187,7 @@ local function UpdateIslandESP()
     end
 end
 
-local function UpdateSpecialLocationsESP()
+function UpdateSpecialLocationsESP()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
@@ -1215,7 +1216,7 @@ local function UpdateSpecialLocationsESP()
     end
 end
 
-local function UpdateNPCsESP()
+function UpdateNPCsESP()
     local myHeadPos = GetMyHeadPos()
     local npcs = Workspace:FindFirstChild("NPCs")
     if not npcs or not myHeadPos then return end
@@ -1227,7 +1228,6 @@ local function UpdateNPCsESP()
 
             local dist = Round((myHeadPos - part.Position).Magnitude / 3)
 
-            -- Phân loại NPC sạch sẽ, không bị lặp đè ESP
             if npc.Name == "Master of Enhancement" then
                 UpdateESP(part, "Master of Enhancement", dist, Color3.fromRGB(80, 245, 245), AuraESP)
             elseif npc.Name == "Legendary Sword Dealer" then
@@ -1239,7 +1239,7 @@ local function UpdateNPCsESP()
     end
 end
 
-local function UpdateEnemiesAndSeaESP()
+function UpdateEnemiesAndSeaESP()
     local myPos = GetMyHeadPos()
     if not myPos then return end
 
@@ -1268,9 +1268,20 @@ local function UpdateEnemiesAndSeaESP()
     end
 end
 
-----------------------------------------------------------------
--- Unified Execution Loop
-----------------------------------------------------------------
+------------------------------------------------------------------
+-- UI Compatibility Wrappers (Giữ tương thích tuyệt đối cho các nút UI cũ)
+------------------------------------------------------------------
+function UpdateDevilChams() UpdateWorkspaceObjectsESP() end
+function UpdateChestChams() UpdateWorkspaceObjectsESP() end
+function UpdateFlowerChams() UpdateWorkspaceObjectsESP() end
+function UpdateIslandMirageESP() UpdateSpecialLocationsESP() end
+function UpdateAuraESP() UpdateNPCsESP() end
+function UpdateLSDESP() UpdateNPCsESP() end
+function UpdateGeaESP() UpdateSpecialLocationsESP() end
+
+------------------------------------------------------------------
+-- Main Execution Loop
+------------------------------------------------------------------
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
