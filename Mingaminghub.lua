@@ -6371,16 +6371,19 @@ spawn(function()
     end
 end);
 local _section = Tabs.Fruit:AddSection("Định Vị");
+
+-- Người Chơi
 local toggleEspPlayer = Tabs.Fruit:AddToggle("ToggleEspPlayer", {
     Title = "Người Chơi",
     Description = "",
     Default = false
 });
 toggleEspPlayer:OnChanged(function(value)
-    ESPPlayer = value;
-    UpdatePlayerChams();
+    ESPPlayer = value
 end);
 Options.ToggleEspPlayer:SetValue(false);
+
+-- Trái (Devil Fruit rơi)
 local toggleEspFruit = Tabs.Fruit:AddToggle("ToggleEspFruit", {
     Title = "Trái",
     Description = "",
@@ -6390,6 +6393,8 @@ toggleEspFruit:OnChanged(function(value)
     DevilFruitESP = value
 end);
 Options.ToggleEspFruit:SetValue(false);
+
+-- Đảo
 local toggleEspIsland = Tabs.Fruit:AddToggle("ToggleEspIsland", {
     Title = "Đảo",
     Description = "",
@@ -6399,43 +6404,21 @@ toggleEspIsland:OnChanged(function(value)
     IslandESP = value
 end);
 Options.ToggleEspIsland:SetValue(false);
+
+-- Hoa
 local toggleEspFlower = Tabs.Fruit:AddToggle("ToggleEspFlower", {
     Title = "Hoa",
     Description = "",
     Default = false
 });
 toggleEspFlower:OnChanged(function(value)
-    FlowerESP = value;
-    UpdateFlowerChams();
+    FlowerESP = value
 end);
 Options.ToggleEspFlower:SetValue(false);
-spawn(function()
-    while wait() do
-        if FlowerESP then
-            UpdateFlowerChams()
-        end
-        if DevilFruitESP then
-            UpdateDevilChams()
-        end
-        if ChestESP then
-            UpdateChestChams()
-        end
-        if ESPPlayer then
-            UpdatePlayerChams()
-        end
-        if RealFruitESP then
-            UpdateRealFruitChams()
-        end
-        if MirageIslandESP then
-            UpdateIslandMirageESP()
-        end
-        if IslandESP then
-            UpdateIslandESP()
-        end
-    end
-end);
+
+-- Trái Dứa / Khóm / Táo (spawner)
 local toggleEspRealFruit = Tabs.Fruit:AddToggle("ToggleEspRealFruit", {
-    Title = "Trái Dứa Khớm Táo",
+    Title = "Trái Dứa Khóm Táo",
     Description = "",
     Default = false
 });
@@ -6444,6 +6427,7 @@ toggleEspRealFruit:OnChanged(function(value)
 end);
 Options.ToggleEspRealFruit:SetValue(false);
 
+-- Đảo Bí Ẩn (Mirage)
 local toggleEspMirageIsland = Tabs.Fruit:AddToggle("ToggleIslandMirageEsp", {
     Title = "Đảo Bí Ẩn",
     Description = "",
@@ -6453,6 +6437,86 @@ toggleEspMirageIsland:OnChanged(function(value)
     MirageIslandESP = value
 end);
 Options.ToggleIslandMirageEsp:SetValue(false);
+
+-- Rương
+local toggleEspChest = Tabs.Fruit:AddToggle("ToggleEspChest", {
+    Title = "Rương",
+    Description = "",
+    Default = false
+});
+toggleEspChest:OnChanged(function(value)
+    ChestESP = value
+end);
+Options.ToggleEspChest:SetValue(false);
+
+-- Quái (Mob)
+local toggleEspMob = Tabs.Fruit:AddToggle("ToggleEspMob", {
+    Title = "Quái",
+    Description = "",
+    Default = false
+});
+toggleEspMob:OnChanged(function(value)
+    MobESP = value
+end);
+Options.ToggleEspMob:SetValue(false);
+
+-- NPC thường
+local toggleEspNpc = Tabs.Fruit:AddToggle("ToggleEspNpc", {
+    Title = "NPC",
+    Description = "",
+    Default = false
+});
+toggleEspNpc:OnChanged(function(value)
+    NpcESP = value
+end);
+Options.ToggleEspNpc:SetValue(false);
+
+-- Hải thú (Sea Beast)
+local toggleEspSea = Tabs.Fruit:AddToggle("ToggleEspSea", {
+    Title = "Hải Thú",
+    Description = "",
+    Default = false
+});
+toggleEspSea:OnChanged(function(value)
+    SeaESP = value
+end);
+Options.ToggleEspSea:SetValue(false);
+
+-- Gear (Mystic Island)
+local toggleEspGear = Tabs.Fruit:AddToggle("ToggleEspGear", {
+    Title = "Gear",
+    Description = "",
+    Default = false
+});
+toggleEspGear:OnChanged(function(value)
+    GearESP = value
+end);
+Options.ToggleEspGear:SetValue(false);
+
+-- Master of Enhancement (Aura)
+local toggleEspAura = Tabs.Fruit:AddToggle("ToggleEspAura", {
+    Title = "Master of Enhancement",
+    Description = "",
+    Default = false
+});
+toggleEspAura:OnChanged(function(value)
+    AuraESP = value
+end);
+Options.ToggleEspAura:SetValue(false);
+
+-- Legendary Sword Dealer
+local toggleEspLAD = Tabs.Fruit:AddToggle("ToggleEspLAD", {
+    Title = "Legendary Sword Dealer",
+    Description = "",
+    Default = false
+});
+toggleEspLAD:OnChanged(function(value)
+    LADESP = value
+end);
+Options.ToggleEspLAD:SetValue(false);
+
+-- Lưu ý: Chỉ dùng 1 vòng lặp ESP (task.wait 0.5s trong ESP System).
+-- Không spawn while wait() ở đây nữa để tránh lag / double update.
 
 local raidChipList = {
     "Flame",
