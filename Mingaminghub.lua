@@ -314,7 +314,21 @@ LoaderGui:Destroy();
 --         pcall(checkHookTamper);
 --     end
 -- end);
-local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
+local Fluent
+local okFluent, errFluent = pcall(function()
+    Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
+end)
+if not okFluent or not Fluent then
+    warn("[Min Gaming] Không tải được Fluent UI: " .. tostring(errFluent))
+    -- Thử mirror dự phòng
+    pcall(function()
+        Fluent = loadstring(game:HttpGet("https://github.com/MR-MPC3/Fluent/raw/master/main.lua"))()
+    end)
+end
+if not Fluent then
+    error("[Min Gaming] Fluent UI load failed. Kiểm tra executor có HttpGet + loadstring không.")
+end
+
 local Window = Fluent:CreateWindow({
     Title = "Min Gaming",
     SubTitle = "",
@@ -449,16 +463,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Xác định Sea
+-- Xác định Sea (hỗ trợ cả PlaceId mới + PlaceId công khai cũ)
 local Sea1, Sea2, Sea3 = false, false, false
-if PlaceId == 85211729168715 then
+if PlaceId == 85211729168715 or PlaceId == 2753915549 then
     Sea1 = true
-elseif PlaceId == 79091703265657 then
+elseif PlaceId == 79091703265657 or PlaceId == 4442272183 then
     Sea2 = true
-elseif PlaceId == 100117331123089 then
+elseif PlaceId == 100117331123089 or PlaceId == 7449423635 then
     Sea3 = true
 else
-    plr:Kick("❌ Error : A[12]Blox Fruits ❌ (ID lạ: " .. tostring(PlaceId) .. ")")
+    -- Không kick để UI vẫn hiện; chỉ cảnh báo
+    warn("[Min Gaming] PlaceId lạ: " .. tostring(PlaceId) .. " — vẫn tiếp tục chạy")
+    -- Mặc định Sea1 để tránh nil
+    Sea1 = true
 end
 
 ----------------------------------------------------------------
@@ -6974,57 +6991,58 @@ end);
 Options.ToggleAutotrial:SetValue(false);
 spawn(function()
     while wait() do
-        if not _G.AutoQuestRace then continue end
-        pcall(function()
-            local race = game:GetService("Players").LocalPlayer.Data.Race.Value
-            if race == "Human" or race == "Ghoul" then
-                for _, mob in pairs(game.Workspace.Enemies:GetDescendants()) do
-                    if mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
-                        pcall(function()
-                            mob.Humanoid.Health = 0
-                            mob.HumanoidRootPart.CanCollide = false
-                            sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-                        end)
-                    end
-                end
-            elseif race == "Skypiea" then
-                local skyTrial = game:GetService("Workspace").Map:FindFirstChild("SkyTrial")
-                if skyTrial and skyTrial:FindFirstChild("Model") then
-                    for _, part in pairs(skyTrial.Model:GetDescendants()) do
-                        if part.Name == "snowisland_Cylinder.081" then
-                            BTPZ(part.CFrame)
+        if _G.AutoQuestRace then
+            pcall(function()
+                local race = game:GetService("Players").LocalPlayer.Data.Race.Value
+                if race == "Human" or race == "Ghoul" then
+                    for _, mob in pairs(game.Workspace.Enemies:GetDescendants()) do
+                        if mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                            pcall(function()
+                                mob.Humanoid.Health = 0
+                                mob.HumanoidRootPart.CanCollide = false
+                                sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+                            end)
                         end
                     end
-                end
-            elseif race == "Fishman" then
-                local seaBeast = game:GetService("Workspace").SeaBeasts:FindFirstChild("SeaBeast1")
-                if seaBeast then
-                    local root = seaBeast:FindFirstChild("HumanoidRootPart", true)
-                    if root then
-                        Tween(root.CFrame * Pos)
-                        for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                            if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Blox Fruit" or tool.ToolTip == "Sword" or tool.ToolTip == "Gun") then
-                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
-                                local vim = game:GetService("VirtualInputManager")
-                                for _, key in ipairs({122, 120, 99}) do
-                                    vim:SendKeyEvent(true, key, false, game)
-                                    vim:SendKeyEvent(false, key, false, game)
-                                    wait(0.2)
+                elseif race == "Skypiea" then
+                    local skyTrial = game:GetService("Workspace").Map:FindFirstChild("SkyTrial")
+                    if skyTrial and skyTrial:FindFirstChild("Model") then
+                        for _, part in pairs(skyTrial.Model:GetDescendants()) do
+                            if part.Name == "snowisland_Cylinder.081" then
+                                BTPZ(part.CFrame)
+                            end
+                        end
+                    end
+                elseif race == "Fishman" then
+                    local seaBeast = game:GetService("Workspace").SeaBeasts:FindFirstChild("SeaBeast1")
+                    if seaBeast then
+                        local root = seaBeast:FindFirstChild("HumanoidRootPart", true)
+                        if root then
+                            Tween(root.CFrame * Pos)
+                            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                                if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Blox Fruit" or tool.ToolTip == "Sword" or tool.ToolTip == "Gun") then
+                                    game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+                                    local vim = game:GetService("VirtualInputManager")
+                                    for _, key in ipairs({122, 120, 99}) do
+                                        vim:SendKeyEvent(true, key, false, game)
+                                        vim:SendKeyEvent(false, key, false, game)
+                                        wait(0.2)
+                                    end
                                 end
                             end
                         end
                     end
-                end
-            elseif race == "Cyborg" then
-                Tween(CFrame.new(28654, 14898.7832, -30))
-            elseif race == "Mink" then
-                for _, part in pairs(game:GetService("Workspace"):GetDescendants()) do
-                    if part.Name == "StartPoint" then
-                        Tween(part.CFrame * CFrame.new(0, 10, 0))
+                elseif race == "Cyborg" then
+                    Tween(CFrame.new(28654, 14898.7832, -30))
+                elseif race == "Mink" then
+                    for _, part in pairs(game:GetService("Workspace"):GetDescendants()) do
+                        if part.Name == "StartPoint" then
+                            Tween(part.CFrame * CFrame.new(0, 10, 0))
+                        end
                     end
                 end
-            end
-        end)
+            end)
+        end
     end
 end);
 
@@ -7337,7 +7355,7 @@ Tabs.Shop:AddButton({
         local dracoChar = dracoPlayer.Character or dracoPlayer.CharacterAdded:Wait() ;
         repeat
             wait();
-        until (enemy.HumanoidRootPart.Position - dracoPos).Magnitude < 1
+        until (dracoChar.HumanoidRootPart.Position - dracoPos).Magnitude < 1
         local dracoQuestArgs = {
             [1] = {
                 NPC = "Dragon Wizard",
@@ -7486,7 +7504,7 @@ Tabs.Misc:AddButton({
     Description = "",
     Callback = function()
         for _, item in ipairs(RedeemCodes) do
-            RedeemCode(redeemCodeItem);
+            RedeemCode(item)
         end
     end
 });
@@ -7502,7 +7520,7 @@ Tabs.Misc:AddButton({
             [1] = "getTitles"
         };
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(getTitlesArgs));
-        game.Players.localPlayer.PlayerGui.Main.Titles.Visible = true;
+        game.Players.LocalPlayer.PlayerGui.Main.Titles.Visible = true;
     end
 });
 local _section = Tabs.Misc:AddSection("Thức Tỉnh");
