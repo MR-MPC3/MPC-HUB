@@ -996,35 +996,63 @@ function MaterialMon()
         end
     end
 end
+----------------------------------------------------------------
+-- ESP Đảo
+----------------------------------------------------------------
 function UpdateIslandESP()
-    for v425, v426 in pairs(game:GetService("Workspace")['_WorldOrigin'].Locations:GetChildren()) do
+    local locations = workspace:FindFirstChild("_WorldOrigin") 
+        and workspace._WorldOrigin:FindFirstChild("Locations")
+    if not locations then return end
+
+    local character = Players.LocalPlayer.Character
+    local head = character and character:FindFirstChild("Head")
+    local myPos = head and head.Position
+
+    for _, island in pairs(locations:GetChildren()) do
         pcall(function()
-            if IslandESP then
-                if (v426.Name ~= "Sea") then
-                    if not v426:FindFirstChild("NameEsp") then
-                        local v1130 = Instance.new("BillboardGui", v426);
-                        v1130.Name = "NameEsp";
-                        v1130.ExtentsOffset = Vector3.new(0, 1, 0);
-                        v1130.Size = UDim2.new(1, 200, 1, 30);
-                        v1130.Adornee = v426;
-                        v1130.AlwaysOnTop = true;
-                        local v1136 = Instance.new("TextLabel", v1130);
-                        v1136.Font = "GothamBold";
-                        v1136.FontSize = "Size14";
-                        v1136.TextWrapped = true;
-                        v1136.Size = UDim2.new(1, 0, 1, 0);
-                        v1136.TextYAlignment = "Top";
-                        v1136.BackgroundTransparency = 1;
-                        v1136.TextStrokeTransparency = 0.5;
-                        v1136.TextColor3 = Color3.fromRGB(8, 0, 0);
-                    else
-                        v426['NameEsp'].TextLabel.Text = v426.Name .. "   \n" .. round((game:GetService("Players").LocalPlayer.Character.Head.Position - v426.Position).Magnitude / 3) .. " Distance" ;
-                    end
+            -- Tắt ESP hoặc nhân vật đang chết → xóa ESP
+            if not IslandESP or not myPos then
+                local oldEsp = island:FindFirstChild("NameEsp")
+                if oldEsp then
+                    oldEsp:Destroy()
                 end
-            elseif v426:FindFirstChild("NameEsp") then
-                v426:FindFirstChild("NameEsp"):Destroy();
+                return
             end
-        end);
+
+            if island.Name == "Sea" then return end
+
+            -- Chỉ xử lý nếu là BasePart (có Position)
+            if not island:IsA("BasePart") then return end
+
+            local esp = island:FindFirstChild("NameEsp")
+
+            -- Tạo mới nếu chưa có
+            if not esp then
+                esp = Instance.new("BillboardGui")
+                esp.Name = "NameEsp"
+                esp.Size = UDim2.new(0, 200, 0, 40)
+                esp.StudsOffset = Vector3.new(0, 3, 0)      -- cao hơn một chút
+                esp.AlwaysOnTop = true
+                esp.Adornee = island
+                esp.Parent = island
+
+                local text = Instance.new("TextLabel")
+                text.Name = "TextLabel"
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.BackgroundTransparency = 1
+                text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                text.TextStrokeTransparency = 0.4
+                text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                text.Font = Enum.Font.GothamBold
+                text.TextSize = 14
+                text.TextWrapped = true
+                text.Parent = esp
+            end
+
+            -- Cập nhật khoảng cách
+            local dist = math.floor((myPos - island.Position).Magnitude / 3)
+            esp.TextLabel.Text = string.format("%s\n[%d m]", island.Name, dist)
+        end)
     end
 end
 function isnil(v198)
