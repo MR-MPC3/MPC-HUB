@@ -1011,28 +1011,41 @@ function MaterialMon()
     end
 end
 ----------------------------------------------------------------
--- ESP Functions (dùng biến plr của bạn)
+-- ESP System (Dùng biến plr + Players có sẵn từ Script gốc)
 ----------------------------------------------------------------
 local Workspace = game:GetService("Workspace")
+local EspTag = "NameEsp" .. math.random(1, 1000000)
 
-Number = math.random(1, 1000000)
-local EspTag = "NameEsp" .. Number
-
+----------------------------------------------------------------
+-- Helper Functions
+----------------------------------------------------------------
 local function Round(num)
     return math.floor(tonumber(num) + 0.5)
 end
 
 local function GetMyHeadPos()
-    local char = plr.Character
+    local char = plr and plr.Character
     local head = char and char:FindFirstChild("Head")
     return head and head.Position
 end
 
--- Hàm tạo/cập nhật ESP dùng chung
-local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
-    if not parentObj or not parentObj.Parent then return end
+local function GetTargetPart(obj)
+    if not obj then return nil end
+    if obj:IsA("BasePart") then return obj end
+    if obj:IsA("Model") then
+        return obj.PrimaryPart 
+            or obj:FindFirstChild("HumanoidRootPart") 
+            or obj:FindFirstChild("Head") 
+            or obj:FindFirstChildOfClass("BasePart")
+    end
+    return nil
+end
 
-    local esp = parentObj:FindFirstChild(EspTag)
+local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
+    local part = GetTargetPart(parentObj)
+    if not part or not part.Parent then return end
+
+    local esp = part:FindFirstChild(EspTag)
 
     if isEnabled then
         if not esp then
@@ -1041,8 +1054,8 @@ local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
             esp.Size = UDim2.new(0, 200, 0, 45)
             esp.StudsOffset = Vector3.new(0, 2.5, 0)
             esp.AlwaysOnTop = true
-            esp.Adornee = parentObj
-            esp.Parent = parentObj
+            esp.Adornee = part
+            esp.Parent = part
 
             local textLabel = Instance.new("TextLabel")
             textLabel.Name = "TextLabel"
@@ -1069,9 +1082,9 @@ local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
 end
 
 ----------------------------------------------------------------
--- ESP Người chơi
+-- Main Update Functions
 ----------------------------------------------------------------
-function UpdatePlayerChams()
+local function UpdatePlayerChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
@@ -1095,10 +1108,7 @@ function UpdatePlayerChams()
     end
 end
 
-----------------------------------------------------------------
--- ESP Rương + Trái Quỷ + Hoa
-----------------------------------------------------------------
-function UpdateWorkspaceObjectsESP()
+local function UpdateWorkspaceObjectsESP()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
@@ -1107,43 +1117,47 @@ function UpdateWorkspaceObjectsESP()
             local name = obj.Name
 
             if string.find(name, "Chest") then
-                local dist = Round((myHeadPos - obj.Position).Magnitude / 3)
-                local color = Color3.fromRGB(160, 160, 160)
-                if name == "Chest2" then color = Color3.fromRGB(255, 215, 0)
-                elseif name == "Chest3" then color = Color3.fromRGB(0, 255, 255) end
-                UpdateESP(obj, name, dist, color, ChestESP)
+                local part = GetTargetPart(obj)
+                if part then
+                    local dist = Round((myHeadPos - part.Position).Magnitude / 3)
+                    local color = Color3.fromRGB(160, 160, 160)
+                    if name == "Chest2" then color = Color3.fromRGB(255, 215, 0)
+                    elseif name == "Chest3" then color = Color3.fromRGB(0, 255, 255) end
+                    UpdateESP(part, name, dist, color, ChestESP)
+                end
 
             elseif string.find(name, "Fruit") and obj:FindFirstChild("Handle") then
                 local dist = Round((myHeadPos - obj.Handle.Position).Magnitude / 3)
                 UpdateESP(obj.Handle, name, dist, Color3.fromRGB(255, 255, 255), DevilFruitESP)
 
             elseif name == "Flower1" or name == "Flower2" then
-                local dist = Round((myHeadPos - obj.Position).Magnitude / 3)
-                local isBlue = (name == "Flower1")
-                local color = isBlue and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(255, 50, 50)
-                local title = isBlue and "Blue Flower" or "Red Flower"
-                UpdateESP(obj, title, dist, color, FlowerESP)
+                local part = GetTargetPart(obj)
+                if part then
+                    local dist = Round((myHeadPos - part.Position).Magnitude / 3)
+                    local isBlue = (name == "Flower1")
+                    local color = isBlue and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(255, 50, 50)
+                    local title = isBlue and "Blue Flower" or "Red Flower"
+                    UpdateESP(part, title, dist, color, FlowerESP)
+                end
             end
         end)
     end
 end
 
-----------------------------------------------------------------
--- ESP Trái thực phẩm
-----------------------------------------------------------------
-function UpdateRealFruitChams()
+local FruitSpawners = {
+    {name = "AppleSpawner", color = Color3.fromRGB(255, 60, 60)},
+    {name = "PineappleSpawner", color = Color3.fromRGB(255, 180, 0)},
+    {name = "BananaSpawner", color = Color3.fromRGB(255, 255, 50)}
+}
+
+local function UpdateRealFruitChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
 
-    local spawners = {
-        {folder = Workspace:FindFirstChild("AppleSpawner"), color = Color3.fromRGB(255, 60, 60)},
-        {folder = Workspace:FindFirstChild("PineappleSpawner"), color = Color3.fromRGB(255, 180, 0)},
-        {folder = Workspace:FindFirstChild("BananaSpawner"), color = Color3.fromRGB(255, 255, 50)}
-    }
-
-    for _, data in ipairs(spawners) do
-        if data.folder then
-            for _, fruit in pairs(data.folder:GetChildren()) do
+    for _, data in ipairs(FruitSpawners) do
+        local folder = Workspace:FindFirstChild(data.name)
+        if folder then
+            for _, fruit in pairs(folder:GetChildren()) do
                 if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
                     local dist = Round((myHeadPos - fruit.Handle.Position).Magnitude / 3)
                     UpdateESP(fruit.Handle, fruit.Name, dist, data.color, RealFruitESP)
@@ -1153,164 +1167,120 @@ function UpdateRealFruitChams()
     end
 end
 
-----------------------------------------------------------------
--- ESP Đảo
-----------------------------------------------------------------
-function UpdateIslandESP()
+local function UpdateIslandESP()
     local myHeadPos = GetMyHeadPos()
     local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
     if not locations or not myHeadPos then return end
 
     for _, island in pairs(locations:GetChildren()) do
         pcall(function()
-            if island.Name ~= "Sea" and island:IsA("BasePart") then
-                local dist = math.floor((myHeadPos - island.Position).Magnitude / 3)
-                UpdateESP(island, island.Name, dist, Color3.fromRGB(255, 255, 255), IslandESP)
+            -- Bỏ qua Sea và Mirage Island để tránh xung đột nút toggle
+            if island.Name ~= "Sea" and island.Name ~= "Mirage Island" then
+                local part = GetTargetPart(island)
+                if part then
+                    local dist = math.floor((myHeadPos - part.Position).Magnitude / 3)
+                    UpdateESP(part, island.Name, dist, Color3.fromRGB(255, 255, 255), IslandESP)
+                end
             end
         end)
     end
 end
 
-----------------------------------------------------------------
--- ESP Mirage Island
-----------------------------------------------------------------
-function UpdateIslandMirageESP()
+local function UpdateSpecialLocationsESP()
     local myHeadPos = GetMyHeadPos()
+    if not myHeadPos then return end
+
+    -- Mirage Island
     local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
-    if not locations or not myHeadPos then return end
-
-    for _, loc in pairs(locations:GetChildren()) do
-        pcall(function()
-            if loc.Name == "Mirage Island" then
-                local dist = Round((myHeadPos - loc.Position).Magnitude / 3)
-                UpdateESP(loc, "Mirage Island", dist, Color3.fromRGB(80, 245, 245), MirageIslandESP)
+    if locations then
+        local mirage = locations:FindFirstChild("Mirage Island")
+        if mirage then
+            local part = GetTargetPart(mirage)
+            if part then
+                local dist = Round((myHeadPos - part.Position).Magnitude / 3)
+                UpdateESP(part, "Mirage Island", dist, Color3.fromRGB(80, 245, 245), MirageIslandESP)
             end
-        end)
+        end
     end
-end
 
-----------------------------------------------------------------
--- ESP Master of Enhancement (Aura)
-----------------------------------------------------------------
-function UpdateAuraESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    local npcs = Workspace:FindFirstChild("NPCs")
-    if not npcs then return end
-
-    for _, npc in pairs(npcs:GetChildren()) do
-        pcall(function()
-            if npc.Name == "Master of Enhancement" then
-                local dist = Round((myHeadPos - npc.Position).Magnitude / 3)
-                UpdateESP(npc, "Master of Enhancement", dist, Color3.fromRGB(80, 245, 245), AuraESP)
-            end
-        end)
-    end
-end
-
-----------------------------------------------------------------
--- ESP Legendary Sword Dealer
-----------------------------------------------------------------
-function UpdateLSDESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    local npcs = Workspace:FindFirstChild("NPCs")
-    if not npcs then return end
-
-    for _, npc in pairs(npcs:GetChildren()) do
-        pcall(function()
-            if npc.Name == "Legendary Sword Dealer" then
-                local dist = Round((myHeadPos - npc.Position).Magnitude / 3)
-                UpdateESP(npc, "Legendary Sword Dealer", dist, Color3.fromRGB(80, 245, 245), LADESP)
-            end
-        end)
-    end
-end
-
-----------------------------------------------------------------
--- ESP Gear (Mystic Island)
-----------------------------------------------------------------
-function UpdateGeaESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
+    -- Gear (Mystic Island)
     local mystic = Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("MysticIsland")
-    if not mystic then return end
-
-    for _, part in pairs(mystic:GetChildren()) do
-        pcall(function()
+    if mystic then
+        for _, part in pairs(mystic:GetChildren()) do
             if part.Name == "MeshPart" then
                 local dist = Round((myHeadPos - part.Position).Magnitude / 3)
                 UpdateESP(part, "Gear", dist, Color3.fromRGB(80, 245, 245), GearESP)
             end
+        end
+    end
+end
+
+local function UpdateNPCsESP()
+    local myHeadPos = GetMyHeadPos()
+    local npcs = Workspace:FindFirstChild("NPCs")
+    if not npcs or not myHeadPos then return end
+
+    for _, npc in pairs(npcs:GetChildren()) do
+        pcall(function()
+            local part = GetTargetPart(npc)
+            if not part then return end
+
+            local dist = Round((myHeadPos - part.Position).Magnitude / 3)
+
+            -- Phân loại NPC sạch sẽ, không bị lặp đè ESP
+            if npc.Name == "Master of Enhancement" then
+                UpdateESP(part, "Master of Enhancement", dist, Color3.fromRGB(80, 245, 245), AuraESP)
+            elseif npc.Name == "Legendary Sword Dealer" then
+                UpdateESP(part, "Legendary Sword Dealer", dist, Color3.fromRGB(80, 245, 245), LADESP)
+            else
+                UpdateESP(part, npc.Name, dist, Color3.fromRGB(7, 236, 240), NpcESP)
+            end
         end)
     end
 end
 
-----------------------------------------------------------------
--- ESP Mob / SeaBeast / NPC (giữ kiểu spawn như gốc)
-----------------------------------------------------------------
-spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            if MobESP then
-                for _, mob in pairs(Workspace.Enemies:GetChildren()) do
-                    if mob:FindFirstChild("HumanoidRootPart") then
-                        local dist = math.floor((plr.Character.HumanoidRootPart.Position - mob.HumanoidRootPart.Position).Magnitude)
-                        UpdateESP(mob, mob.Name, dist, Color3.fromRGB(7, 236, 240), true)
-                    end
-                end
-            else
-                for _, mob in pairs(Workspace.Enemies:GetChildren()) do
-                    if mob:FindFirstChild(EspTag) then
-                        mob[EspTag]:Destroy()
-                    end
-                end
-            end
-        end)
-    end
-end)
+local function UpdateEnemiesAndSeaESP()
+    local myPos = GetMyHeadPos()
+    if not myPos then return end
 
-spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            if SeaESP then
-                for _, beast in pairs(Workspace.SeaBeasts:GetChildren()) do
-                    if beast:FindFirstChild("HumanoidRootPart") then
-                        local dist = math.floor((plr.Character.HumanoidRootPart.Position - beast.HumanoidRootPart.Position).Magnitude)
-                        UpdateESP(beast, beast.Name, dist, Color3.fromRGB(7, 236, 240), true)
-                    end
-                end
-            else
-                for _, beast in pairs(Workspace.SeaBeasts:GetChildren()) do
-                    if beast:FindFirstChild(EspTag) then
-                        beast[EspTag]:Destroy()
-                    end
-                end
+    -- Mobs
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, mob in pairs(enemies:GetChildren()) do
+            local hrp = mob:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local dist = math.floor((myPos - hrp.Position).Magnitude / 3)
+                UpdateESP(hrp, mob.Name, dist, Color3.fromRGB(7, 236, 240), MobESP)
             end
-        end)
+        end
     end
-end)
 
-spawn(function()
+    -- Sea Beasts
+    local seaBeasts = Workspace:FindFirstChild("SeaBeasts")
+    if seaBeasts then
+        for _, beast in pairs(seaBeasts:GetChildren()) do
+            local hrp = beast:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local dist = math.floor((myPos - hrp.Position).Magnitude / 3)
+                UpdateESP(hrp, beast.Name, dist, Color3.fromRGB(7, 236, 240), SeaESP)
+            end
+        end
+    end
+end
+
+----------------------------------------------------------------
+-- Unified Execution Loop
+----------------------------------------------------------------
+task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
-            if NpcESP then
-                for _, npc in pairs(Workspace.NPCs:GetChildren()) do
-                    if npc:FindFirstChild("HumanoidRootPart") then
-                        local dist = math.floor((plr.Character.HumanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude)
-                        UpdateESP(npc, npc.Name, dist, Color3.fromRGB(7, 236, 240), true)
-                    end
-                end
-            else
-                for _, npc in pairs(Workspace.NPCs:GetChildren()) do
-                    if npc:FindFirstChild(EspTag) then
-                        npc[EspTag]:Destroy()
-                    end
-                end
-            end
+            UpdatePlayerChams()
+            UpdateWorkspaceObjectsESP()
+            UpdateRealFruitChams()
+            UpdateIslandESP()
+            UpdateSpecialLocationsESP()
+            UpdateNPCsESP()
+            UpdateEnemiesAndSeaESP()
         end)
     end
 end)
