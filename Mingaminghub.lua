@@ -936,6 +936,9 @@ local function TravelToSea(targetSeaNumber)
     end
 end
 
+-- Biến chống spam đổi Sea
+local lastTravelTime = 0
+
 function MaterialMon()
     -- Reset sạch
     MMon = nil
@@ -959,19 +962,20 @@ function MaterialMon()
         local targetSea = nil
 
         if matInfo.TargetSea then
-            -- Trường hợp vật phẩm cố định 1 Sea (ví dụ: Radioactive Material -> Sea 2)
             targetSea = matInfo.TargetSea
         else
-            -- Trường hợp vật phẩm có ở nhiều Sea, chọn Sea khả thi đầu tiên (ví dụ: Sea1 -> Sea2 -> Sea3)
             if matInfo.Sea1 then targetSea = 1
             elseif matInfo.Sea2 then targetSea = 2
             elseif matInfo.Sea3 then targetSea = 3
             end
         end
 
-        -- Nếu tìm thấy Sea phù hợp và khác Sea hiện tại, thực hiện chuyển Sea
+        -- Nếu tìm thấy Sea phù hợp và khác Sea hiện tại, thực hiện chuyển Sea với bộ đếm thời gian
         if targetSea and targetSea ~= currentSeaNum then
-            TravelToSea(targetSea)
+            if tick() - lastTravelTime > 5 then -- Chống spam 5 giây (an toàn và mượt mà)
+                lastTravelTime = tick()
+                TravelToSea(targetSea)
+            end
         end
         return
     end
