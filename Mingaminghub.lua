@@ -1013,8 +1013,7 @@ end
 ----------------------------------------------------------------
 -- ESP Functions (dùng biến plr của bạn)
 ----------------------------------------------------------------
-local Workspace = game:GetService("Workspace")
-
+local Workspace = game:GetService("Workspace") 
 Number = math.random(1, 1000000)
 local EspTag = "NameEsp" .. Number
 
@@ -1028,7 +1027,6 @@ local function GetMyHeadPos()
     return head and head.Position
 end
 
--- Hàm tạo/cập nhật ESP dùng chung
 local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
     if not parentObj or not parentObj.Parent then return end
 
@@ -1068,9 +1066,7 @@ local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
     end
 end
 
-----------------------------------------------------------------
 -- ESP Người chơi
-----------------------------------------------------------------
 function UpdatePlayerChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
@@ -1089,15 +1085,13 @@ function UpdatePlayerChams()
                 local isTeam = player.Team and player.Team == plr.Team
                 local color = isTeam and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(255, 60, 60)
 
-                UpdateESP(head, string.format("%s | HP: %d%%", player.Name, hp), dist, color, ESPPlayer)
+                UpdateESP(head, string.format("%s  |  HP: %d%%", player.Name, hp), dist, color, ESPPlayer)
             end
         end)
     end
 end
 
-----------------------------------------------------------------
 -- ESP Rương + Trái Quỷ + Hoa
-----------------------------------------------------------------
 function UpdateWorkspaceObjectsESP()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
@@ -1128,9 +1122,7 @@ function UpdateWorkspaceObjectsESP()
     end
 end
 
-----------------------------------------------------------------
 -- ESP Trái thực phẩm
-----------------------------------------------------------------
 function UpdateRealFruitChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
@@ -1153,9 +1145,7 @@ function UpdateRealFruitChams()
     end
 end
 
-----------------------------------------------------------------
 -- ESP Đảo
-----------------------------------------------------------------
 function UpdateIslandESP()
     local myHeadPos = GetMyHeadPos()
     local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
@@ -1170,150 +1160,130 @@ function UpdateIslandESP()
         end)
     end
 end
-
-----------------------------------------------------------------
--- ESP Mirage Island
-----------------------------------------------------------------
 function UpdateIslandMirageESP()
-    local myHeadPos = GetMyHeadPos()
-    local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
-    if not locations or not myHeadPos then return end
-
-    for _, loc in pairs(locations:GetChildren()) do
+    for _, loc in pairs(game:GetService("Workspace")['_WorldOrigin'].Locations:GetChildren()) do
         pcall(function()
-            if loc.Name == "Mirage Island" then
-                local dist = Round((myHeadPos - loc.Position).Magnitude / 3)
-                UpdateESP(loc, "Mirage Island", dist, Color3.fromRGB(80, 245, 245), MirageIslandESP)
+            if MirageIslandESP then
+                if (loc.Name == "Mirage Island") then
+                    if not loc:FindFirstChild("NameEsp") then
+                        local billboard = Instance.new("BillboardGui", loc);
+billboard.Name = "NameEsp";
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = loc;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.Code;
+                        textLabel.TextSize = 14;
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = Enum.TextYAlignment.Top;
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(80, 245, 245);
+                    else
+                        loc['NameEsp'].TextLabel.Text = loc.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - loc.Position).Magnitude / 3) .. " M" ;
+                    end
+                end
+            elseif loc:FindFirstChild("NameEsp") then
+                loc:FindFirstChild("NameEsp"):Destroy();
             end
-        end)
+        end);
     end
 end
-
-----------------------------------------------------------------
--- ESP Master of Enhancement (Aura)
-----------------------------------------------------------------
 function UpdateAuraESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    local npcs = Workspace:FindFirstChild("NPCs")
-    if not npcs then return end
-
-    for _, npc in pairs(npcs:GetChildren()) do
+    for _, mirage in pairs(game:GetService("Workspace").NPCs:GetChildren()) do
         pcall(function()
-            if npc.Name == "Master of Enhancement" then
-                local dist = Round((myHeadPos - npc.Position).Magnitude / 3)
-                UpdateESP(npc, "Master of Enhancement", dist, Color3.fromRGB(80, 245, 245), AuraESP)
+            if AuraESP then
+                if (mirage.Name == "Master of Enhancement") then
+                    if not mirage:FindFirstChild("NameEsp") then
+                        local billboard = Instance.new("BillboardGui", mirage);
+billboard.Name = "NameEsp";
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = mirage;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = "Code";
+                        textLabel.FontSize = "Size14";
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = "Top";
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(80, 245, 245);
+                    else
+                        mirage['NameEsp'].TextLabel.Text = mirage.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - mirage.Position).Magnitude / 3) .. " M" ;
+                    end
+                end
+            elseif mirage:FindFirstChild("NameEsp") then
+                mirage:FindFirstChild("NameEsp"):Destroy();
             end
-        end)
+        end);
     end
 end
-
-----------------------------------------------------------------
--- ESP Legendary Sword Dealer
-----------------------------------------------------------------
 function UpdateLSDESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    local npcs = Workspace:FindFirstChild("NPCs")
-    if not npcs then return end
-
-    for _, npc in pairs(npcs:GetChildren()) do
+    for _, location in pairs(game:GetService("Workspace").NPCs:GetChildren()) do
         pcall(function()
-            if npc.Name == "Legendary Sword Dealer" then
-                local dist = Round((myHeadPos - npc.Position).Magnitude / 3)
-                UpdateESP(npc, "Legendary Sword Dealer", dist, Color3.fromRGB(80, 245, 245), LADESP)
+            if LADESP then
+                if (location.Name == "Legendary Sword Dealer") then
+                    if not location:FindFirstChild("NameEsp") then
+                        local billboard = Instance.new("BillboardGui", location);
+billboard.Name = "NameEsp";
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = location;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = "Code";
+                        textLabel.FontSize = "Size14";
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = "Top";
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(80, 245, 245);
+                    else
+                        location['NameEsp'].TextLabel.Text = location.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - location.Position).Magnitude / 3) .. " M" ;
+                    end
+                end
+            elseif location:FindFirstChild("NameEsp") then
+                location:FindFirstChild("NameEsp"):Destroy();
             end
-        end)
+        end);
     end
 end
-
-----------------------------------------------------------------
--- ESP Gear (Mystic Island)
-----------------------------------------------------------------
 function UpdateGeaESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    local mystic = Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("MysticIsland")
-    if not mystic then return end
-
-    for _, part in pairs(mystic:GetChildren()) do
+    for _, island in pairs(game:GetService("Workspace").Map.MysticIsland:GetChildren()) do
         pcall(function()
-            if part.Name == "MeshPart" then
-                local dist = Round((myHeadPos - part.Position).Magnitude / 3)
-                UpdateESP(part, "Gear", dist, Color3.fromRGB(80, 245, 245), GearESP)
+            if GearESP then
+                if (island.Name == "MeshPart") then
+                    if not island:FindFirstChild("NameEsp") then
+                        local billboard = Instance.new("BillboardGui", island);
+billboard.Name = "NameEsp";
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = island;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = "Code";
+                        textLabel.FontSize = "Size14";
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = "Top";
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(80, 245, 245);
+                    else
+                        island['NameEsp'].TextLabel.Text = island.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - island.Position).Magnitude / 3) .. " M" ;
+                    end
+                end
+            elseif island:FindFirstChild("NameEsp") then
+                island:FindFirstChild("NameEsp"):Destroy();
             end
-        end)
+        end);
     end
 end
-
-----------------------------------------------------------------
--- ESP Mob / SeaBeast / NPC (giữ kiểu spawn như gốc)
-----------------------------------------------------------------
-spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            if MobESP then
-                for _, mob in pairs(Workspace.Enemies:GetChildren()) do
-                    if mob:FindFirstChild("HumanoidRootPart") then
-                        local dist = math.floor((plr.Character.HumanoidRootPart.Position - mob.HumanoidRootPart.Position).Magnitude)
-                        UpdateESP(mob, mob.Name, dist, Color3.fromRGB(7, 236, 240), true)
-                    end
-                end
-            else
-                for _, mob in pairs(Workspace.Enemies:GetChildren()) do
-                    if mob:FindFirstChild(EspTag) then
-                        mob[EspTag]:Destroy()
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            if SeaESP then
-                for _, beast in pairs(Workspace.SeaBeasts:GetChildren()) do
-                    if beast:FindFirstChild("HumanoidRootPart") then
-                        local dist = math.floor((plr.Character.HumanoidRootPart.Position - beast.HumanoidRootPart.Position).Magnitude)
-                        UpdateESP(beast, beast.Name, dist, Color3.fromRGB(7, 236, 240), true)
-                    end
-                end
-            else
-                for _, beast in pairs(Workspace.SeaBeasts:GetChildren()) do
-                    if beast:FindFirstChild(EspTag) then
-                        beast[EspTag]:Destroy()
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            if NpcESP then
-                for _, npc in pairs(Workspace.NPCs:GetChildren()) do
-                    if npc:FindFirstChild("HumanoidRootPart") then
-                        local dist = math.floor((plr.Character.HumanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude)
-                        UpdateESP(npc, npc.Name, dist, Color3.fromRGB(7, 236, 240), true)
-                    end
-                end
-            else
-                for _, npc in pairs(Workspace.NPCs:GetChildren()) do
-                    if npc:FindFirstChild(EspTag) then
-                        npc[EspTag]:Destroy()
-                    end
-                end
-            end
-        end)
-    end
-end)
 function BTPZ(cf)
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
     task.wait();
