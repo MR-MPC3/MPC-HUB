@@ -7765,7 +7765,7 @@ spawn(function()
     while wait() do
         if _G.AntiBand then
             for _, player in pairs(game:GetService(\"Players\"):GetPlayers()) do
-                if table.find(BannedUserIds, _v458.UserId) then
+                if table.find(BannedUserIds, player.UserId) then
                     Hop();
                 end
             end
