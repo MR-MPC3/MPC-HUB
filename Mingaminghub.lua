@@ -5828,7 +5828,7 @@ spawn(function()
     end
 end);
 local playerNameList = {};
-for _, player in pairs(game:GetService(\"Players\"):GetChildren()) do
+for _, player in pairs(game:GetService("Players"):GetChildren()) do
     table.insert(playerNameList, player.Name);
 end
 local dropdownSelectPlayer = Tabs.Player:AddDropdown("SelectedPly", {
@@ -5847,7 +5847,7 @@ Tabs.Player:AddButton({
     Description = "",
     Callback = function()
         table.clear(playerNameList);
-        for _, player in pairs(game:GetService(\"Players\"):GetChildren()) do
+        for _, player in pairs(game:GetService("Players"):GetChildren()) do
             table.insert(playerNameList, player.Name);
         end
     end
@@ -5893,8 +5893,8 @@ spawn(function()
         game:GetService("RunService").Stepped:Connect(function()
             if _G.LOf then
                 for _, descendant in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                    if tushitaArgs:IsA("BasePart") then
-                        tushitaArgs.CanCollide = false;
+                    if descendant:IsA("BasePart") then
+                        descendant.CanCollide = false;
                     end
                 end
             end
