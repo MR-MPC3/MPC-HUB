@@ -1011,32 +1011,23 @@ function MaterialMon()
     end
 end
 ------------------------------------------------------------------
--- ESP System (Fixed - Tương thích 100% với UI Min Gaming)
+-- ESP System (Tối ưu performance + Tương thích UI 100%)
 ------------------------------------------------------------------
 local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
 local EspTag = "NameEsp" .. math.random(1, 1000000)
 
--- ==================== KHAI BÁO TOGGLE (bắt buộc) ====================
-ESPPlayer       = false
-ChestESP        = false
-DevilFruitESP   = false
-FlowerESP       = false
-RealFruitESP    = false
-IslandESP       = false
-MirageIslandESP = false
-GearESP         = false
-AuraESP         = false
-LADESP          = false
-NpcESP         = false
-MobESP          = false
-SeaESP          = false
-
+-- Static Data: Đưa ra ngoài để tránh khởi tạo lại bảng mỗi 0.5s gây rác RAM
 local FruitSpawners = {
     {name = "AppleSpawner", color = Color3.fromRGB(255, 60, 60)},
     {name = "PineappleSpawner", color = Color3.fromRGB(255, 180, 0)},
     {name = "BananaSpawner", color = Color3.fromRGB(255, 255, 50)}
 }
 
+------------------------------------------------------------------
+-- Helper Functions (Dùng nội bộ)
+------------------------------------------------------------------
 local function Round(num)
     return math.floor(tonumber(num or 0) + 0.5)
 end
@@ -1051,9 +1042,9 @@ local function GetTargetPart(obj)
     if not obj then return nil end
     if obj:IsA("BasePart") then return obj end
     if obj:IsA("Model") then
-        return obj.PrimaryPart
-            or obj:FindFirstChild("HumanoidRootPart")
-            or obj:FindFirstChild("Head")
+        return obj.PrimaryPart 
+            or obj:FindFirstChild("HumanoidRootPart") 
+            or obj:FindFirstChild("Head") 
             or obj:FindFirstChildOfClass("BasePart")
     end
     return nil
@@ -1099,7 +1090,9 @@ local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
     end
 end
 
--- ==================== CÁC HÀM ESP (Global để UI gọi được) ====================
+------------------------------------------------------------------
+-- Main Functions (Global Scope - Bắt buộc để UI gọi được)
+------------------------------------------------------------------
 function UpdatePlayerChams()
     local myHeadPos = GetMyHeadPos()
     if not myHeadPos then return end
@@ -1110,11 +1103,13 @@ function UpdatePlayerChams()
             local char = player.Character
             local head = char and char:FindFirstChild("Head")
             local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
             if head then
                 local dist = Round((myHeadPos - head.Position).Magnitude / 3)
                 local hp = humanoid and Round((humanoid.Health / humanoid.MaxHealth) * 100) or 0
                 local isTeam = player.Team and player.Team == plr.Team
                 local color = isTeam and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(255, 60, 60)
+
                 UpdateESP(head, string.format("%s | HP: %d%%", player.Name, hp), dist, color, ESPPlayer)
             end
         end)
@@ -1128,6 +1123,7 @@ function UpdateWorkspaceObjectsESP()
     for _, obj in pairs(Workspace:GetChildren()) do
         pcall(function()
             local name = obj.Name
+
             if string.find(name, "Chest") then
                 local part = GetTargetPart(obj)
                 if part then
@@ -1137,9 +1133,11 @@ function UpdateWorkspaceObjectsESP()
                     elseif name == "Chest3" then color = Color3.fromRGB(0, 255, 255) end
                     UpdateESP(part, name, dist, color, ChestESP)
                 end
+
             elseif string.find(name, "Fruit") and obj:FindFirstChild("Handle") then
                 local dist = Round((myHeadPos - obj.Handle.Position).Magnitude / 3)
                 UpdateESP(obj.Handle, name, dist, Color3.fromRGB(255, 255, 255), DevilFruitESP)
+
             elseif name == "Flower1" or name == "Flower2" then
                 local part = GetTargetPart(obj)
                 if part then
@@ -1227,6 +1225,7 @@ function UpdateNPCsESP()
         pcall(function()
             local part = GetTargetPart(npc)
             if not part then return end
+
             local dist = Round((myHeadPos - part.Position).Magnitude / 3)
 
             if npc.Name == "Master of Enhancement" then
@@ -1244,6 +1243,7 @@ function UpdateEnemiesAndSeaESP()
     local myPos = GetMyHeadPos()
     if not myPos then return end
 
+    -- Mobs
     local enemies = Workspace:FindFirstChild("Enemies")
     if enemies then
         for _, mob in pairs(enemies:GetChildren()) do
@@ -1255,6 +1255,7 @@ function UpdateEnemiesAndSeaESP()
         end
     end
 
+    -- Sea Beasts
     local seaBeasts = Workspace:FindFirstChild("SeaBeasts")
     if seaBeasts then
         for _, beast in pairs(seaBeasts:GetChildren()) do
@@ -1267,16 +1268,20 @@ function UpdateEnemiesAndSeaESP()
     end
 end
 
--- ==================== Compatibility Wrappers (giữ nguyên tên cũ) ====================
-function UpdateDevilChams()       UpdateWorkspaceObjectsESP() end
-function UpdateChestChams()       UpdateWorkspaceObjectsESP() end
-function UpdateFlowerChams()      UpdateWorkspaceObjectsESP() end
-function UpdateIslandMirageESP()  UpdateSpecialLocationsESP() end
-function UpdateAuraESP()          UpdateNPCsESP() end
-function UpdateLSDESP()           UpdateNPCsESP() end
-function UpdateGeaESP()           UpdateSpecialLocationsESP() end
+------------------------------------------------------------------
+-- UI Compatibility Wrappers (Giữ tương thích tuyệt đối cho các nút UI cũ)
+------------------------------------------------------------------
+function UpdateDevilChams() UpdateWorkspaceObjectsESP() end
+function UpdateChestChams() UpdateWorkspaceObjectsESP() end
+function UpdateFlowerChams() UpdateWorkspaceObjectsESP() end
+function UpdateIslandMirageESP() UpdateSpecialLocationsESP() end
+function UpdateAuraESP() UpdateNPCsESP() end
+function UpdateLSDESP() UpdateNPCsESP() end
+function UpdateGeaESP() UpdateSpecialLocationsESP() end
 
--- ==================== Main Loop ====================
+------------------------------------------------------------------
+-- Main Execution Loop
+------------------------------------------------------------------
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
@@ -1290,9 +1295,6 @@ task.spawn(function()
         end)
     end
 end)
-
-print("[Min Gaming] ESP System loaded successfully")
-
 function BTPZ(cf)
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
     task.wait();
@@ -6369,19 +6371,16 @@ spawn(function()
     end
 end);
 local _section = Tabs.Fruit:AddSection("Định Vị");
-
--- Người Chơi
 local toggleEspPlayer = Tabs.Fruit:AddToggle("ToggleEspPlayer", {
     Title = "Người Chơi",
     Description = "",
     Default = false
 });
 toggleEspPlayer:OnChanged(function(value)
-    ESPPlayer = value
+    ESPPlayer = value;
+    UpdatePlayerChams();
 end);
 Options.ToggleEspPlayer:SetValue(false);
-
--- Trái (Devil Fruit rơi)
 local toggleEspFruit = Tabs.Fruit:AddToggle("ToggleEspFruit", {
     Title = "Trái",
     Description = "",
@@ -6391,8 +6390,6 @@ toggleEspFruit:OnChanged(function(value)
     DevilFruitESP = value
 end);
 Options.ToggleEspFruit:SetValue(false);
-
--- Đảo
 local toggleEspIsland = Tabs.Fruit:AddToggle("ToggleEspIsland", {
     Title = "Đảo",
     Description = "",
@@ -6402,21 +6399,43 @@ toggleEspIsland:OnChanged(function(value)
     IslandESP = value
 end);
 Options.ToggleEspIsland:SetValue(false);
-
--- Hoa
 local toggleEspFlower = Tabs.Fruit:AddToggle("ToggleEspFlower", {
     Title = "Hoa",
     Description = "",
     Default = false
 });
 toggleEspFlower:OnChanged(function(value)
-    FlowerESP = value
+    FlowerESP = value;
+    UpdateFlowerChams();
 end);
 Options.ToggleEspFlower:SetValue(false);
-
--- Trái Dứa / Khóm / Táo (spawner)
+spawn(function()
+    while wait() do
+        if FlowerESP then
+            UpdateFlowerChams()
+        end
+        if DevilFruitESP then
+            UpdateDevilChams()
+        end
+        if ChestESP then
+            UpdateChestChams()
+        end
+        if ESPPlayer then
+            UpdatePlayerChams()
+        end
+        if RealFruitESP then
+            UpdateRealFruitChams()
+        end
+        if MirageIslandESP then
+            UpdateIslandMirageESP()
+        end
+        if IslandESP then
+            UpdateIslandESP()
+        end
+    end
+end);
 local toggleEspRealFruit = Tabs.Fruit:AddToggle("ToggleEspRealFruit", {
-    Title = "Trái Dứa Khóm Táo",
+    Title = "Trái Dứa Khớm Táo",
     Description = "",
     Default = false
 });
@@ -6425,7 +6444,6 @@ toggleEspRealFruit:OnChanged(function(value)
 end);
 Options.ToggleEspRealFruit:SetValue(false);
 
--- Đảo Bí Ẩn (Mirage)
 local toggleEspMirageIsland = Tabs.Fruit:AddToggle("ToggleIslandMirageEsp", {
     Title = "Đảo Bí Ẩn",
     Description = "",
@@ -6435,86 +6453,6 @@ toggleEspMirageIsland:OnChanged(function(value)
     MirageIslandESP = value
 end);
 Options.ToggleIslandMirageEsp:SetValue(false);
-
--- Rương
-local toggleEspChest = Tabs.Fruit:AddToggle("ToggleEspChest", {
-    Title = "Rương",
-    Description = "",
-    Default = false
-});
-toggleEspChest:OnChanged(function(value)
-    ChestESP = value
-end);
-Options.ToggleEspChest:SetValue(false);
-
--- Quái (Mob)
-local toggleEspMob = Tabs.Fruit:AddToggle("ToggleEspMob", {
-    Title = "Quái",
-    Description = "",
-    Default = false
-});
-toggleEspMob:OnChanged(function(value)
-    MobESP = value
-end);
-Options.ToggleEspMob:SetValue(false);
-
--- NPC thường
-local toggleEspNpc = Tabs.Fruit:AddToggle("ToggleEspNpc", {
-    Title = "NPC",
-    Description = "",
-    Default = false
-});
-toggleEspNpc:OnChanged(function(value)
-    NpcESP = value
-end);
-Options.ToggleEspNpc:SetValue(false);
-
--- Hải thú (Sea Beast)
-local toggleEspSea = Tabs.Fruit:AddToggle("ToggleEspSea", {
-    Title = "Hải Thú",
-    Description = "",
-    Default = false
-});
-toggleEspSea:OnChanged(function(value)
-    SeaESP = value
-end);
-Options.ToggleEspSea:SetValue(false);
-
--- Gear (Mystic Island)
-local toggleEspGear = Tabs.Fruit:AddToggle("ToggleEspGear", {
-    Title = "Gear",
-    Description = "",
-    Default = false
-});
-toggleEspGear:OnChanged(function(value)
-    GearESP = value
-end);
-Options.ToggleEspGear:SetValue(false);
-
--- Master of Enhancement (Aura)
-local toggleEspAura = Tabs.Fruit:AddToggle("ToggleEspAura", {
-    Title = "Master of Enhancement",
-    Description = "",
-    Default = false
-});
-toggleEspAura:OnChanged(function(value)
-    AuraESP = value
-end);
-Options.ToggleEspAura:SetValue(false);
-
--- Legendary Sword Dealer
-local toggleEspLAD = Tabs.Fruit:AddToggle("ToggleEspLAD", {
-    Title = "Legendary Sword Dealer",
-    Description = "",
-    Default = false
-});
-toggleEspLAD:OnChanged(function(value)
-    LADESP = value
-end);
-Options.ToggleEspLAD:SetValue(false);
-
--- Lưu ý: Chỉ dùng 1 vòng lặp ESP (task.wait 0.5s trong ESP System).
--- Không spawn while wait() ở đây nữa để tránh lag / double update.
 
 local raidChipList = {
     "Flame",
