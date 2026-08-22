@@ -470,7 +470,7 @@ else
 end
 
 ----------------------------------------------------------------
--- QUÁI THƯỜNG
+-- BẢNG DỮ LIỆU QUEST (dễ sửa / thêm bãi)
 ----------------------------------------------------------------
 local QuestData = {
     Sea1 = {
@@ -619,7 +619,7 @@ elseif Sea3 then
     AreaList = {"Pirate Port","Amazon","Marine Tree","Deep Forest","Haunted Castle","Nut Island","Ice Cream Island","Cake Island","Choco Island","Candy Island","Tiki Outpost"}
 end
 ----------------------------------------------------------------
--- BOSS
+-- boss
 ----------------------------------------------------------------
 local BossData = {
     -- ========== Sea 1 ==========
@@ -857,7 +857,7 @@ function CheckBossQuest()
     end
 end
 ----------------------------------------------------------------
--- MATERIAL
+-- Material
 ----------------------------------------------------------------
 local MaterialData = {
     -- ========== Flat (không phụ thuộc Sea) ==========
@@ -1010,156 +1010,297 @@ function MaterialMon()
         end
     end
 end
-----------------------------------------------------------------
--- ESP Functions (dùng biến plr của bạn)
-----------------------------------------------------------------
-local Workspace = game:GetService("Workspace") 
-Number = math.random(1, 1000000)
-local EspTag = "NameEsp" .. Number
-
-local function Round(num)
-    return math.floor(tonumber(num) + 0.5)
-end
-
-local function GetMyHeadPos()
-    local char = plr.Character
-    local head = char and char:FindFirstChild("Head")
-    return head and head.Position
-end
-
-local function UpdateESP(parentObj, titleText, dist, color, isEnabled)
-    if not parentObj or not parentObj.Parent then return end
-
-    local esp = parentObj:FindFirstChild(EspTag)
-
-    if isEnabled then
-        if not esp then
-            esp = Instance.new("BillboardGui")
-            esp.Name = EspTag
-            esp.Size = UDim2.new(0, 200, 0, 45)
-            esp.StudsOffset = Vector3.new(0, 2.5, 0)
-            esp.AlwaysOnTop = true
-            esp.Adornee = parentObj
-            esp.Parent = parentObj
-
-            local textLabel = Instance.new("TextLabel")
-            textLabel.Name = "TextLabel"
-            textLabel.Size = UDim2.new(1, 0, 1, 0)
-            textLabel.BackgroundTransparency = 1
-            textLabel.TextStrokeTransparency = 0.3
-            textLabel.Font = Enum.Font.GothamBold
-            textLabel.TextSize = 13
-            textLabel.TextWrapped = true
-            textLabel.TextYAlignment = Enum.TextYAlignment.Top
-            textLabel.Parent = esp
-        end
-
-        local textLabel = esp:FindFirstChild("TextLabel")
-        if textLabel then
-            textLabel.TextColor3 = color or Color3.fromRGB(255, 255, 255)
-            textLabel.Text = string.format("%s\n[%d m]", titleText, dist)
-        end
-    else
-        if esp then
-            esp:Destroy()
-        end
-    end
-end
-
--- ESP Người chơi
 function UpdatePlayerChams()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    for _, player in pairs(Players:GetPlayers()) do
+    for _, player in pairs(game:GetService("Players"):GetChildren()) do
         pcall(function()
-            if player == plr then return end
-
-            local char = player.Character
-            local head = char and char:FindFirstChild("Head")
-            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-
-            if head then
-                local dist = Round((myHeadPos - head.Position).Magnitude / 3)
-                local hp = humanoid and Round((humanoid.Health / humanoid.MaxHealth) * 100) or 0
-                local isTeam = player.Team and player.Team == plr.Team
-                local color = isTeam and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(255, 60, 60)
-
-                UpdateESP(head, string.format("%s  |  HP: %d%%", player.Name, hp), dist, color, ESPPlayer)
-            end
-        end)
-    end
-end
-
--- ESP Rương + Trái Quỷ + Hoa
-function UpdateWorkspaceObjectsESP()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    for _, obj in pairs(Workspace:GetChildren()) do
-        pcall(function()
-            local name = obj.Name
-
-            if string.find(name, "Chest") then
-                local dist = Round((myHeadPos - obj.Position).Magnitude / 3)
-                local color = Color3.fromRGB(160, 160, 160)
-                if name == "Chest2" then color = Color3.fromRGB(255, 215, 0)
-                elseif name == "Chest3" then color = Color3.fromRGB(0, 255, 255) end
-                UpdateESP(obj, name, dist, color, ChestESP)
-
-            elseif string.find(name, "Fruit") and obj:FindFirstChild("Handle") then
-                local dist = Round((myHeadPos - obj.Handle.Position).Magnitude / 3)
-                UpdateESP(obj.Handle, name, dist, Color3.fromRGB(255, 255, 255), DevilFruitESP)
-
-            elseif name == "Flower1" or name == "Flower2" then
-                local dist = Round((myHeadPos - obj.Position).Magnitude / 3)
-                local isBlue = (name == "Flower1")
-                local color = isBlue and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(255, 50, 50)
-                local title = isBlue and "Blue Flower" or "Red Flower"
-                UpdateESP(obj, title, dist, color, FlowerESP)
-            end
-        end)
-    end
-end
-
--- ESP Trái thực phẩm
-function UpdateRealFruitChams()
-    local myHeadPos = GetMyHeadPos()
-    if not myHeadPos then return end
-
-    local spawners = {
-        {folder = Workspace:FindFirstChild("AppleSpawner"), color = Color3.fromRGB(255, 60, 60)},
-        {folder = Workspace:FindFirstChild("PineappleSpawner"), color = Color3.fromRGB(255, 180, 0)},
-        {folder = Workspace:FindFirstChild("BananaSpawner"), color = Color3.fromRGB(255, 255, 50)}
-    }
-
-    for _, data in ipairs(spawners) do
-        if data.folder then
-            for _, fruit in pairs(data.folder:GetChildren()) do
-                if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
-                    local dist = Round((myHeadPos - fruit.Handle.Position).Magnitude / 3)
-                    UpdateESP(fruit.Handle, fruit.Name, dist, data.color, RealFruitESP)
+            if not isnil(player.Character) then
+                if ESPPlayer then
+                    if (not isnil(player.Character.Head) and not player.Character.Head:FindFirstChild("NameEsp" .. Number)) then
+                        local billboard = Instance.new("BillboardGui", player.Character.Head);
+billboard.Name = "NameEsp" .. Number ;
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = player.Character.Head;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.GothamSemibold;
+                        textLabel.FontSize = "Size10";
+                        textLabel.TextWrapped = true;
+                        textLabel.Text = player.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - player.Character.Head.Position).Magnitude / 3) .. " Distance" ;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = "Top";
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        if (player.Team == game.Players.LocalPlayer.Team) then
+                            textLabel.TextColor3 = Color3.new(0, 0, 254);
+                        else
+                            textLabel.TextColor3 = Color3.new(255, 0, 0);
+                        end
+                    else
+                        player.Character.Head["NameEsp" .. Number ].TextLabel.Text = player.Name .. " | " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - player.Character.Head.Position).Magnitude / 3) .. " Distance\nHealth : " .. Round((player.Character.Humanoid.Health * 100) / player.Character.Humanoid.MaxHealth) .. "%" ;
+                    end
+                elseif player.Character.Head:FindFirstChild("NameEsp" .. Number) then
+                    player.Character.Head:FindFirstChild("NameEsp" .. Number):Destroy();
                 end
             end
+        end);
+    end
+end
+function UpdateChestChams()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        pcall(function()
+            if string.find(obj.Name, "Chest") then
+                if ChestESP then
+                    if string.find(obj.Name, "Chest") then
+                        if not obj:FindFirstChild("NameEsp" .. Number) then
+                            local billboard = Instance.new("BillboardGui", obj);
+billboard.Name = "NameEsp" .. Number ;
+                            billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                            billboard.Size = UDim2.new(1, 200, 1, 30);
+                            billboard.Adornee = obj;
+                            billboard.AlwaysOnTop = true;
+                            local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.GothamSemibold;
+                            textLabel.FontSize = "Size14";
+                            textLabel.TextWrapped = true;
+                            textLabel.Size = UDim2.new(1, 0, 1, 0);
+                            textLabel.TextYAlignment = "Top";
+                            textLabel.BackgroundTransparency = 1;
+                            textLabel.TextStrokeTransparency = 0.5;
+                            if (obj.Name == "Chest1") then
+                                textLabel.TextColor3 = Color3.fromRGB(109, 109, 109);
+                                textLabel.Text = "Chest 1" .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                            end
+                            if (obj.Name == "Chest2") then
+                                textLabel.TextColor3 = Color3.fromRGB(173, 158, 21);
+                                textLabel.Text = "Chest 2" .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                            end
+                            if (obj.Name == "Chest3") then
+                                textLabel.TextColor3 = Color3.fromRGB(85, 255, 255);
+                                textLabel.Text = "Chest 3" .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                            end
+                        else
+                            obj["NameEsp" .. Number ].TextLabel.Text = obj.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                        end
+                    end
+                elseif obj:FindFirstChild("NameEsp" .. Number) then
+                    obj:FindFirstChild("NameEsp" .. Number):Destroy();
+                end
+            end
+        end);
+    end
+end
+function UpdateDevilChams()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        pcall(function()
+            if DevilFruitESP then
+                if string.find(obj.Name, "Fruit") then
+                    if not obj.Handle:FindFirstChild("NameEsp" .. Number) then
+                        local billboard = Instance.new("BillboardGui", obj.Handle);
+billboard.Name = "NameEsp" .. Number ;
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = obj.Handle;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.GothamSemibold;
+                        textLabel.FontSize = "Size14";
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = "Top";
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
+                        textLabel.Text = obj.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Handle.Position).Magnitude / 3) .. " Distance" ;
+                    else
+                        obj.Handle["NameEsp" .. Number ].TextLabel.Text = obj.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Handle.Position).Magnitude / 3) .. " Distance" ;
+                    end
+                end
+            elseif obj.Handle:FindFirstChild("NameEsp" .. Number) then
+                obj.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
+            end
+        end);
+    end
+end
+function UpdateFlowerChams()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        pcall(function()
+            if ((obj.Name == "Flower2") or (obj.Name == "Flower1")) then
+                if FlowerESP then
+                    if not obj:FindFirstChild("NameEsp" .. Number) then
+                        local billboard = Instance.new("BillboardGui", obj);
+billboard.Name = "NameEsp" .. Number ;
+                        billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                        billboard.Size = UDim2.new(1, 200, 1, 30);
+                        billboard.Adornee = obj;
+                        billboard.AlwaysOnTop = true;
+                        local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.GothamSemibold;
+                        textLabel.FontSize = "Size14";
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = "Top";
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(255, 0, 0);
+                        if (obj.Name == "Flower1") then
+                            textLabel.Text = "Blue Flower" .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                            textLabel.TextColor3 = Color3.fromRGB(0, 0, 255);
+                        end
+                        if (obj.Name == "Flower2") then
+                            textLabel.Text = "Red Flower" .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                            textLabel.TextColor3 = Color3.fromRGB(255, 0, 0);
+                        end
+                    else
+                        obj["NameEsp" .. Number ].TextLabel.Text = obj.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - obj.Position).Magnitude / 3) .. " Distance" ;
+                    end
+                elseif obj:FindFirstChild("NameEsp" .. Number) then
+                    obj:FindFirstChild("NameEsp" .. Number):Destroy();
+                end
+            end
+        end);
+    end
+end
+function UpdateRealFruitChams()
+    for _, fruit in pairs(game.Workspace.AppleSpawner:GetChildren()) do
+        if fruit:IsA("Tool") then
+            if RealFruitESP then
+                if not fruit.Handle:FindFirstChild("NameEsp" .. Number) then
+                    local billboard = Instance.new("BillboardGui", fruit.Handle);
+billboard.Name = "NameEsp" .. Number ;
+                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                    billboard.Size = UDim2.new(1, 200, 1, 30);
+                    billboard.Adornee = fruit.Handle;
+                    billboard.AlwaysOnTop = true;
+                    local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.GothamSemibold;
+                    textLabel.FontSize = "Size14";
+                    textLabel.TextWrapped = true;
+                    textLabel.Size = UDim2.new(1, 0, 1, 0);
+                    textLabel.TextYAlignment = "Top";
+                    textLabel.BackgroundTransparency = 1;
+                    textLabel.TextStrokeTransparency = 0.5;
+                    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0);
+                    textLabel.Text = fruit.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - fruit.Handle.Position).Magnitude / 3) .. " Distance" ;
+                else
+                    fruit.Handle["NameEsp" .. Number ].TextLabel.Text = fruit.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - fruit.Handle.Position).Magnitude / 3) .. " Distance" ;
+                end
+            elseif fruit.Handle:FindFirstChild("NameEsp" .. Number) then
+                fruit.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
+            end
+        end
+    end
+    for _, fruit in pairs(game.Workspace.PineappleSpawner:GetChildren()) do
+        if fruit:IsA("Tool") then
+            if RealFruitESP then
+                if not fruit.Handle:FindFirstChild("NameEsp" .. Number) then
+                    local billboard = Instance.new("BillboardGui", fruit.Handle);
+billboard.Name = "NameEsp" .. Number ;
+                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                    billboard.Size = UDim2.new(1, 200, 1, 30);
+                    billboard.Adornee = fruit.Handle;
+                    billboard.AlwaysOnTop = true;
+                    local textLabel = Instance.new("TextLabel", billboard);
+textLabel.Font = Enum.Font.GothamSemibold;
+                    textLabel.FontSize = "Size14";
+                    textLabel.TextWrapped = true;
+                    textLabel.Size = UDim2.new(1, 0, 1, 0);
+                    textLabel.TextYAlignment = "Top";
+                    textLabel.BackgroundTransparency = 1;
+                    textLabel.TextStrokeTransparency = 0.5;
+                    textLabel.TextColor3 = Color3.fromRGB(255, 174, 0);
+                    textLabel.Text = fruit.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - fruit.Handle.Position).Magnitude / 3) .. " Distance" ;
+                else
+                    fruit.Handle["NameEsp" .. Number ].TextLabel.Text = fruit.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - fruit.Handle.Position).Magnitude / 3) .. " Distance" ;
+                end
+            elseif fruit.Handle:FindFirstChild("NameEsp" .. Number) then
+                fruit.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
+            end
+        end
+    end
+    for _, fruit in pairs(game.Workspace.BananaSpawner:GetChildren()) do
+        if fruit:IsA("Tool") then
+            if RealFruitESP then
+                if not fruit.Handle:FindFirstChild("NameEsp" .. Number) then
+                    local billboard = Instance.new("BillboardGui", fruit.Handle);
+                    billboard.Name = "NameEsp" .. Number ;
+                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                    billboard.Size = UDim2.new(1, 200, 1, 30);
+                    billboard.Adornee = fruit.Handle;
+                    billboard.AlwaysOnTop = true;
+                    local textLabel = Instance.new("TextLabel", billboard);
+                    textLabel.Font = Enum.Font.GothamSemibold;
+                    textLabel.FontSize = "Size14";
+                    textLabel.TextWrapped = true;
+                    textLabel.Size = UDim2.new(1, 0, 1, 0);
+                    textLabel.TextYAlignment = "Top";
+                    textLabel.BackgroundTransparency = 1;
+                    textLabel.TextStrokeTransparency = 0.5;
+                    textLabel.TextColor3 = Color3.fromRGB(251, 255, 0);
+                    textLabel.Text = fruit.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - fruit.Handle.Position).Magnitude / 3) .. " Distance" ;
+                else
+                    fruit.Handle["NameEsp" .. Number ].TextLabel.Text = fruit.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - fruit.Handle.Position).Magnitude / 3) .. " Distance" ;
+                end
+            elseif fruit.Handle:FindFirstChild("NameEsp" .. Number) then
+                fruit.Handle:FindFirstChild("NameEsp" .. Number):Destroy();
+            end
         end
     end
 end
-
+----------------------------------------------------------------
 -- ESP Đảo
+----------------------------------------------------------------
 function UpdateIslandESP()
-    local myHeadPos = GetMyHeadPos()
-    local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
-    if not locations or not myHeadPos then return end
+    -- 1. Tìm thư mục chứa các đảo
+    local locations = workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations")
+    if not locations then return end
+
+    -- 2. Lấy vị trí nhân vật hiện tại
+    local myPos = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head") and Players.LocalPlayer.Character.Head.Position
 
     for _, island in pairs(locations:GetChildren()) do
         pcall(function()
-            if island.Name ~= "Sea" and island:IsA("BasePart") then
-                local dist = math.floor((myHeadPos - island.Position).Magnitude / 3)
-                UpdateESP(island, island.Name, dist, Color3.fromRGB(255, 255, 255), IslandESP)
+            -- Nếu tắt ESP hoặc mất nhân vật -> Xóa ESP cũ
+            if not IslandESP or not myPos then
+                local oldEsp = island:FindFirstChild("NameEsp")
+                if oldEsp then oldEsp:Destroy() end
+                return
             end
+
+            if island.Name == "Sea" or not island:IsA("BasePart") then return end
+
+            -- 3. Tạo khung hiển thị (BillboardGui) nếu chưa có
+            local esp = island:FindFirstChild("NameEsp")
+            if not esp then
+                esp = Instance.new("BillboardGui", island)
+                esp.Name = "NameEsp"
+                esp.Size = UDim2.new(0, 200, 0, 45)
+                esp.StudsOffset = Vector3.new(0, 4, 0)
+                esp.AlwaysOnTop = true
+
+                local text = Instance.new("TextLabel", esp)
+                text.Name = "TextLabel"
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.BackgroundTransparency = 1
+                text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                text.TextStrokeTransparency = 0.2
+                text.Font = Enum.Font.GothamBold
+                text.TextSize = 15
+            end
+
+            -- 4. Tính khoảng cách và cập nhật chữ liên tục
+            local dist = math.floor((myPos - island.Position).Magnitude / 3)
+            esp.TextLabel.Text = string.format("%s\n[%d m]", island.Name, dist)
         end)
     end
 end
+function isnil(value)
+    return value == nil
+end
+local function Round(num)
+    return math.floor(tonumber(num) + 0.5)
+end
+Number = math.random(1, 1000000);
 function UpdateIslandMirageESP()
     for _, loc in pairs(game:GetService("Workspace")['_WorldOrigin'].Locations:GetChildren()) do
         pcall(function()
