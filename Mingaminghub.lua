@@ -1014,8 +1014,6 @@ end
 -- ESP System (Fixed - Tương thích 100% với UI Min Gaming)
 ------------------------------------------------------------------
 local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
-local plr = Players.LocalPlayer
 local EspTag = "NameEsp" .. math.random(1, 1000000)
 
 -- ==================== KHAI BÁO TOGGLE (bắt buộc) ====================
