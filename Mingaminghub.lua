@@ -1306,14 +1306,14 @@ billboard.Name = "NameEsp";
                         billboard.Adornee = loc;
                         billboard.AlwaysOnTop = true;
                         local textLabel = Instance.new("TextLabel", billboard);
-textLabel.Font = "Code";
-                        espLabel.FontSize = "Size14";
-                        espLabel.TextWrapped = true;
-                        espLabel.Size = UDim2.new(1, 0, 1, 0);
-                        espLabel.TextYAlignment = "Top";
-                        espLabel.BackgroundTransparency = 1;
-                        espLabel.TextStrokeTransparency = 0.5;
-                        espLabel.TextColor3 = Color3.fromRGB(80, 245, 245);
+textLabel.Font = Enum.Font.Code;
+                        textLabel.TextSize = 14;
+                        textLabel.TextWrapped = true;
+                        textLabel.Size = UDim2.new(1, 0, 1, 0);
+                        textLabel.TextYAlignment = Enum.TextYAlignment.Top;
+                        textLabel.BackgroundTransparency = 1;
+                        textLabel.TextStrokeTransparency = 0.5;
+                        textLabel.TextColor3 = Color3.fromRGB(80, 245, 245);
                     else
                         loc['NameEsp'].TextLabel.Text = loc.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - loc.Position).Magnitude / 3) .. " M" ;
                     end
@@ -1667,7 +1667,7 @@ function to(targetCF)
         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
     until (targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 2000
 end
-function to(targetCF)
+function toAdvanced(targetCF)
     pcall(function()
         if (((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >= 2000) and not Auto_Raid and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)) then
             if (NameMon == "FishmanQuest") then
@@ -2795,8 +2795,8 @@ textLabel.Font = "Code";
                 local kitsuneModel = kitsuneIsland:FindFirstChild("ShrineActive");
                 if kitsuneModel then
                     for _, descendant in pairs(kitsuneModel:GetDescendants()) do
-                        if (spawnRelated531:IsA("BasePart") and spawnRelated531.Name:find("NeonShrinePart")) then
-                            Tween(spawnRelated531.CFrame);
+                        if (descendant:IsA("BasePart") and descendant.Name:find("NeonShrinePart")) then
+                            Tween(descendant.CFrame);
                         end
                     end
                 end
@@ -3194,7 +3194,7 @@ if Sea3 then
         local seaHumanoid = seaCharacter.Humanoid;
         local target = nil;
         for _, child in pairs(WorkspaceService.Boats:GetChildren()) do
-            local vehicleSeat = boatChild:FindFirstChild("VehicleSeat");
+            local vehicleSeat = child:FindFirstChild("VehicleSeat");
             if (vehicleSeat and (vehicleSeat.Occupant == seaHumanoid)) then
                 target = vehicleSeat;
                 break;
@@ -3490,7 +3490,7 @@ if Sea3 then
                             AimBotSkillPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, - 5, 0) ;
                             Skillaimbot = true;
                             AutoSkill = false;
-                        until not pirateBoatCheck or not enemy.Parent or (pirateBoatCheck.Health.Value <= 0) or not CheckPirateBoat()
+                        until not pirateBoatCheck or not pirateBoatCheck.Parent or (pirateBoatCheck.Health.Value <= 0) or not CheckPirateBoat()
                         Skillaimbot = true;
                         AutoSkill = false;
                     end
@@ -3507,7 +3507,7 @@ if Sea3 then
         _G.GhostShip = value;
     end);
     Options.ToggleGhostShip:SetValue(false);
-    function CheckPirateBoat()
+    function CheckGhostShip()
         local ghostShipNames = {
             "FishBoat"
         };
@@ -3521,18 +3521,18 @@ if Sea3 then
         while wait() do
             pcall(function()
                 if _G.bjirFishBoat then
-                    if CheckPirateBoat() then
+                    if CheckGhostShip() then
                         game:GetService("VirtualInputManager"):SendKeyEvent(true, 32, false, game);
                         wait();
                         game:GetService("VirtualInputManager"):SendKeyEvent(false, 32, false, game);
-                        local ghostBoatCheck = CheckPirateBoat();
+                        local ghostBoatCheck = CheckGhostShip();
                         repeat
                             wait();
                             spawn(Tween(ghostBoatCheck.Engine.CFrame * CFrame.new(0, - 20, 0), 1));
                             AutoSkill = true;
                             Skillaimbot = true;
                             AimBotSkillPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, - 5, 0) ;
-                        until enemy.Parent or (ghostBoatCheck.Health.Value <= 0) or not CheckPirateBoat()
+                        until not ghostBoatCheck.Parent or (ghostBoatCheck.Health.Value <= 0) or not CheckGhostShip()
                         AutoSkill = false;
                         Skillaimbot = false;
                     end
@@ -3544,7 +3544,7 @@ if Sea3 then
         while wait() do
             if _G.bjirFishBoat then
                 pcall(function()
-                    if CheckPirateBoat() then
+                    if CheckGhostShip() then
                         AutoHaki();
                         game:GetService("VirtualUser"):CaptureController();
                         game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672));
@@ -6574,20 +6574,20 @@ function UpdateRealFruitEsp()
                 if not npc.Handle:FindFirstChild("NameEsp" .. Number) then
                     local billboard = Instance.new("BillboardGui", npc.Handle);
 billboard.Name = "NameEsp" .. Number ;
-                    obj4.ExtentsOffset = Vector3.new(0, 1, 0);
-                    obj4.Size = UDim2.new(1, 200, 1, 30);
-                    obj4.Adornee = npc.Handle;
-                    obj4.AlwaysOnTop = true;
-                    local textLabel = Instance.new("TextLabel", obj4);
-textLabel.Font = Enum.Font.GothamSemibold;
-                    dist.FontSize = "Size14";
-                    dist.TextWrapped = true;
-                    dist.Size = UDim2.new(1, 0, 1, 0);
-                    dist.TextYAlignment = "Top";
-                    dist.BackgroundTransparency = 1;
-                    dist.TextStrokeTransparency = 0.5;
-                    dist.TextColor3 = Color3.fromRGB(255, 0, 0);
-                    dist.Text = npc.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - npc.Handle.Position).Magnitude / 3) .. " Distance" ;
+                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                    billboard.Size = UDim2.new(1, 200, 1, 30);
+                    billboard.Adornee = npc.Handle;
+                    billboard.AlwaysOnTop = true;
+                    local textLabel = Instance.new("TextLabel", billboard);
+                    textLabel.Font = Enum.Font.GothamSemibold;
+                    textLabel.TextSize = 14;
+                    textLabel.TextWrapped = true;
+                    textLabel.Size = UDim2.new(1, 0, 1, 0);
+                    textLabel.TextYAlignment = Enum.TextYAlignment.Top;
+                    textLabel.BackgroundTransparency = 1;
+                    textLabel.TextStrokeTransparency = 0.5;
+                    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0);
+                    textLabel.Text = npc.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - npc.Handle.Position).Magnitude / 3) .. " Distance" ;
                 else
                     npc.Handle["NameEsp" .. Number ].TextLabel.Text = npc.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - npc.Handle.Position).Magnitude / 3) .. " Distance" ;
                 end
@@ -6602,20 +6602,20 @@ textLabel.Font = Enum.Font.GothamSemibold;
                 if not monster.Handle:FindFirstChild("NameEsp" .. Number) then
                     local billboard = Instance.new("BillboardGui", monster.Handle);
 billboard.Name = "NameEsp" .. Number ;
-                    obj5.ExtentsOffset = Vector3.new(0, 1, 0);
-                    obj5.Size = UDim2.new(1, 200, 1, 30);
-                    obj5.Adornee = monster.Handle;
-                    obj5.AlwaysOnTop = true;
-                    local textLabel = Instance.new("TextLabel", obj5);
-textLabel.Font = Enum.Font.GothamSemibold;
-                    cf.FontSize = "Size14";
-                    cf.TextWrapped = true;
-                    cf.Size = UDim2.new(1, 0, 1, 0);
-                    cf.TextYAlignment = "Top";
-                    cf.BackgroundTransparency = 1;
-                    cf.TextStrokeTransparency = 0.5;
-                    cf.TextColor3 = Color3.fromRGB(255, 174, 0);
-                    cf.Text = monster.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - monster.Handle.Position).Magnitude / 3) .. " Distance" ;
+                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                    billboard.Size = UDim2.new(1, 200, 1, 30);
+                    billboard.Adornee = monster.Handle;
+                    billboard.AlwaysOnTop = true;
+                    local textLabel = Instance.new("TextLabel", billboard);
+                    textLabel.Font = Enum.Font.GothamSemibold;
+                    textLabel.TextSize = 14;
+                    textLabel.TextWrapped = true;
+                    textLabel.Size = UDim2.new(1, 0, 1, 0);
+                    textLabel.TextYAlignment = Enum.TextYAlignment.Top;
+                    textLabel.BackgroundTransparency = 1;
+                    textLabel.TextStrokeTransparency = 0.5;
+                    textLabel.TextColor3 = Color3.fromRGB(255, 174, 0);
+                    textLabel.Text = monster.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - monster.Handle.Position).Magnitude / 3) .. " Distance" ;
                 else
                     monster.Handle["NameEsp" .. Number ].TextLabel.Text = monster.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - monster.Handle.Position).Magnitude / 3) .. " Distance" ;
                 end
@@ -6630,20 +6630,20 @@ textLabel.Font = Enum.Font.GothamSemibold;
                 if not questData.Handle:FindFirstChild("NameEsp" .. Number) then
                     local billboard = Instance.new("BillboardGui", questData.Handle);
 billboard.Name = "NameEsp" .. Number ;
-                    val1.ExtentsOffset = Vector3.new(0, 1, 0);
-                    val1.Size = UDim2.new(1, 200, 1, 30);
-                    val1.Adornee = questData.Handle;
-                    val1.AlwaysOnTop = true;
-                    local textLabel = Instance.new("TextLabel", val1);
-textLabel.Font = Enum.Font.GothamSemibold;
-                    pos.FontSize = "Size14";
-                    pos.TextWrapped = true;
-                    pos.Size = UDim2.new(1, 0, 1, 0);
-                    pos.TextYAlignment = "Top";
-                    pos.BackgroundTransparency = 1;
-                    pos.TextStrokeTransparency = 0.5;
-                    pos.TextColor3 = Color3.fromRGB(251, 255, 0);
-                    pos.Text = questData.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - questData.Handle.Position).Magnitude / 3) .. " Distance" ;
+                    billboard.ExtentsOffset = Vector3.new(0, 1, 0);
+                    billboard.Size = UDim2.new(1, 200, 1, 30);
+                    billboard.Adornee = questData.Handle;
+                    billboard.AlwaysOnTop = true;
+                    local textLabel = Instance.new("TextLabel", billboard);
+                    textLabel.Font = Enum.Font.GothamSemibold;
+                    textLabel.TextSize = 14;
+                    textLabel.TextWrapped = true;
+                    textLabel.Size = UDim2.new(1, 0, 1, 0);
+                    textLabel.TextYAlignment = Enum.TextYAlignment.Top;
+                    textLabel.BackgroundTransparency = 1;
+                    textLabel.TextStrokeTransparency = 0.5;
+                    textLabel.TextColor3 = Color3.fromRGB(251, 255, 0);
+                    textLabel.Text = questData.Name .. " \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - questData.Handle.Position).Magnitude / 3) .. " Distance" ;
                 else
                     questData.Handle["NameEsp" .. Number ].TextLabel.Text = questData.Name .. " " .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - questData.Handle.Position).Magnitude / 3) .. " Distance" ;
                 end
@@ -6662,42 +6662,10 @@ toggleEspMirageIsland:OnChanged(function(value)
     IslandMirageEsp = value;
     while IslandMirageEsp do
         wait();
-        UpdateIslandMirageEsp();
+        UpdateIslandMirageESP();
     end
 end);
 Options.ToggleIslandMirageEsp:SetValue(false);
-function isnil(nilCheckVal)
-    return nilCheckVal == nil ;
-end
-local function Round(roundNum)
-    return math.floor(tonumber(roundNum) + 0.5);
-end
-Number = math.random(1, 1000000);
-function UpdateIslandMirageEsp()
-    for _, data in pairs(game:GetService("Workspace")['_WorldOrigin'].Locations:GetChildren()) do
-        pcall(function()
-            if MirageIslandESP then
-                if (loc.Name == "Mirage Island") then
-                    if not data:FindFirstChild("NameEsp") then
-                        local billboard = Instance.new("BillboardGui", data);
-billboard.Name = "NameEsp";
-                        val2.ExtentsOffset = Vector3.new(0, 1, 0);
-                        val2.Size = UDim2.new(1, 200, 1, 30);
-                        val2.Adornee = data;
-                        val2.AlwaysOnTop = true;
-                        local textLabel = Instance.new("TextLabel", val2);
-textLabel.Font = Enum.Font.Code;
-                        espGui.FontSize = Enum.FontSize.Size14;
-                        espGui.TextWrapped = true;
-                        espGui.Size = UDim2.new(1, 0, 1, 0);
-                        espGui.TextYAlignment = Enum.TextYAlignment.Top;
-                        espGui.BackgroundTransparency = 1;
-                        espGui.TextStrokeTransparency = 0.5;
-                        espGui.TextColor3 = Color3.fromRGB(80, 245, 245);
-                    else
-                        data['NameEsp'].TextLabel.Text = data.Name .. "   \n" .. Round((game:GetService("Players").LocalPlayer.Character.Head.Position - data.Position).Magnitude / 3) .. " M" ;
-                    end
-                end
             elseif data:FindFirstChild("NameEsp") then
                 data:FindFirstChild("NameEsp"):Destroy();
             end
