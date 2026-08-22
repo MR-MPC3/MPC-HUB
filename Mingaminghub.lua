@@ -443,6 +443,14 @@ local Tabs = {
         Title = "Khác"
     })
 };
+----------------------------------------------------------------
+-- code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
+----------------------------------------------------------------
+local Options = Fluent.Options;
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local plr = Players.LocalPlayer
 
 ----------------------------------------------------------------
 -- Code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
