@@ -1047,10 +1047,9 @@ textLabel.Font = Enum.Font.GothamSemibold;
         end);
     end
 end
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local plr = Players.LocalPlayer
 
+
+local Workspace = game:GetService("Workspace")
 -- Khai báo các biến Toggle (Default: false)
 local ESPPlayer = false
 local DevilFruitESP = false
