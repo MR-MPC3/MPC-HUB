@@ -1006,55 +1006,44 @@ end
 -- ESP Đảo
 ----------------------------------------------------------------
 function UpdateIslandESP()
-    -- 1. Lấy thư mục chứa tọa độ các đảo
-    local locations = workspace:FindFirstChild("_WorldOrigin") 
-        and workspace._WorldOrigin:FindFirstChild("Locations")
+    -- 1. Tìm thư mục chứa các đảo
+    local locations = workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations")
     if not locations then return end
 
-    -- 2. Lấy vị trí đầu của nhân vật (tránh crash khi chết)
-    local character = Players.LocalPlayer.Character
-    local head = character and character:FindFirstChild("Head")
-    local myPos = head and head.Position
+    -- 2. Lấy vị trí nhân vật hiện tại
+    local myPos = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head") and Players.LocalPlayer.Character.Head.Position
 
-    -- 3. Duyệt qua từng đảo để xử lý ESP
     for _, island in pairs(locations:GetChildren()) do
         pcall(function()
-            -- Tắt ESP hoặc nhân vật đang chết -> Xóa sạch chữ ESP
+            -- Nếu tắt ESP hoặc mất nhân vật -> Xóa ESP cũ
             if not IslandESP or not myPos then
                 local oldEsp = island:FindFirstChild("NameEsp")
                 if oldEsp then oldEsp:Destroy() end
                 return
             end
 
-            -- Bỏ qua vùng biển "Sea" hoặc các vật thể không có vị trí
             if island.Name == "Sea" or not island:IsA("BasePart") then return end
 
+            -- 3. Tạo khung hiển thị (BillboardGui) nếu chưa có
             local esp = island:FindFirstChild("NameEsp")
-
-            -- 4. Tạo mới khung chữ ESP 3D hiển thị tên đảo
             if not esp then
-                esp = Instance.new("BillboardGui")
+                esp = Instance.new("BillboardGui", island)
                 esp.Name = "NameEsp"
                 esp.Size = UDim2.new(0, 200, 0, 45)
-                esp.StudsOffset = Vector3.new(0, 4, 0) -- Cao hơn đỉnh đảo 4 studs
+                esp.StudsOffset = Vector3.new(0, 4, 0)
                 esp.AlwaysOnTop = true
-                esp.Adornee = island
-                esp.Parent = island
 
-                local text = Instance.new("TextLabel")
+                local text = Instance.new("TextLabel", esp)
                 text.Name = "TextLabel"
                 text.Size = UDim2.new(1, 0, 1, 0)
                 text.BackgroundTransparency = 1
-                text.TextColor3 = Color3.fromRGB(255, 255, 255)      -- Chữ màu trắng
-                text.TextStrokeTransparency = 0.2                    -- Viền đen đậm
-                text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                text.TextStrokeTransparency = 0.2
                 text.Font = Enum.Font.GothamBold
                 text.TextSize = 15
-                text.TextWrapped = true
-                text.Parent = esp
             end
 
-            -- 5. Tính khoảng cách ra mét và cập nhật chữ hiển thị
+            -- 4. Tính khoảng cách và cập nhật chữ liên tục
             local dist = math.floor((myPos - island.Position).Magnitude / 3)
             esp.TextLabel.Text = string.format("%s\n[%d m]", island.Name, dist)
         end)
