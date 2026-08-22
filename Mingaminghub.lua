@@ -1002,60 +1002,6 @@ function MaterialMon()
         end
     end
 end
-----------------------------------------------------------------
--- ESP Đảo
-----------------------------------------------------------------
-function UpdateIslandESP()
-    -- 1. Tìm thư mục chứa các đảo
-    local locations = workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations")
-    if not locations then return end
-
-    -- 2. Lấy vị trí nhân vật hiện tại
-    local myPos = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head") and Players.LocalPlayer.Character.Head.Position
-
-    for _, island in pairs(locations:GetChildren()) do
-        pcall(function()
-            -- Nếu tắt ESP hoặc mất nhân vật -> Xóa ESP cũ
-            if not IslandESP or not myPos then
-                local oldEsp = island:FindFirstChild("NameEsp")
-                if oldEsp then oldEsp:Destroy() end
-                return
-            end
-
-            if island.Name == "Sea" or not island:IsA("BasePart") then return end
-
-            -- 3. Tạo khung hiển thị (BillboardGui) nếu chưa có
-            local esp = island:FindFirstChild("NameEsp")
-            if not esp then
-                esp = Instance.new("BillboardGui", island)
-                esp.Name = "NameEsp"
-                esp.Size = UDim2.new(0, 200, 0, 45)
-                esp.StudsOffset = Vector3.new(0, 4, 0)
-                esp.AlwaysOnTop = true
-
-                local text = Instance.new("TextLabel", esp)
-                text.Name = "TextLabel"
-                text.Size = UDim2.new(1, 0, 1, 0)
-                text.BackgroundTransparency = 1
-                text.TextColor3 = Color3.fromRGB(255, 255, 255)
-                text.TextStrokeTransparency = 0.2
-                text.Font = Enum.Font.GothamBold
-                text.TextSize = 15
-            end
-
-            -- 4. Tính khoảng cách và cập nhật chữ liên tục
-            local dist = math.floor((myPos - island.Position).Magnitude / 3)
-            esp.TextLabel.Text = string.format("%s\n[%d m]", island.Name, dist)
-        end)
-    end
-end
-function isnil(v198)
-    return v198 == nil ;
-end
-local function v20(v199)
-    return math.floor(tonumber(v199) + 0.5);
-end
-Number = math.random(1, 1000000);
 function UpdatePlayerChams()
     for v427, v428 in pairs(game:GetService("Players"):GetChildren()) do
         pcall(function()
@@ -1293,35 +1239,51 @@ function UpdateRealFruitChams()
         end
     end
 end
+----------------------------------------------------------------
+-- ESP Đảo
+----------------------------------------------------------------
 function UpdateIslandESP()
-    for v441, v442 in pairs(game:GetService("Workspace")['_WorldOrigin'].Locations:GetChildren()) do
+    -- 1. Tìm thư mục chứa các đảo
+    local locations = workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations")
+    if not locations then return end
+
+    -- 2. Lấy vị trí nhân vật hiện tại
+    local myPos = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head") and Players.LocalPlayer.Character.Head.Position
+
+    for _, island in pairs(locations:GetChildren()) do
         pcall(function()
-            if IslandESP then
-                if (v442.Name ~= "Sea") then
-                    if not v442:FindFirstChild("NameEsp") then
-                        local v1200 = Instance.new("BillboardGui", v442);
-                        v1200.Name = "NameEsp";
-                        v1200.ExtentsOffset = Vector3.new(0, 1, 0);
-                        v1200.Size = UDim2.new(1, 200, 1, 30);
-                        v1200.Adornee = v442;
-                        v1200.AlwaysOnTop = true;
-                        local v1206 = Instance.new("TextLabel", v1200);
-                        v1206.Font = "GothamBold";
-                        v1206.FontSize = "Size14";
-                        v1206.TextWrapped = true;
-                        v1206.Size = UDim2.new(1, 0, 1, 0);
-                        v1206.TextYAlignment = "Top";
-                        v1206.BackgroundTransparency = 1;
-                        v1206.TextStrokeTransparency = 0.5;
-                        v1206.TextColor3 = Color3.fromRGB(7, 236, 240);
-                    else
-                        v442['NameEsp'].TextLabel.Text = v442.Name .. "   \n" .. v20((game:GetService("Players").LocalPlayer.Character.Head.Position - v442.Position).Magnitude / 3) .. " Distance" ;
-                    end
-                end
-            elseif v442:FindFirstChild("NameEsp") then
-                v442:FindFirstChild("NameEsp"):Destroy();
+            -- Nếu tắt ESP hoặc mất nhân vật -> Xóa ESP cũ
+            if not IslandESP or not myPos then
+                local oldEsp = island:FindFirstChild("NameEsp")
+                if oldEsp then oldEsp:Destroy() end
+                return
             end
-        end);
+
+            if island.Name == "Sea" or not island:IsA("BasePart") then return end
+
+            -- 3. Tạo khung hiển thị (BillboardGui) nếu chưa có
+            local esp = island:FindFirstChild("NameEsp")
+            if not esp then
+                esp = Instance.new("BillboardGui", island)
+                esp.Name = "NameEsp"
+                esp.Size = UDim2.new(0, 200, 0, 45)
+                esp.StudsOffset = Vector3.new(0, 4, 0)
+                esp.AlwaysOnTop = true
+
+                local text = Instance.new("TextLabel", esp)
+                text.Name = "TextLabel"
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.BackgroundTransparency = 1
+                text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                text.TextStrokeTransparency = 0.2
+                text.Font = Enum.Font.GothamBold
+                text.TextSize = 15
+            end
+
+            -- 4. Tính khoảng cách và cập nhật chữ liên tục
+            local dist = math.floor((myPos - island.Position).Magnitude / 3)
+            esp.TextLabel.Text = string.format("%s\n[%d m]", island.Name, dist)
+        end)
     end
 end
 function isnil(v200)
