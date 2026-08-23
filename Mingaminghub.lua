@@ -579,7 +579,6 @@ function CheckLevel()
 
     for _, data in ipairs(QuestData[currentSea]) do
         if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
-            Ms        = data.Mon
             NameMon   = data.Mon
             NameQuest = data.Quest
             QuestLv   = data.QLv
@@ -1913,7 +1912,7 @@ spawn(function()
                 elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name == Ms) then
+                            if (enemy.Name ==  NameMon) then
                                 repeat
                                     wait(_G.Fast_Delay);
                                     AttackNoCoolDown();
