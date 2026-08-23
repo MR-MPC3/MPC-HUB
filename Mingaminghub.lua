@@ -2643,6 +2643,8 @@ end
 ----------------------------------------------------------------
 -- UI: Chọn Quái & Toggle Farm Quái Tự Chọn
 ----------------------------------------------------------------
+local MonsterSection = Tabs.Main:AddSection("Quái Thường")
+
 local SelectMonsterDropdown = Tabs.Main:AddDropdown("SelectMonster", {
     Title = "Chọn Quái Muốn Farm",
     Values = tableMon or {},
