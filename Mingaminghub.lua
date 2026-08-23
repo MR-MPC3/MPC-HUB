@@ -570,7 +570,7 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- Hàm CheckLevel (Đầy đủ an toàn & Viết gọn)
+-- 1. Hàm CheckLevel (Chỉ xử lý Auto Level)
 ----------------------------------------------------------------
 function CheckLevel()
     local myLevel = plr.Data.Level.Value
@@ -578,7 +578,7 @@ function CheckLevel()
     if not currentSea or not QuestData[currentSea] then return end
 
     for _, data in ipairs(QuestData[currentSea]) do
-        if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
+        if myLevel >= data.Min and myLevel <= data.Max then
             Ms        = data.Mon
             NameMon   = data.Mon
             NameQuest = data.Quest
@@ -586,14 +586,47 @@ function CheckLevel()
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
 
-            -- Bypass Cổng an toàn
+            -- Bypass Cổng dịch chuyển cho Auto Level
             if _G.AutoLevel and data.Entrance then
                 local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
                 if rootPart then
                     local dist = (CFrameMon.Position - rootPart.Position).Magnitude
-                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
+                    if dist > 3000 then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                        end)
+                    end
+                end
+            end
+            break
+        end
+    end
+end
 
-                    if dist > threshold then
+----------------------------------------------------------------
+-- 2. Hàm GetSelectedMonsterData (Chỉ xử lý Farm Quái Tự Chọn)
+----------------------------------------------------------------
+function GetSelectedMonsterData()
+    if not _G.SelectMonster or _G.SelectMonster == "" then return end
+
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
+    if not currentSea or not QuestData[currentSea] then return end
+
+    for _, data in ipairs(QuestData[currentSea]) do
+        if data.Mon == _G.SelectMonster then
+            Ms          = data.Mon
+            NameMon     = data.Mon
+            NameQuest   = data.Quest
+            QuestLv     = data.QLv
+            CFrameQ     = data.QCF
+            CFrameMon   = data.MonCF
+
+            -- Bypass Cổng dịch chuyển cho Farm Quái Tự Chọn
+            if _G.AutoSelectMonster and data.Entrance then
+                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
+                    if dist > 3000 then
                         pcall(function()
                             ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
                         end)
@@ -2607,6 +2640,37 @@ if Sea2 then
         end
     end);
 end
+----------------------------------------------------------------
+-- UI: Chọn Quái & Toggle Farm Quái Tự Chọn
+----------------------------------------------------------------
+local SelectMonsterDropdown = Tabs.Main:AddDropdown("SelectMonster", {
+    Title = "Chọn Quái Muốn Farm",
+    Values = tableMon or {},
+    Multi = false,
+    Default = nil,
+})
+
+SelectMonsterDropdown:OnChanged(function(Value)
+    _G.SelectMonster = Value
+end)
+
+local AutoSelectMonsterToggle = Tabs.Main:AddToggle("ToggleSelectMonster", {
+    Title = "Farm Quái Tự Chọn",
+    Description = "Chỉ tập trung đánh con quái đã chọn ở trên",
+    Default = false
+})
+
+AutoSelectMonsterToggle:OnChanged(function(value)
+    _G.AutoSelectMonster = value
+    if not value then
+        task.wait()
+        if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            Tween(plr.Character.HumanoidRootPart.CFrame)
+        end
+    end
+end)
+Options.ToggleSelectMonster:SetValue(false)
+
 local BossSection = Tabs.Main:AddSection("Trùm");
 if Sea1 then
     tableBoss = {
