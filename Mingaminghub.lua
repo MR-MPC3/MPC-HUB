@@ -570,74 +570,165 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- 1. Hàm CheckLevel (Chỉ xử lý Auto Level)
+-- AUTO LEVEL DATA
+-- Chỉ dùng riêng cho Auto Level
 ----------------------------------------------------------------
+
+local AutoLevelData = {
+    Mon = nil,
+    NameMon = nil,
+    NameQuest = nil,
+    QuestLv = nil,
+    CFrameQ = nil,
+    CFrameMon = nil,
+    Entrance = nil
+}
+
 function CheckLevel()
-    local myLevel = plr.Data.Level.Value
-    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSea or not QuestData[currentSea] then return end
+    local levelValue = plr:FindFirstChild("Data")
+        and plr.Data:FindFirstChild("Level")
 
-    for _, data in ipairs(QuestData[currentSea]) do
+    if not levelValue then
+        return nil
+    end
+
+    local myLevel = levelValue.Value
+
+    local currentSea =
+        Sea1 and "Sea1"
+        or Sea2 and "Sea2"
+        or Sea3 and "Sea3"
+
+    if not currentSea then
+        return nil
+    end
+
+    local seaData = QuestData[currentSea]
+
+    if not seaData then
+        return nil
+    end
+
+    for _, data in ipairs(seaData) do
         if myLevel >= data.Min and myLevel <= data.Max then
-            Ms        = data.Mon
-            NameMon   = data.Mon
-            NameQuest = data.Quest
-            QuestLv   = data.QLv
-            CFrameQ   = data.QCF
-            CFrameMon = data.MonCF
 
-            -- Bypass Cổng dịch chuyển cho Auto Level
+            AutoLevelData.Mon = data.Mon
+            AutoLevelData.NameMon = data.Mon
+            AutoLevelData.NameQuest = data.Quest
+            AutoLevelData.QuestLv = data.QLv
+            AutoLevelData.CFrameQ = data.QCF
+            AutoLevelData.CFrameMon = data.MonCF
+            AutoLevelData.Entrance = data.Entrance
+
+            ------------------------------------------------
+            -- Bypass Entrance chỉ dành cho Auto Level
+            ------------------------------------------------
             if _G.AutoLevel and data.Entrance then
-                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+
+                local character = plr.Character
+                local rootPart = character
+                    and character:FindFirstChild("HumanoidRootPart")
+
                 if rootPart then
-                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
-                    if dist > 3000 then
+                    local distance =
+                        (data.MonCF.Position - rootPart.Position).Magnitude
+
+                    if distance > 3000 then
                         pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                                "requestEntrance",
+                                data.Entrance
+                            )
                         end)
                     end
                 end
             end
-            break
+
+            return AutoLevelData
         end
     end
+
+    return nil
 end
 
 ----------------------------------------------------------------
--- 2. Hàm GetSelectedMonsterData (Chỉ xử lý Farm Quái Tự Chọn)
+-- SELECTED MONSTER DATA
+-- Chỉ dùng riêng cho Farm Quái Tự Chọn
 ----------------------------------------------------------------
+
+local SelectedMonsterData = {
+    Mon = nil,
+    NameMon = nil,
+    NameQuest = nil,
+    QuestLv = nil,
+    CFrameQ = nil,
+    CFrameMon = nil,
+    Entrance = nil
+}
+
 function GetSelectedMonsterData()
-    if not _G.SelectMonster or _G.SelectMonster == "" then return end
+    local selectedMonster = _G.SelectMonster
 
-    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSea or not QuestData[currentSea] then return end
+    if not selectedMonster or selectedMonster == "" then
+        return nil
+    end
 
-    for _, data in ipairs(QuestData[currentSea]) do
-        if data.Mon == _G.SelectMonster then
-            Ms          = data.Mon
-            NameMon     = data.Mon
-            NameQuest   = data.Quest
-            QuestLv     = data.QLv
-            CFrameQ     = data.QCF
-            CFrameMon   = data.MonCF
+    local currentSea =
+        Sea1 and "Sea1"
+        or Sea2 and "Sea2"
+        or Sea3 and "Sea3"
 
-            -- Bypass Cổng dịch chuyển cho Farm Quái Tự Chọn
+    if not currentSea then
+        return nil
+    end
+
+    local seaData = QuestData[currentSea]
+
+    if not seaData then
+        return nil
+    end
+
+    for _, data in ipairs(seaData) do
+        if data.Mon == selectedMonster then
+
+            SelectedMonsterData.Mon = data.Mon
+            SelectedMonsterData.NameMon = data.Mon
+            SelectedMonsterData.NameQuest = data.Quest
+            SelectedMonsterData.QuestLv = data.QLv
+            SelectedMonsterData.CFrameQ = data.QCF
+            SelectedMonsterData.CFrameMon = data.MonCF
+            SelectedMonsterData.Entrance = data.Entrance
+
+            ------------------------------------------------
+            -- Bypass Entrance chỉ dành cho Farm Quái Tự Chọn
+            ------------------------------------------------
             if _G.AutoSelectMonster and data.Entrance then
-                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+
+                local character = plr.Character
+                local rootPart = character
+                    and character:FindFirstChild("HumanoidRootPart")
+
                 if rootPart then
-                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
-                    if dist > 3000 then
+                    local distance =
+                        (data.MonCF.Position - rootPart.Position).Magnitude
+
+                    if distance > 3000 then
                         pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                                "requestEntrance",
+                                data.Entrance
+                            )
                         end)
                     end
                 end
             end
-            break
+
+            return SelectedMonsterData
         end
     end
-end
 
+    return nil
+end
 ----------------------------------------------------------------
 -- tableMon & AreaList (giữ nguyên logic cũ)
 ----------------------------------------------------------------
