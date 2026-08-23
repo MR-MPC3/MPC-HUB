@@ -569,165 +569,37 @@ local QuestData = {
     }
 }
 
+---------------------------------------------------------------
+-- 1. Hàm CheckLevel (Chỉ xử lý Auto Level)
 ----------------------------------------------------------------
--- AUTO LEVEL DATA
--- Chỉ dùng riêng cho Auto Level
-----------------------------------------------------------------
-
-local AutoLevelData = {
-    Mon = nil,
-    NameMon = nil,
-    NameQuest = nil,
-    QuestLv = nil,
-    CFrameQ = nil,
-    CFrameMon = nil,
-    Entrance = nil
-}
-
 function CheckLevel()
-    local levelValue = plr:FindFirstChild("Data")
-        and plr.Data:FindFirstChild("Level")
+    local myLevel = plr.Data.Level.Value
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
+    if not currentSea or not QuestData[currentSea] then return end
 
-    if not levelValue then
-        return nil
-    end
-
-    local myLevel = levelValue.Value
-
-    local currentSea =
-        Sea1 and "Sea1"
-        or Sea2 and "Sea2"
-        or Sea3 and "Sea3"
-
-    if not currentSea then
-        return nil
-    end
-
-    local seaData = QuestData[currentSea]
-
-    if not seaData then
-        return nil
-    end
-
-    for _, data in ipairs(seaData) do
+    for _, data in ipairs(QuestData[currentSea]) do
         if myLevel >= data.Min and myLevel <= data.Max then
+            NameMon   = data.Mon
+            NameQuest = data.Quest
+            QuestLv   = data.QLv
+            CFrameQ   = data.QCF
+            CFrameMon = data.MonCF
 
-            AutoLevelData.Mon = data.Mon
-            AutoLevelData.NameMon = data.Mon
-            AutoLevelData.NameQuest = data.Quest
-            AutoLevelData.QuestLv = data.QLv
-            AutoLevelData.CFrameQ = data.QCF
-            AutoLevelData.CFrameMon = data.MonCF
-            AutoLevelData.Entrance = data.Entrance
-
-            ------------------------------------------------
-            -- Bypass Entrance chỉ dành cho Auto Level
-            ------------------------------------------------
+            -- Bypass Cổng dịch chuyển cho Auto Level
             if _G.AutoLevel and data.Entrance then
-
-                local character = plr.Character
-                local rootPart = character
-                    and character:FindFirstChild("HumanoidRootPart")
-
+                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
                 if rootPart then
-                    local distance =
-                        (data.MonCF.Position - rootPart.Position).Magnitude
-
-                    if distance > 3000 then
+                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
+                    if dist > 3000 then
                         pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                                "requestEntrance",
-                                data.Entrance
-                            )
-                        end)
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                       end)
                     end
                 end
             end
-
-            return AutoLevelData
+            break
         end
     end
-
-    return nil
-end
-
-----------------------------------------------------------------
--- SELECTED MONSTER DATA
--- Chỉ dùng riêng cho Farm Quái Tự Chọn
-----------------------------------------------------------------
-
-local SelectedMonsterData = {
-    Mon = nil,
-    NameMon = nil,
-    NameQuest = nil,
-    QuestLv = nil,
-    CFrameQ = nil,
-    CFrameMon = nil,
-    Entrance = nil
-}
-
-function GetSelectedMonsterData()
-    local selectedMonster = _G.SelectMonster
-
-    if not selectedMonster or selectedMonster == "" then
-        return nil
-    end
-
-    local currentSea =
-        Sea1 and "Sea1"
-        or Sea2 and "Sea2"
-        or Sea3 and "Sea3"
-
-    if not currentSea then
-        return nil
-    end
-
-    local seaData = QuestData[currentSea]
-
-    if not seaData then
-        return nil
-    end
-
-    for _, data in ipairs(seaData) do
-        if data.Mon == selectedMonster then
-
-            SelectedMonsterData.Mon = data.Mon
-            SelectedMonsterData.NameMon = data.Mon
-            SelectedMonsterData.NameQuest = data.Quest
-            SelectedMonsterData.QuestLv = data.QLv
-            SelectedMonsterData.CFrameQ = data.QCF
-            SelectedMonsterData.CFrameMon = data.MonCF
-            SelectedMonsterData.Entrance = data.Entrance
-
-            ------------------------------------------------
-            -- Bypass Entrance chỉ dành cho Farm Quái Tự Chọn
-            ------------------------------------------------
-            if _G.AutoSelectMonster and data.Entrance then
-
-                local character = plr.Character
-                local rootPart = character
-                    and character:FindFirstChild("HumanoidRootPart")
-
-                if rootPart then
-                    local distance =
-                        (data.MonCF.Position - rootPart.Position).Magnitude
-
-                    if distance > 3000 then
-                        pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                                "requestEntrance",
-                                data.Entrance
-                            )
-                        end)
-                    end
-                end
-            end
-
-            return SelectedMonsterData
-        end
-    end
-
-    return nil
 end
 ----------------------------------------------------------------
 -- tableMon & AreaList (giữ nguyên logic cũ)
@@ -2037,7 +1909,7 @@ spawn(function()
                 elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name == Ms) then
+                            if (enemy.Name == NameMon) then
                                 repeat
                                     wait(_G.Fast_Delay);
                                     AttackNoCoolDown();
