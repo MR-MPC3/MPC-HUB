@@ -1941,10 +1941,10 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
 });
 AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
-if not value then
-    pcall(function()
-        local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-        if root then
+    if not value then
+      pcall(function()
+         local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+         if root then
             Tween(root.CFrame)
         end
     end)
