@@ -1603,11 +1603,19 @@ function Tween2(targetCFrame)
 
     _G.Clip2 = false
 end
+----------------------------------------------------------------
+-- Hàm EquipTool(toolName)
+----------------------------------------------------------------
 function EquipTool(toolName)
-    if game.Players.LocalPlayer.Backpack:FindFirstChild(toolName) then
-        local foundTool = game.Players.LocalPlayer.Backpack:FindFirstChild(toolName)
-        task.wait()
-        game.Players.LocalPlayer.Character.Humanoid:EquipTool(foundTool)
+    if not toolName or toolName == "" then return end
+    local char = plr.Character
+    if not char then return end
+    -- Nếu vũ khí đã cầm trên tay thì không trang bị lại
+    if char:FindFirstChild(toolName) then return end
+    local tool = plr.Backpack:FindFirstChild(toolName)
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if tool and humanoid then
+        humanoid:EquipTool(tool)
     end
 end
 spawn(function()
@@ -1733,41 +1741,33 @@ function FindEnemiesInRange(resultTable, enemyList)
     end
     return ref4;
 end
+----------------------------------------------------------------
+-- Hàm GetEquippedTool()
+----------------------------------------------------------------
 function GetEquippedTool()
-    local char = LocalPlayer.Character;
-    if not char then
-        return nil;
-    end
-    for _, item in ipairs(char:GetChildren()) do
-        if item:IsA("Tool") then
-            return item;
-        end
-    end
-    return nil;
+    local char = plr.Character
+    if not char then return nil end
+    return char:FindFirstChildOfClass("Tool")
 end
+----------------------------------------------------------------
+-- Hàm AttackNoCoolDown() & Cấu hình vị trí
+----------------------------------------------------------------
+local NetModule = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
+local regAttack = NetModule:WaitForChild("RE/RegisterAttack")
+local regHit = NetModule:WaitForChild("RE/RegisterHit")
 function AttackNoCoolDown()
-    local enemiesInRange = {};
-    local enemies = game:GetService("Workspace").Enemies:GetChildren();
-    local hitPart = FindEnemiesInRange(enemiesInRange, enemies);
-    if not hitPart then
-        return;
-    end
-    local equipped = GetEquippedTool();
-    if not equipped then
-        return;
-    end
+    local enemiesInRange = {}
+    local enemies = workspace.Enemies:GetChildren()
+    -- Gọi hàm tìm kẻ địch 
+    local hitPart = FindEnemiesInRange(enemiesInRange, enemies)
+    if not hitPart or #enemiesInRange == 0 then return end
+    local equipped = GetEquippedTool()
+    if not equipped then return end
     pcall(function()
-        local delay = _G.Fast_Delay or 0.5
-        local RS = game:GetService("ReplicatedStorage");
-        local regAttack = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack");
-        local regHit = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit");
-        if (# enemiesInRange > 0) then
-            regAttack:FireServer(delay);
-            regHit:FireServer(hitPart, enemiesInRange);
-        else
-            task.wait(delay);
-        end
-    end);
+        local delayTime = _G.Fast_Delay or 0.1
+        regAttack:FireServer(delayTime)
+        regHit:FireServer(hitPart, enemiesInRange)
+    end)
 end
 Type = 1
 Pos = CFrame.new(0, 30, 0)
@@ -1838,52 +1838,55 @@ Tabs.Home:AddButton({
         setclipboard("https://discord.gg/25ms")
     end
 })
+----------------------------------------------------------------
+-- UI Dropdown & Loop Tự động chọn Vũ Khí
+----------------------------------------------------------------
 local SelectWeaponDropdown = Tabs.Main:AddDropdown("DropdownSelectWeapon", {
     Title = "Vũ Khí",
     Description = "",
     Values = {
-        "Melee",
-        "Sword",
-        "Blox Fruits"
+        "Cận Chiến",
+        "Kiếm",
+        "Trái Blox"
     },
     Multi = false,
     Default = 1
-});
-SelectWeaponDropdown:SetValue("Melee");
+})
+SelectWeaponDropdown:SetValue("Cận Chiến")
 SelectWeaponDropdown:OnChanged(function(value)
-    ChooseWeapon = value;
-end);
+    ChooseWeapon = value
+end)
 task.spawn(function()
-    while wait() do
+    -- Bảng ánh xạ ToolTip tương ứng
+    local weaponTypeMap = {
+        ["Cận Chiến"] = "Melee",
+        ["Kiếm"] = "Sword",
+        ["Trái Blox"] = "Blox Fruit"
+    }
+    while task.wait(0.5) do
         pcall(function()
-            if (ChooseWeapon == "Melee") then
-                for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                    if (tool.ToolTip == "Melee") then
-                        if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(tool.Name)) then
-                            SelectWeapon = tool.Name;
-                        end
-                    end
+            if not ChooseWeapon then return end
+            local targetToolTip = weaponTypeMap[ChooseWeapon]
+            if not targetToolTip then return end
+            -- Kiểm tra trong Backpack
+            for _, tool in ipairs(plr.Backpack:GetChildren()) do
+                if tool:IsA("Tool") and tool.ToolTip == targetToolTip then
+                    SelectWeapon = tool.Name
+                    return
                 end
-            elseif (ChooseWeapon == "Sword") then
-                for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                    if (tool.ToolTip == "Sword") then
-                        if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(tool.Name)) then
-                            SelectWeapon = tool.Name;
-                        end
-                    end
-                end
-            elseif (ChooseWeapon == "Blox Fruits") then
-                for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                    if (tool.ToolTip == "Blox Fruit") then
-                        if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(tool.Name)) then
-                            SelectWeapon = tool.Name;
-                        end
+            end
+            -- Nếu đang cầm trên tay (Character)
+            if plr.Character then
+                for _, tool in ipairs(plr.Character:GetChildren()) do
+                    if tool:IsA("Tool") and tool.ToolTip == targetToolTip then
+                        SelectWeapon = tool.Name
+                        return
                     end
                 end
             end
-        end);
+        end)
     end
-end);
+end)
 local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
     Title = "Cày Cấp",
     Description = "",
