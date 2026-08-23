@@ -445,7 +445,7 @@ local Tabs = {
 };
 
 ----------------------------------------------------------------
--- Code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
+-- Code khởi đầu cho toàn bộ logic và hoạt động 
 ----------------------------------------------------------------
 local Options = Fluent.Options;
 local Players = game:GetService("Players")
