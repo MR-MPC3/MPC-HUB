@@ -454,15 +454,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Xác định Sea duy nhất 1 lần bằng CurrentSea
-local CurrentSea
+-- Xác định Sea bằng biến Boolean truyền thống
+local Sea1, Sea2, Sea3 = false, false, false
 
 if PlaceId == 85211729168715 then
-    CurrentSea = "Sea1"
+    Sea1 = true
 elseif PlaceId == 79091703265657 then
-    CurrentSea = "Sea2"
+    Sea2 = true
 elseif PlaceId == 100117331123089 then
-    CurrentSea = "Sea3"
+    Sea3 = true
 else
     -- Đá người chơi nếu vào sai game hoặc map không hợp lệ
     plr:Kick("[Min Gaming] PlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits (Sea 1, 2, 3).")
@@ -574,7 +574,7 @@ local QuestData = {
 ----------------------------------------------------------------
 function CheckLevel()
     local myLevel = plr.Data.Level.Value
-    local dataList = QuestData[CurrentSea]
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
     if not currentSea or not QuestData[currentSea] then return end
 
     for _, data in ipairs(QuestData[currentSea]) do
@@ -609,7 +609,7 @@ end
 function GetSelectedMonsterData()
     if not _G.SelectMonster or _G.SelectMonster == "" then return end
 
-    local dataList = QuestData[CurrentSea]
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
     if not currentSea or not QuestData[currentSea] then return end
 
     for _, data in ipairs(QuestData[currentSea]) do
