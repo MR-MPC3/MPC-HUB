@@ -579,7 +579,6 @@ function CheckLevel()
 
     for _, data in ipairs(QuestData[currentSea]) do
         if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
-            Ms        = data.Mon
             NameMon   = data.Mon
             NameQuest = data.Quest
             QuestLv   = data.QLv
@@ -1540,45 +1539,90 @@ function BTPZ(cf)
     task.wait();
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
 end
+----------------------------------------------------------------
+-- TWEEN CORE
+----------------------------------------------------------------
+local TweenService = game:GetService("TweenService")
 local TweenSpeed = 270
 local CurrentTween = nil
+local CurrentTweenTarget = nil
 _G.StopTween = false
 function Tween(targetCFrame)
-    if _G.StopTween then return end
-    if not game.Players.LocalPlayer.Character then return end
-    local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    local distance = (targetCFrame.Position - root.Position).Magnitude
-    if distance < 2 then
-        root.CFrame = targetCFrame
-        return
-    end
-    if CurrentTween then
-        pcall(function() CurrentTween:Cancel() end)
-        CurrentTween = nil
-    end
-    local time = distance / TweenSpeed
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-    CurrentTween = game:GetService("TweenService"):Create(root, tweenInfo, {
-        CFrame = targetCFrame
-    })
-    CurrentTween:Play()
+    if _G.StopTween then
+        return
+    end
+    if typeof(targetCFrame) ~= "CFrame" then
+        return
+    end
+    local char = plr.Character
+    if not char then
+        return
+    end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then
+        return
+    end
+    local distance = (targetCFrame.Position - root.Position).Magnitude
+    if distance < 2 then
+        if CurrentTween then
+            pcall(function()
+                CurrentTween:Cancel()
+            end)
+            CurrentTween = nil
+        end
+        CurrentTweenTarget = targetCFrame
+        root.CFrame = targetCFrame
+        return
+    end
+    -- Không tạo Tween mới nếu target gần như không thay đổi
+    if CurrentTween
+        and CurrentTween.PlaybackState == Enum.PlaybackState.Playing
+        and CurrentTweenTarget
+        and (CurrentTweenTarget.Position - targetCFrame.Position).Magnitude < 3 then
+        return
+    end
+    -- Hủy Tween cũ trước khi tạo target mới
+    if CurrentTween then
+        pcall(function()
+            CurrentTween:Cancel()
+        end)
+        CurrentTween = nil
+    end
+    CurrentTweenTarget = targetCFrame
+    local tweenTime = math.max(distance / TweenSpeed, 0.05)
+    CurrentTween = TweenService:Create(
+        root,
+        TweenInfo.new(
+            tweenTime,
+            Enum.EasingStyle.Linear,
+            Enum.EasingDirection.Out
+        ),
+        {
+            CFrame = targetCFrame
+        }
+    )
+    CurrentTween:Play()
 end
 function CancelTween()
-    _G.StopTween = true
+    _G.StopTween = true
+    if CurrentTween then
+        pcall(function()
+            CurrentTween:Cancel()
+        end)
+        CurrentTween = nil
+    end
+    CurrentTweenTarget = nil
+    local char = plr.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
 
-    if CurrentTween then
-        pcall(function() CurrentTween:Cancel() end)
-        CurrentTween = nil
-    end
-    local char = game.Players.LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local root = char.HumanoidRootPart
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
-    end
-    task.wait(0.15)
-    _G.StopTween = false
+        if root then
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+    task.wait(0.15)
+    _G.StopTween = false
 end
 function Tween2(targetCFrame)
     if not game.Players.LocalPlayer.Character then return end
@@ -1887,67 +1931,128 @@ task.spawn(function()
         end)
     end
 end)
-local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
-    Title = "Cày Cấp",
-    Description = "",
-    Default = false
-});
-AutoLevelToggle:OnChanged(function(value)
-    _G.AutoLevel = value;
-    if (value== false) then
-        wait();
-        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
-        wait();
+----------------------------------------------------------------
+-- CÀY CẤP
+----------------------------------------------------------------
+local LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
+local LastAbandon = 0
+local function IsValidFarmEnemy(enemy)
+    if not enemy or enemy.Parent ~= workspace.Enemies then return false end
+    local humanoid = enemy:FindFirstChildOfClass("Humanoid")
+    local root = enemy:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not root or humanoid.Health <= 0 then return false end
+    return true
+end
+local function PrepareFarmEnemy(enemy)
+    if not IsValidFarmEnemy(enemy) then return false end
+    local humanoid = enemy:FindFirstChildOfClass("Humanoid")
+    local root = enemy:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not root then return false end
+    if LastFarmEnemy ~= enemy then
+        pcall(function()
+            root.Size = Vector3.new(60, 60, 60)
+            root.Transparency = 1
+            root.CanCollide = false
+            humanoid.JumpPower = 0
+            humanoid.WalkSpeed = 0
+        end)
     end
-end);
-Options.ToggleLevel:SetValue(false);
-spawn(function()
-    while task.wait() do
-        if _G.AutoLevel then
-            pcall(function()
-                CheckLevel();
-                if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
-                    Tween(CFrameQ);
-                    if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
-                        task.wait(0.5);
-                    end
-                elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
-                    for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name == Ms) then
-                                repeat
-                                    wait(_G.Fast_Delay);
-                                    AttackNoCoolDown();
-                                    bringmob = true;
-                                    AutoHaki();
-                                    EquipTool(SelectWeapon);
-                                    Tween(enemy.HumanoidRootPart.CFrame * Pos);
-                                    enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
-                                    enemy.HumanoidRootPart.Transparency = 1;
-                                    enemy.Humanoid.JumpPower = 0;
-                                    enemy.Humanoid.WalkSpeed = 0;
-                                    enemy.HumanoidRootPart.CanCollide = false;
-                                    FarmPos = enemy.HumanoidRootPart.CFrame;
-                                    MonFarm = enemy.Name;
-                                until not _G.AutoLevel or not enemy.Parent or (enemy.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) or (game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
-                                bringmob = false;
-                            end
-                        end
-                    end
-                    for _, enemySpawn in pairs(game:GetService("Workspace")['_WorldOrigin'].EnemySpawns:GetChildren()) do
-                        if string.find(enemySpawn.Name, NameMon) then
-                            if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - enemySpawn.Position).Magnitude >= 10) then
-                                Tween(enemySpawn.CFrame * Pos);
-                            end
-                        end
-                    end
-                end
-            end);
+    return true
+end
+local function FindFarmEnemy()
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if not enemiesFolder or not NameMon then return nil end
+    for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+        if enemy.Name == NameMon and IsValidFarmEnemy(enemy) then
+            return enemy
         end
     end
-end);
+    return nil
+end
+local function FindFarmEnemySpawn()
+    local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
+    if not worldOrigin then return nil end
+    local enemySpawns = worldOrigin:FindFirstChild("EnemySpawns")
+    if not enemySpawns or not NameMon then return nil end
+    for _, enemySpawn in ipairs(enemySpawns:GetChildren()) do
+        if enemySpawn:IsA("BasePart") and string.find(enemySpawn.Name, NameMon, 1, true) then
+            return enemySpawn
+        end
+    end
+    return nil
+end
+spawn(function()
+    while task.wait(_G.Fast_Delay or 0.12) do
+        if not _G.AutoLevel then
+            LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
+            continue
+        end
+        pcall(function()
+            CheckLevel()
+            if not NameMon or not NameQuest or not QuestLv or not CFrameQ then return end
+            local char = plr.Character
+            if not char then return end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            local playerGui = plr:FindFirstChild("PlayerGui")
+            local mainGui = playerGui and playerGui:FindFirstChild("Main")
+            local questGui = mainGui and mainGui:FindFirstChild("Quest")
+            local container = questGui and questGui:FindFirstChild("Container")
+            local title = container and container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title")
+            if not title then return end
+            local hasCorrectQuest = questGui.Visible and string.find(title.Text or "", NameMon, 1, true)
+            if not hasCorrectQuest then
+                LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
+                if tick() - LastAbandon > 1.2 then
+                    pcall(function()
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+                    end)
+                    LastAbandon = tick()
+                end
+                if (CFrameQ.Position - root.Position).Magnitude > 6 then
+                    Tween(CFrameQ)
+                else
+                    pcall(function()
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
+                    end)
+                    task.wait(0.55)
+                end
+                return
+            end
+            local enemy = FindFarmEnemy()
+            if enemy then
+                LastSpawnTarget = nil
+                if not PrepareFarmEnemy(enemy) then return end
+                local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
+                if not enemyRoot then return end
+                bringmob = true
+                AutoHaki()
+                EquipTool(SelectWeapon)
+                FarmPos = enemyRoot.CFrame
+                MonFarm = enemy.Name
+                local targetCF = enemyRoot.CFrame * Pos
+                if LastFarmEnemy ~= enemy or not LastFarmTarget or (LastFarmTarget.Position - targetCF.Position).Magnitude > 3 then
+                    LastFarmEnemy = enemy
+                    LastFarmTarget = targetCF
+                    Tween(targetCF)
+                end
+                AttackNoCoolDown()
+                return
+            end
+            bringmob = false
+            LastFarmEnemy, LastFarmTarget = nil, nil
+            local enemySpawn = FindFarmEnemySpawn()
+            if not enemySpawn then return end
+            local targetCF = enemySpawn.CFrame * Pos
+            if (root.Position - targetCF.Position).Magnitude > 12 then
+                if not LastSpawnTarget or (LastSpawnTarget.Position - targetCF.Position).Magnitude > 4 then
+                    LastSpawnTarget = targetCF
+                    Tween(targetCF)
+                end
+            end
+        end)
+    end
+end)
 local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
     Title = "Đấm Quái Gần",
     Description = "",
