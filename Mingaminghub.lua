@@ -1934,6 +1934,23 @@ end)
 ----------------------------------------------------------------
 -- CÀY CẤP
 ----------------------------------------------------------------
+local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
+    Title = "Cày Cấp",
+    Description = "",
+    Default = false
+});
+AutoLevelToggle:OnChanged(function(value)
+    _G.AutoLevel = value;
+if not value then
+    pcall(function()
+        local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            Tween(root.CFrame)
+        end
+    end)
+end
+end);
+Options.ToggleLevel:SetValue(false);
 local LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
 local LastAbandon = 0
 local function IsValidFarmEnemy(enemy)
