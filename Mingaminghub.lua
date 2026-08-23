@@ -2000,74 +2000,75 @@ local function FindFarmEnemySpawn()
 end
 spawn(function()
     while task.wait(_G.Fast_Delay or 0.12) do
-        if not _G.AutoLevel then
+        if _G.AutoLevel then
+            pcall(function()
+                CheckLevel()
+                if not NameMon or not NameQuest or not QuestLv or not CFrameQ then return end
+                local char = plr.Character
+                if not char then return end
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+                local playerGui = plr:FindFirstChild("PlayerGui")
+                local mainGui = playerGui and playerGui:FindFirstChild("Main")
+                local questGui = mainGui and mainGui:FindFirstChild("Quest")
+                local container = questGui and questGui:FindFirstChild("Container")
+                local title = container and container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title")
+                if not title then return end
+                local hasCorrectQuest = questGui.Visible and string.find(title.Text or "", NameMon, 1, true)
+                if not hasCorrectQuest then
+                    LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
+                    if tick() - LastAbandon > 1.2 then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+                        end)
+                        LastAbandon = tick()
+                    end
+                    if (CFrameQ.Position - root.Position).Magnitude > 6 then
+                        Tween(CFrameQ)
+                    else
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
+                        end)
+                        task.wait(0.55)
+                    end
+                    return
+                end
+                local enemy = FindFarmEnemy()
+                if enemy then
+                    LastSpawnTarget = nil
+                    if not PrepareFarmEnemy(enemy) then return end
+                    local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
+                    if not enemyRoot then return end
+                    bringmob = true
+                    AutoHaki()
+                    EquipTool(SelectWeapon)
+                    FarmPos = enemyRoot.CFrame
+                    MonFarm = enemy.Name
+                    local targetCF = enemyRoot.CFrame * Pos
+                    if LastFarmEnemy ~= enemy or not LastFarmTarget or (LastFarmTarget.Position - targetCF.Position).Magnitude > 3 then
+                        LastFarmEnemy = enemy
+                        LastFarmTarget = targetCF
+                        Tween(targetCF)
+                    end
+                    AttackNoCoolDown()
+                    return
+                end
+                bringmob = false
+                LastFarmEnemy, LastFarmTarget = nil, nil
+                local enemySpawn = FindFarmEnemySpawn()
+                if not enemySpawn then return end
+
+                local targetCF = enemySpawn.CFrame * Pos
+                if (root.Position - targetCF.Position).Magnitude > 12 then
+                    if not LastSpawnTarget or (LastSpawnTarget.Position - targetCF.Position).Magnitude > 4 then
+                        LastSpawnTarget = targetCF
+                        Tween(targetCF)
+                    end
+                end
+            end)
+        else
             LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
-            continue
         end
-        pcall(function()
-            CheckLevel()
-            if not NameMon or not NameQuest or not QuestLv or not CFrameQ then return end
-            local char = plr.Character
-            if not char then return end
-            local root = char:FindFirstChild("HumanoidRootPart")
-            if not root then return end
-            local playerGui = plr:FindFirstChild("PlayerGui")
-            local mainGui = playerGui and playerGui:FindFirstChild("Main")
-            local questGui = mainGui and mainGui:FindFirstChild("Quest")
-            local container = questGui and questGui:FindFirstChild("Container")
-            local title = container and container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title")
-            if not title then return end
-            local hasCorrectQuest = questGui.Visible and string.find(title.Text or "", NameMon, 1, true)
-            if not hasCorrectQuest then
-                LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
-                if tick() - LastAbandon > 1.2 then
-                    pcall(function()
-                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
-                    end)
-                    LastAbandon = tick()
-                end
-                if (CFrameQ.Position - root.Position).Magnitude > 6 then
-                    Tween(CFrameQ)
-                else
-                    pcall(function()
-                        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
-                    end)
-                    task.wait(0.55)
-                end
-                return
-            end
-            local enemy = FindFarmEnemy()
-            if enemy then
-                LastSpawnTarget = nil
-                if not PrepareFarmEnemy(enemy) then return end
-                local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
-                if not enemyRoot then return end
-                bringmob = true
-                AutoHaki()
-                EquipTool(SelectWeapon)
-                FarmPos = enemyRoot.CFrame
-                MonFarm = enemy.Name
-                local targetCF = enemyRoot.CFrame * Pos
-                if LastFarmEnemy ~= enemy or not LastFarmTarget or (LastFarmTarget.Position - targetCF.Position).Magnitude > 3 then
-                    LastFarmEnemy = enemy
-                    LastFarmTarget = targetCF
-                    Tween(targetCF)
-                end
-                AttackNoCoolDown()
-                return
-            end
-            bringmob = false
-            LastFarmEnemy, LastFarmTarget = nil, nil
-            local enemySpawn = FindFarmEnemySpawn()
-            if not enemySpawn then return end
-            local targetCF = enemySpawn.CFrame * Pos
-            if (root.Position - targetCF.Position).Magnitude > 12 then
-                if not LastSpawnTarget or (LastSpawnTarget.Position - targetCF.Position).Magnitude > 4 then
-                    LastSpawnTarget = targetCF
-                    Tween(targetCF)
-                end
-            end
-        end)
     end
 end)
 local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
