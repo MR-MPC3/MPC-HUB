@@ -1938,19 +1938,19 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
     Title = "Cày Cấp",
     Description = "",
     Default = false
-});
+})
 AutoLevelToggle:OnChanged(function(value)
-    _G.AutoLevel = value;
+    _G.AutoLevel = value
     if not value then
-      pcall(function()
-         local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-         if root then
-            Tween(root.CFrame)
-        end
-    end)
-end
-end);
-Options.ToggleLevel:SetValue(false);
+        pcall(function()
+            local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                Tween(root.CFrame)
+            end
+        end)
+    end
+end)
+Options.ToggleLevel:SetValue(false)
 local LastFarmEnemy, LastFarmTarget, LastSpawnTarget = nil, nil, nil
 local LastAbandon = 0
 local function IsValidFarmEnemy(enemy)
@@ -8100,8 +8100,10 @@ local WhiteBeltToggle = Tabs.Sea:AddToggle("ToggleWhiteBelt", {
     Description = "",
     Default = false
 })
+
 WhiteBeltToggle:OnChanged(function(value)
-    _G.AutoLevel = value
+    _G.AutoWhiteBelt = value   -- đổi thành biến riêng
+
     if value then
         local requestArgs = {
             [1] = {
@@ -8109,18 +8111,22 @@ WhiteBeltToggle:OnChanged(function(value)
                 Command = "RequestQuest"
             }
         }
-        ReplicatedStorage.Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(requestArgs))
+        pcall(function()
+            ReplicatedStorage.Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(requestArgs))
+        end)
 
         spawn(function()
-            while _G.AutoLevel do
+            while _G.AutoWhiteBelt do   -- dùng biến mới
                 local claimArgs = {
                     [1] = {
                         NPC = "Dojo Trainer",
                         Command = "ClaimQuest"
                     }
                 }
-                ReplicatedStorage.Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(claimArgs))
-                task.wait()
+                pcall(function()
+                    ReplicatedStorage.Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(claimArgs))
+                end)
+                task.wait(1)   -- tăng delay một chút cho ổn định
             end
         end)
     end
