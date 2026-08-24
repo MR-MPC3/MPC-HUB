@@ -3,11 +3,6 @@
 ----------------------------------------------------------------
 -- discord.gg/25ms
 
-----------------------------------------------------------------
--- code phần khung giao diện (UI Framework), và chống sao chép code 
-----------------------------------------------------------------
--- discord.gg/25ms
-
 local TweenService = game:GetService("TweenService")
 
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
