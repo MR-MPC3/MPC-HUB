@@ -3,25 +3,21 @@
 ----------------------------------------------------------------
 -- discord.gg/25ms
 
+----------------------------------------------------------------
+-- code phần khung giao diện (UI Framework), và chống sao chép code 
+----------------------------------------------------------------
+-- discord.gg/25ms
+
+local TweenService = game:GetService("TweenService")
+
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
 shared.LoaderKeyFrames = {
-    [1] = {
-        1,
-        10
-    },
-    [2] = {
-        2,
-        30
-    },
-    [3] = {
-        3,
-        60
-    },
-    [4] = {
-        2,
-        100
-    }
+    [1] = {1, 10},
+    [2] = {2, 30},
+    [3] = {3, 60},
+    [4] = {2, 100}
 };
+
 local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "A Loader",
@@ -33,35 +29,26 @@ local LoaderConfig = {
             LoaderSplash = Color3.fromRGB(3, 252, 3)
         }
     },
-    Keyframes = shared.LoaderKeyFrames or {
-        [1] = {
-            1,
-            10
-        },
-        [2] = {
-            2,
-            30
-        },
-        [3] = {
-            3,
-            60
-        },
-        [4] = {
-            2,
-            100
-        }
-    }
+    Keyframes = shared.LoaderKeyFrames
 };
+
 local LoaderStepTexts = {
     [1] = "Đang kiểm tra dữ liệu...",
     [2] = "Đang nạp thư viện UI...",
     [3] = "Đang kết nối Server...",
     [4] = "Thành công!"
-
 };
+
 function TweenObject(object, duration, goals)
-    game.TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals):Play();
+    if not object then return end
+    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals)
+    tween:Play()
+    return tween
 end
+
+_G.LoaderConfig = LoaderConfig
+_G.LoaderStepTexts = LoaderStepTexts
+
 function CreateObject(className, props)
     local instance = Instance.new(className);
     local parent;
