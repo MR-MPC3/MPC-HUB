@@ -1,39 +1,60 @@
 ----------------------------------------------------------------
--- CHẶN LỖI VÔ NGHĨA TỪ BLOX FRUITS (EFFECTSLOCALTHREAD HOOK) TẠM THỜI
+-- DÒNG 1: BỘ XỬ LÝ LOG TOÀN DIỆN (CHỐNG SPAM & DẬP LỖI GAME)
 ----------------------------------------------------------------
-local renv = getrenv and getrenv()
 
+local renv = getrenv and getrenv()
 if renv and hookfunction then
-    -- 1. Hook hàm require của Game: Ngăn văng lỗi khi Blox Fruits gọi Module đã bị hủy
     if renv.require then
         local oldRequire
-        oldRequire = hookfunction(renv.require, function(module, ...)
+        oldRequire = hookfunction(renv.require, newcclosure(function(module, ...)
             if typeof(module) == "Instance" and module:IsA("ModuleScript") then
                 if not module.Parent or not pcall(function() return module.Name end) then
-                    return {} -- Trả về bảng rỗng thay vì báo lỗi đỏ "Requested module has been destroyed"
+                    return {} 
                 end
             end
-            
             local success, result = pcall(oldRequire, module, ...)
-            if success then
-                return result
-            end
-            return {}
-        end)
+            return success and result or {}
+        end))
     end
 
-    -- 2. Hook hàm warn của Game: Lọc bỏ các cảnh báo vàng "require() should not be called..."
     if renv.warn then
         local oldWarn
-        oldWarn = hookfunction(renv.warn, function(...)
+        oldWarn = hookfunction(renv.warn, newcclosure(function(...)
             local msg = tostring(...)
             if msg:find("require") or msg:find("destroyed") or msg:find("EffectsLocalThread") then
-                return -- Chặn không cho hiển thị dòng cảnh báo này ra Console
+                return 
             end
             return oldWarn(...)
-        end)
+        end))
     end
 end
+
+-- BỘ LỌC CHỐNG SPAM LOG CÁ NHÂN
+local originalPrint = print
+local originalWarn = warn
+local lastLogged = {}
+local LOG_COOLDOWN = 3 
+
+local function smartLog(originalFunc, ...)
+    local args = {...}
+    local messageParts = {}
+    for i, v in ipairs(args) do
+        table.insert(messageParts, tostring(v))
+    end
+    local msg = table.concat(messageParts, " ")
+    local currentTime = os.clock()
+
+    if lastLogged[msg] and (currentTime - lastLogged[msg] < LOG_COOLDOWN) then
+        return
+    end
+
+    lastLogged[msg] = currentTime
+    originalFunc(...)
+end
+
+print = function(...) smartLog(originalPrint, ...) end
+warn = function(...) smartLog(originalWarn, ...) end
+
 ----------------------------------------------------------------
 -- FRAMEWORK GIAO DIỆN (OPTIMIZED & INCLUDED ANTI-SKID COMMENT)
 ----------------------------------------------------------------
