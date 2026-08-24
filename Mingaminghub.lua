@@ -379,51 +379,50 @@ MinButton.Activated:Connect(function()
     end
 end)
 
-local Tabs = {
-    Home = Window:AddTab({
-        Title = "Thông Tin"
-    }),
-    Main = Window:AddTab({
-        Title = "Cày"
-    }),
-    Sea = Window:AddTab({
-        Title = "Sự Kiện"
-    }),
-    ITM = Window:AddTab({
-        Title = "Vật Phẩm"
-    }),
-    Setting = Window:AddTab({
-        Title = "Cài Đặt"
-    }),
-    Status = Window:AddTab({
-        Title = "Máy Chủ"
-    }),
-    Stats = Window:AddTab({
-        Title = "Chỉ Số"
-    }),
-    Player = Window:AddTab({
-        Title = "Người Chơi"
-    }),
-    Teleport = Window:AddTab({
-        Title = "Dịch Chuyển"
-    }),
-    Fruit = Window:AddTab({
-        Title = "Trái"
-    }),
-    Raid = Window:AddTab({
-        Title = "Tập Kích"
-    }),
-    Race = Window:AddTab({
-        Title = "Tộc"
-    }),
-    Shop = Window:AddTab({
-        Title = "Cửa Hàng"
-    }),
-    Misc = Window:AddTab({
-        Title = "Khác"
-    })
-};
+----------------------------------------------------------------
+-- CÁC TAB CHÍNH 
+----------------------------------------------------------------
 
+-- Kiểm tra an toàn: Đảm bảo Window đã tồn tại trước khi tạo Tab để không bị văng Script
+assert(Window, "[Min Gaming Error] Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
+
+-- Bảng cấu hình danh sách Tab (Dễ dàng thêm/bớt/sửa Icon mà không làm rối code)
+local TabDefinitions = {
+    { Key = "Home",     Title = "Thông Tin",   Icon = "info" },
+    { Key = "Main",     Title = "Cày",         Icon = "sword" },
+    { Key = "Sea",      Title = "Sự Kiện",     Icon = "waves" },
+    { Key = "ITM",      Title = "Vật Phẩm",    Icon = "package" },
+    { Key = "Setting",  Title = "Cài Đặt",     Icon = "settings" },
+    { Key = "Status",   Title = "Máy Chủ",     Icon = "server" },
+    { Key = "Stats",    Title = "Chỉ Số",      Icon = "bar-chart-2" },
+    { Key = "Player",   Title = "Người Chơi",  Icon = "user" },
+    { Key = "Teleport", Title = "Dịch Chuyển", Icon = "map-pin" },
+    { Key = "Fruit",    Title = "Trái",        Icon = "apple" },
+    { Key = "Raid",     Title = "Tập Kích",    Icon = "shield-alert" },
+    { Key = "Race",     Title = "Tộc",         Icon = "dna" },
+    { Key = "Shop",     Title = "Cửa Hàng",    Icon = "shopping-cart" },
+    { Key = "Misc",     Title = "Khác",        Icon = "layers" }
+}
+
+-- Khai báo bảng chứa Tab dạng 'local' hoàn toàn (Ngăn chặn Anti-Cheat quét bộ nhớ toàn cục)
+local Tabs = {}
+
+-- Vòng lặp khởi tạo tự động (Mượt hơn, không tốn tài nguyên hệ thống)
+for _, tabInfo in ipairs(TabDefinitions) do
+    local success, tabObject = pcall(function()
+        return Window:AddTab({
+            Title = tabInfo.Title,
+            Icon = tabInfo.Icon
+        })
+    end)
+
+    if success and tabObject then
+        Tabs[tabInfo.Key] = tabObject
+    else
+        -- Thử lại không dùng Icon nếu thư viện Fluent của bạn bản cũ không hỗ trợ Icon
+        Tabs[tabInfo.Key] = Window:AddTab({ Title = tabInfo.Title })
+    end
+end
 ----------------------------------------------------------------
 -- Code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
 ----------------------------------------------------------------
