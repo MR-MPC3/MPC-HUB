@@ -399,7 +399,7 @@ local TabDefinitions = {
     { Key = "Teleport", Title = "Dịch Chuyển", Icon = "map-pin" },
     { Key = "Fruit",    Title = "Trái",        Icon = "apple" },
     { Key = "Raid",     Title = "Tập Kích",    Icon = "swords" },
-    { Key = "Race",     Title = "Tộc",         Icon = "waves" },
+    { Key = "Race",     Title = "Tộc",         Icon = "shield" },
     { Key = "Shop",     Title = "Cửa Hàng",    Icon = "shopping-cart" },
     { Key = "Misc",     Title = "Khác",        Icon = "layers" }
 }
