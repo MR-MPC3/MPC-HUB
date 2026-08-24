@@ -1806,46 +1806,38 @@ function toAdvanced(targetCF)
         end
     end);
 end
--- BẢN FIX CHUẨN VÀNG: Mất 100% hiệu ứng + Sạch 100% Log Console
-local function MuteEffectModule(name)
-    local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
-        and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
-    if not container then return end
-    
-    local mod = container:FindFirstChild(name)
-    if mod and mod:IsA("ModuleScript") then
-        -- 1. Tìm vật thể 'eff' trong module
-        local eff = mod:FindFirstChild("eff")
-        if eff then
-            -- Xóa sạch các hạt particle/âm thanh BÊN TRONG eff, nhưng giữ lại cái vỏ 'eff'
-            pcall(function()
-                eff:ClearAllChildren()
-            end)
-        end
+local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
+    and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
 
-        -- 2. Xóa các file phụ khác trong module (trừ vỏ 'eff')
-        for _, child in pairs(mod:GetChildren()) do
-            if child.Name ~= "eff" then
-                pcall(function() child:Destroy() end)
-            end
-        end
-
-        -- 3. Đè hàm xử lý thành hàm rỗng
-        pcall(function()
-            local loaded = require(mod)
-            if type(loaded) == "table" then
-                for k, v in pairs(loaded) do
-                    if type(v) == "function" then
-                        loaded[k] = function() end
-                    end
+if container then
+    for _, name in ipairs({"Death", "Respawn"}) do
+        local mod = container:FindFirstChild(name)
+        if mod and mod:IsA("ModuleScript") then
+            -- 1. Xóa hạt hiệu ứng bên trong vỏ 'eff' để mượt GPU
+            local eff = mod:FindFirstChild("eff")
+            if eff then
+                for _, child in ipairs(eff:GetChildren()) do
+                    pcall(function() child:Destroy() end)
                 end
             end
-        end)
+            
+            -- 2. Ghi đè hàm trực tiếp (Nhanh & Không tốn C-Stack)
+            pcall(function()
+                local loaded = require(mod)
+                if type(loaded) == "function" then
+                    -- Nếu trả về 1 function thì mới cần hook
+                    hookfunction(loaded, function() end)
+                elseif type(loaded) == "table" then
+                    for k, v in pairs(loaded) do
+                        if type(v) == "function" then
+                            loaded[k] = function() end
+                        end
+                    end
+                end
+            end)
+        end
     end
 end
-
-MuteEffectModule("Death")
-MuteEffectModule("Respawn")
 ------------------------------------------
 ---THÔNG TIN
 ------------------------------------------
