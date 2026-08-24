@@ -1806,7 +1806,7 @@ function toAdvanced(targetCF)
         end
     end);
 end
--- BẢN FIX CHUẨN 100%: Giữ nguyên 'eff' để không lỗi, chỉ triệt tiêu logic vẽ hiệu ứng
+-- BẢN FIX CHUẨN VÀNG: Mất 100% hiệu ứng + Sạch 100% Log Console
 local function MuteEffectModule(name)
     local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
         and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
@@ -1814,8 +1814,24 @@ local function MuteEffectModule(name)
     
     local mod = container:FindFirstChild(name)
     if mod and mod:IsA("ModuleScript") then
+        -- 1. Tìm vật thể 'eff' trong module
+        local eff = mod:FindFirstChild("eff")
+        if eff then
+            -- Xóa sạch các hạt particle/âm thanh BÊN TRONG eff, nhưng giữ lại cái vỏ 'eff'
+            pcall(function()
+                eff:ClearAllChildren()
+            end)
+        end
+
+        -- 2. Xóa các file phụ khác trong module (trừ vỏ 'eff')
+        for _, child in pairs(mod:GetChildren()) do
+            if child.Name ~= "eff" then
+                pcall(function() child:Destroy() end)
+            end
+        end
+
+        -- 3. Đè hàm xử lý thành hàm rỗng
         pcall(function()
-            -- Nạp module và đè các hàm vẽ hiệu ứng thành hàm rỗng
             local loaded = require(mod)
             if type(loaded) == "table" then
                 for k, v in pairs(loaded) do
