@@ -1,4 +1,40 @@
 ----------------------------------------------------------------
+-- CHẶN LỖI VÔ NGHĨA TỪ BLOX FRUITS (EFFECTSLOCALTHREAD HOOK) TẠM THỜI
+----------------------------------------------------------------
+local renv = getrenv and getrenv()
+
+if renv and hookfunction then
+    -- 1. Hook hàm require của Game: Ngăn văng lỗi khi Blox Fruits gọi Module đã bị hủy
+    if renv.require then
+        local oldRequire
+        oldRequire = hookfunction(renv.require, function(module, ...)
+            if typeof(module) == "Instance" and module:IsA("ModuleScript") then
+                if not module.Parent or not pcall(function() return module.Name end) then
+                    return {} -- Trả về bảng rỗng thay vì báo lỗi đỏ "Requested module has been destroyed"
+                end
+            end
+            
+            local success, result = pcall(oldRequire, module, ...)
+            if success then
+                return result
+            end
+            return {}
+        end)
+    end
+
+    -- 2. Hook hàm warn của Game: Lọc bỏ các cảnh báo vàng "require() should not be called..."
+    if renv.warn then
+        local oldWarn
+        oldWarn = hookfunction(renv.warn, function(...)
+            local msg = tostring(...)
+            if msg:find("require") or msg:find("destroyed") or msg:find("EffectsLocalThread") then
+                return -- Chặn không cho hiển thị dòng cảnh báo này ra Console
+            end
+            return oldWarn(...)
+        end)
+    end
+end
+----------------------------------------------------------------
 -- FRAMEWORK GIAO DIỆN (OPTIMIZED & INCLUDED ANTI-SKID COMMENT)
 ----------------------------------------------------------------
 -- discord.gg/25ms
