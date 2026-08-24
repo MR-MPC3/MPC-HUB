@@ -579,7 +579,6 @@ function CheckLevel()
 
     for _, data in ipairs(QuestData[currentSea]) do
         if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
-            Ms        = data.Mon
             NameMon   = data.Mon
             NameQuest = data.Quest
             QuestLv   = data.QLv
