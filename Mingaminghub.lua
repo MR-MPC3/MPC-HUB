@@ -1806,12 +1806,36 @@ function toAdvanced(targetCF)
         end
     end);
 end
---if game:GetService("ReplicatedStorage").Effect.Container:FindFirstChild("Death") then
-    --game:GetService("ReplicatedStorage").Effect.Container.Death:Destroy();
---end
---if game:GetService("ReplicatedStorage").Effect.Container:FindFirstChild("Respawn") then
-   -- game:GetService("ReplicatedStorage").Effect.Container.Respawn:Destroy();
---end
+-- BẢN FIX TỐI ƯU: Tắt hiệu ứng + Không bị Log Console + An toàn Anti-Ban
+local function MuteEffectModule(name)
+    local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
+        and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
+    if not container then return end
+    
+    local mod = container:FindFirstChild(name)
+    if mod and mod:IsA("ModuleScript") then
+        -- 1. Xóa hạt hiệu ứng/âm thanh bên trong để giảm tải RAM & GPU
+        pcall(function() mod:ClearAllChildren() end)
+        
+        -- 2. Ghi đè các hàm vẽ hiệu ứng trong Lua Cache thành hàm rỗng
+        pcall(function()
+            local loaded = require(mod)
+            if type(loaded) == "table" then
+                for k, v in pairs(loaded) do
+                    if type(v) == "function" then
+                        loaded[k] = function() end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+MuteEffectModule("Death")
+MuteEffectModule("Respawn")
+------------------------------------------
+---THÔNG TIN
+------------------------------------------
 Tabs.Home:AddButton({
     Title = "Discord",
     Description = "Giao Lưu",
