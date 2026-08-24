@@ -201,8 +201,6 @@ for step, keyframe in ipairs(LoaderConfig.Keyframes) do
     task.wait(keyframe[1]);
     UpdatePercentage(keyframe[2], step);
 end
-
-UpdatePercentage(100, 4);
 task.wait(0.5);
 
 TweenObject(TopicLabel, 0.5, { TextTransparency = 1 });
