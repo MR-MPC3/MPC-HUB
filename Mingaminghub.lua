@@ -4,7 +4,7 @@
 -- discord.gg/25ms
 
 
--- Tối ưu hóa cấu hình Loader: Né Anti-cheat Blox Fruits, tập trung dữ liệu
+-- Tối ưu hóa cấu hình Loader
 local LoaderConfig = {
     Title = shared.LoaderTitle or "Đăng Ký Kênh Min Gaming",
     
@@ -26,7 +26,7 @@ local LoaderConfig = {
     }
 }
 
--- Dọn dẹp biến shared ngay sau khi đọc xong để xóa dấu vết khỏi Anti-cheat
+-- Dọn dẹp biến shared ngay sau khi đọc xong 
 shared.LoaderTitle = nil
 shared.LoaderKeyFrames = nil
 return LoaderConfig
