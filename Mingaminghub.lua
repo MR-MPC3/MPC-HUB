@@ -7,7 +7,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
--- Chống Blox Fruits quét UI: Dùng gethui() nếu có
 local ParentGui = (gethui and gethui()) or CoreGui
 
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
