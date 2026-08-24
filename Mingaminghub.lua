@@ -4,61 +4,33 @@
 -- discord.gg/25ms
 
 
-shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
-shared.LoaderKeyFrames = {
-    [1] = {
-        1,
-        10
-    },
-    [2] = {
-        2,
-        30
-    },
-    [3] = {
-        3,
-        60
-    },
-    [4] = {
-        2,
-        100
-    }
-};
+-- Tối ưu hóa cấu hình Loader: Né Anti-cheat Blox Fruits, tập trung dữ liệu
 local LoaderConfig = {
-    LoaderData = {
-        Name = shared.LoaderTitle or "A Loader",
-        Colors = shared.LoaderColors or {
-            Main = Color3.fromRGB(0, 0, 0),
-            Topic = Color3.fromRGB(200, 200, 200),
-            Title = Color3.fromRGB(255, 255, 255),
-            LoaderBackground = Color3.fromRGB(40, 40, 40),
-            LoaderSplash = Color3.fromRGB(3, 252, 3)
-        }
+    Title = shared.LoaderTitle or "Đăng Ký Kênh Min Gaming",
+    
+    -- Định nghĩa hệ màu UI
+    Colors = {
+        Main = Color3.fromRGB(0, 0, 0),
+        Topic = Color3.fromRGB(200, 200, 200),
+        Title = Color3.fromRGB(255, 255, 255),
+        Background = Color3.fromRGB(40, 40, 40),
+        Splash = Color3.fromRGB(3, 252, 3)
     },
-    Keyframes = shared.LoaderKeyFrames or {
-        [1] = {
-            1,
-            10
-        },
-        [2] = {
-            2,
-            30
-        },
-        [3] = {
-            3,
-            60
-        },
-        [4] = {
-            2,
-            100
-        }
+
+    -- Gom chung thời gian, phần trăm và văn bản hiển thị vào 1 mảng duy nhất
+    Steps = {
+        [1] = { Duration = 1, Percent = 10,  Text = "Đang kiểm tra dữ liệu..." },
+        [2] = { Duration = 2, Percent = 30,  Text = "Đang nạp thư viện UI..." },
+        [3] = { Duration = 3, Percent = 60,  Text = "Đang kết nối Server..." },
+        [4] = { Duration = 2, Percent = 100, Text = "Thành công!" }
     }
-};
-local LoaderStepTexts = {
-    [1] = "Đang kiểm tra dữ liệu...",
-    [2] = "Đang nạp thư viện UI...",
-    [3] = "Đang kết nối Server...",
-    [4] = "Thành công!"
-};
+}
+
+-- Dọn dẹp biến shared ngay sau khi đọc xong để xóa dấu vết khỏi Anti-cheat
+shared.LoaderTitle = nil
+shared.LoaderKeyFrames = nil
+return LoaderConfig
+
 function TweenObject(object, duration, goals)
     game.TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals):Play();
 end
