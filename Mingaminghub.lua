@@ -564,101 +564,44 @@ local QuestData = {
     }
 }
 
-------------------------------------------------------------------
--- CACHE / COOLDOWN
-------------------------------------------------------------------
-local LastCheckLevel = nil
-local LastCheckSea = nil
-local LastQuestData = nil
-local LastEntranceTime = 0
-local EntranceCooldown = 2
-
-------------------------------------------------------------------
--- LẤY SEA HIỆN TẠI
-------------------------------------------------------------------
-local function GetCurrentSea()
-    if Sea1 then return "Sea1"
-    elseif Sea2 then return "Sea2"
-    elseif Sea3 then return "Sea3" end
-    return nil
-end
-
-------------------------------------------------------------------
--- TÌM QUEST THEO LEVEL
-------------------------------------------------------------------
-local function FindQuestData(myLevel, currentSea)
-    local seaData = QuestData[currentSea]
-    if not seaData then return nil end
-    for _, data in ipairs(seaData) do
-        if myLevel >= data.Min and myLevel <= data.Max then
-            return data
-        end
-    end
-    return nil
-end
-
-------------------------------------------------------------------
--- ÁP DỤNG DỮ LIỆU QUEST
-------------------------------------------------------------------
-local function ApplyQuestData(data)
-    if not data then return end
-    NameMon = data.Mon
-    NameQuest = data.Quest
-    QuestLv = data.QLv
-    CFrameQ = data.QCF
-    CFrameMon = data.MonCF
-end
-
-------------------------------------------------------------------
--- XỬ LÝ ENTRANCE
-------------------------------------------------------------------
-local function HandleEntrance(data, currentSea)
-    if not _G.AutoLevel or not data or not data.Entrance then return end
-    local character = plr.Character
-    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
-
-    local distance = (data.MonCF.Position - rootPart.Position).Magnitude
-    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
-    if distance <= threshold then return end
-
-    local now = tick()
-    if now - LastEntranceTime < EntranceCooldown then return end
-    LastEntranceTime = now
-
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
-    end)
-end
-
-------------------------------------------------------------------
--- CHECK LEVEL
-------------------------------------------------------------------
+----------------------------------------------------------------
+-- Hàm CheckLevel (Đầy đủ an toàn & Viết gọn)
+----------------------------------------------------------------
 function CheckLevel()
-    local levelValue = plr.Data:FindFirstChild("Level")
-    if not levelValue then return end
-    local myLevel = levelValue.Value
-    local currentSea = GetCurrentSea()
+    local myLevel = plr.Data.Level.Value
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
     if not currentSea or not QuestData[currentSea] then return end
 
-    -- Cache
-    if myLevel == LastCheckLevel and currentSea == LastCheckSea and LastQuestData then
-        HandleEntrance(LastQuestData, currentSea)
-        return
+    for _, data in ipairs(QuestData[currentSea]) do
+        if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
+            Ms        = data.Mon
+            NameMon   = data.Mon
+            NameQuest = data.Quest
+            QuestLv   = data.QLv
+            CFrameQ   = data.QCF
+            CFrameMon = data.MonCF
+
+            -- Bypass Cổng an toàn
+            if _G.AutoLevel and data.Entrance then
+                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
+                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
+
+                    if dist > threshold then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                        end)
+                    end
+                end
+            end
+            break
+        end
     end
-
-    local data = FindQuestData(myLevel, currentSea)
-    if not data then return end
-
-    LastCheckLevel = myLevel
-    LastCheckSea = currentSea
-    LastQuestData = data
-    ApplyQuestData(data)
-    HandleEntrance(data, currentSea)
 end
 
 ----------------------------------------------------------------
--- tableMon & AreaList
+-- tableMon & AreaList (giữ nguyên logic cũ)
 ----------------------------------------------------------------
 if Sea1 then
     tableMon = {"Bandit","Monkey","Gorilla","Pirate","Brute","Desert Bandit","Desert Officer","Snow Bandit","Snowman","Chief Petty Officer","Sky Bandit","Dark Master","Prisoner","Dangerous Prisoner","Toga Warrior","Gladiator","Military Soldier","Military Spy","Fishman Warrior","Fishman Commando","God's Guard","Shanda","Royal Squad","Royal Soldier","Galley Pirate","Galley Captain"}
