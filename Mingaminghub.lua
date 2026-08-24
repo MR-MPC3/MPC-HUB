@@ -1,35 +1,28 @@
 ----------------------------------------------------------------
--- DÒNG 1: BỘ XỬ LÝ LOG TOÀN DIỆN (CHỐNG SPAM & DẬP LỖI GAME)
+-- BỘ LỌC LOG AN TOÀN (CHỈ HOOK WARN - KHÔNG SẬP SCRIPT GAME)
 ----------------------------------------------------------------
-
 local renv = getrenv and getrenv()
-if renv and hookfunction then
-    if renv.require then
-        local oldRequire
-        oldRequire = hookfunction(renv.require, newcclosure(function(module, ...)
-            if typeof(module) == "Instance" and module:IsA("ModuleScript") then
-                if not module.Parent or not pcall(function() return module.Name end) then
-                    return {} 
-                end
-            end
-            local success, result = pcall(oldRequire, module, ...)
-            return success and result or {}
-        end))
-    end
+local loggedEffectsError = false
 
-    if renv.warn then
-        local oldWarn
-        oldWarn = hookfunction(renv.warn, newcclosure(function(...)
-            local msg = tostring(...)
-            if msg:find("require") or msg:find("destroyed") or msg:find("EffectsLocalThread") then
-                return 
+-- 1. Lọc lỗi rác Blox Fruits: Hiện 1 lần duy nhất rồi ẩn hoàn toàn
+if renv and renv.warn and hookfunction then
+    local oldWarn
+    oldWarn = hookfunction(renv.warn, newcclosure(function(...)
+        local msg = tostring(...)
+        
+        if msg:find("EffectsLocalThread") or msg:find("destroyed") or msg:find("require") then
+            if not loggedEffectsError then
+                loggedEffectsError = true
+                return oldWarn(...) -- Cho phép in đúng 1 lần đầu
             end
-            return oldWarn(...)
-        end))
-    end
+            return -- Lần thứ 2 trở đi chặn hẳn
+        end
+        
+        return oldWarn(...)
+    end))
 end
 
--- BỘ LỌC CHỐNG SPAM LOG CÁ NHÂN
+-- 2. Bộ lọc chống spam log cá nhân (Giãn cách 3 giây)
 local originalPrint = print
 local originalWarn = warn
 local lastLogged = {}
