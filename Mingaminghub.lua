@@ -1806,7 +1806,7 @@ function toAdvanced(targetCF)
         end
     end);
 end
--- BẢN FIX TỐI ƯU: Tắt hiệu ứng + Không bị Log Console + An toàn Anti-Ban
+-- BẢN FIX CHUẨN 100%: Giữ nguyên 'eff' để không lỗi, chỉ triệt tiêu logic vẽ hiệu ứng
 local function MuteEffectModule(name)
     local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
         and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
@@ -1814,11 +1814,8 @@ local function MuteEffectModule(name)
     
     local mod = container:FindFirstChild(name)
     if mod and mod:IsA("ModuleScript") then
-        -- 1. Xóa hạt hiệu ứng/âm thanh bên trong để giảm tải RAM & GPU
-        pcall(function() mod:ClearAllChildren() end)
-        
-        -- 2. Ghi đè các hàm vẽ hiệu ứng trong Lua Cache thành hàm rỗng
         pcall(function()
+            -- Nạp module và đè các hàm vẽ hiệu ứng thành hàm rỗng
             local loaded = require(mod)
             if type(loaded) == "table" then
                 for k, v in pairs(loaded) do
