@@ -7974,32 +7974,36 @@ local WhiteBeltToggle = Tabs.Sea:AddToggle("ToggleWhiteBelt", {
     Description = "",
     Default = false
 })
+
 WhiteBeltToggle:OnChanged(function(value)
-    _G.AutoLevel = value
+    -- Dùng biến riêng biệt để không xung đột với AutoLevel
+    _G.AutoWhiteBelt = value
+
     if value then
-        local requestArgs = {
-            [1] = {
+        -- Gửi yêu cầu nhận Quest lần đầu khi bật
+        pcall(function()
+            game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer({
                 NPC = "Dojo Trainer",
                 Command = "RequestQuest"
-            }
-        }
-        ReplicatedStorage.Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(requestArgs))
+            })
+        end)
 
+        -- Vòng lặp claim quest tự động
         spawn(function()
-            while _G.AutoLevel do
-                local claimArgs = {
-                    [1] = {
+            while _G.AutoWhiteBelt do
+                pcall(function()
+                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer({
                         NPC = "Dojo Trainer",
                         Command = "ClaimQuest"
-                    }
-                }
-                ReplicatedStorage.Modules.Net:FindFirstChild("RF/InteractDragonQuest"):InvokeServer(unpack(claimArgs))
-                task.wait()
+                    })
+                end)
+                
+                -- Đợi 0.5 giây thay vì chạy mỗi frame để tránh bị Anti-Cheat ngắt kết nối
+                task.wait(0.5)
             end
         end)
     end
 end)
-
 Tabs.Sea:AddParagraph({
     Title = "Hoàn Thành Ải Draco V4 (Sớm Ra)",
     Content = ""
