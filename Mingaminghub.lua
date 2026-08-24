@@ -445,7 +445,7 @@ local Tabs = {
 };
 
 ----------------------------------------------------------------
--- Code khởi đầu cho toàn bộ logic và hoạt động
+-- CODE KHỎI ĐẦU CHO TOÀN BỘ LOGIC HOẠT ĐỘNG
 ----------------------------------------------------------------
 local Options = Fluent.Options;
 local Players = game:GetService("Players")
@@ -470,11 +470,10 @@ else
 end
 
 ----------------------------------------------------------------
--- QUÁI THƯỜNG
+-- DANH SÁCH QUÁI THƯỜNG
 ----------------------------------------------------------------
-local QuestData = {
     Sea1 = {
-        {Min = 1,   Max = 9,   Mon = "Bandit",            Quest = "BanditQuest1",   QLv = 1, QCF = CFrame.new(1060.9383544922, 16.455066680908, 1547.7841796875), MonCF = CFrame.new(1038.5533447266, 41.296249389648, 1576.5098876953)},
+        {Min = 1,   Max = 9,   Mon = "Bandit",             Quest = "BanditQuest1",   QLv = 1, QCF = CFrame.new(1060.9383544922, 16.455066680908, 1547.7841796875), MonCF = CFrame.new(1038.5533447266, 41.296249389648, 1576.5098876953)},
         {Min = 10,  Max = 14,  Mon = "Monkey",            Quest = "JungleQuest",    QLv = 1, QCF = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102), MonCF = CFrame.new(-1448.1446533203, 50.851993560791, 63.60718536377)},
         {Min = 15,  Max = 29,  Mon = "Gorilla",           Quest = "JungleQuest",    QLv = 2, QCF = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102), MonCF = CFrame.new(-1142.6488037109, 40.462348937988, -515.39227294922)},
         {Min = 30,  Max = 39,  Mon = "Pirate",            Quest = "BuggyQuest1",    QLv = 1, QCF = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188), MonCF = CFrame.new(-1201.0881347656, 40.628940582275, 3857.5966796875)},
@@ -496,11 +495,11 @@ local QuestData = {
         {Min = 400, Max = 449, Mon = "Fishman Commando",  Quest = "FishmanQuest",   QLv = 2, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(61738.3984375, 64.207321166992, 1433.8375244141), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
         {Min = 450, Max = 474, Mon = "God's Guard",       Quest = "SkyExp1Quest",   QLv = 1, QCF = CFrame.new(-4721.8603515625, 845.30297851563, -1953.8489990234), MonCF = CFrame.new(-4628.0498046875, 866.92877197266, -1931.2352294922), Entrance = Vector3.new(-4607.82275, 872.54248, -1667.55688)},
         {Min = 475, Max = 524, Mon = "Shanda",            Quest = "SkyExp1Quest",   QLv = 2, QCF = CFrame.new(-7863.1596679688, 5545.5190429688, -378.42266845703), MonCF = CFrame.new(-7685.1474609375, 5601.0751953125, -441.38876342773), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
-        {Min = 525, Max = 549, Mon = "Royal Squad",       Quest = "SkyExp2Quest",   QLv = 1, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7654.2514648438, 5637.1079101563, -1407.7550048828)},
-        {Min = 550, Max = 624, Mon = "Royal Soldier",     Quest = "SkyExp2Quest",   QLv = 2, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7760.4106445313, 5679.9077148438, -1884.8112792969)},
+        {Min = 525, Max = 549, Mon = "Royal Squad",       Quest = "SkyExp2Quest",   QLv = 1, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7654.2514648438, 5637.1079101563, -1407.7550048828), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+        {Min = 550, Max = 624, Mon = "Royal Soldier",     Quest = "SkyExp2Quest",   QLv = 2, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7760.4106445313, 5679.9077148438, -1884.8112792969), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
         {Min = 625, Max = 649, Mon = "Galley Pirate",     Quest = "FountainQuest",  QLv = 1, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5557.1684570313, 152.32717895508, 3998.7758789063)},
         {Min = 650, Max = 9999, Mon = "Galley Captain",   Quest = "FountainQuest",  QLv = 2, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5677.6772460938, 92.786109924316, 4966.6323242188)},
-    },
+    }
 
     Sea2 = {
         {Min = 700,  Max = 724,  Mon = "Raider",            Quest = "Area1Quest",       QLv = 1, QCF = CFrame.new(-427.72567749023, 72.99634552002, 1835.9426269531), MonCF = CFrame.new(68.874565124512, 93.635643005371, 2429.6752929688)},
@@ -521,7 +520,7 @@ local QuestData = {
         {Min = 1275, Max = 1299, Mon = "Ship Engineer",     Quest = "ShipQuest1",       QLv = 2, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(886.28179931641, 40.47790145874, 32800.83203125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
         {Min = 1300, Max = 1324, Mon = "Ship Steward",      Quest = "ShipQuest2",       QLv = 1, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(943.85504150391, 129.58183288574, 33444.3671875), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
         {Min = 1325, Max = 1349, Mon = "Ship Officer",      Quest = "ShipQuest2",       QLv = 2, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(955.38458251953, 181.08335876465, 33331.890625), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
-        {Min = 1350, Max = 1374, Mon = "Arctic Warrior",    Quest = "FrostQuest",       QLv = 1, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5935.4541015625, 77.26016998291, -6472.7568359375), Entrance = Vector3.new(-6508.5581054688, 89.034996032715, -132.83953857422)},
+        {Min = 1350, Max = 1374, Mon = "Arctic Warrior",    Quest = "FrostQuest",       QLv = 1, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5935.4541015625, 77.26016998291, -6472.7568359375), 
         {Min = 1375, Max = 1424, Mon = "Snow Lurker",       Quest = "FrostQuest",       QLv = 2, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5628.482421875, 57.574996948242, -6618.3481445313)},
         {Min = 1425, Max = 1449, Mon = "Sea Soldier",       Quest = "ForgottenQuest",   QLv = 1, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3185.0153808594, 58.789089202881, -9663.6064453125)},
         {Min = 1450, Max = 9999, Mon = "Water Fighter",     Quest = "ForgottenQuest",   QLv = 2, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3262.9301757813, 298.69036865234, -10552.529296875)},
@@ -568,42 +567,100 @@ local QuestData = {
         {Min = 2575, Max = 9999, Mon = "Skull Slayer",         Quest = "TikiQuest3",         QLv = 2, QCF = CFrame.new(-16665.19140625, 104.59640502929688, 1579.6943359375), MonCF = CFrame.new(-16811.5703125, 84.625244140625, 1542.235107421875)},
     }
 }
+------------------------------------------------------------------
+-- CACHE / COOLDOWN
+------------------------------------------------------------------
+local LastCheckLevel = nil
+local LastCheckSea = nil
+local LastQuestData = nil
+local LastEntranceTime = 0
+local EntranceCooldown = 2
+------------------------------------------------------------------
+-- LẤY SEA HIỆN TẠI
+------------------------------------------------------------------
+local function GetCurrentSea()
+    if Sea1 then return "Sea1"
+    elseif Sea2 then return "Sea2"
+    elseif Sea3 then return "Sea3" end
+    return nil
+end
+------------------------------------------------------------------
+-- TÌM QUEST THEO LEVEL
+------------------------------------------------------------------
+local function FindQuestData(myLevel, currentSea)
+    local seaData = QuestData[currentSea]
+    if not seaData then return nil end
 
-----------------------------------------------------------------
--- Hàm CheckLevel (Đầy đủ an toàn & Viết gọn)
-----------------------------------------------------------------
-function CheckLevel()
-    local myLevel = plr.Data.Level.Value
-    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSea or not QuestData[currentSea] then return end
-
-    for _, data in ipairs(QuestData[currentSea]) do
-        if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
-            NameMon   = data.Mon
-            NameQuest = data.Quest
-            QuestLv   = data.QLv
-            CFrameQ   = data.QCF
-            CFrameMon = data.MonCF
-
-            -- Bypass Cổng an toàn
-            if _G.AutoLevel and data.Entrance then
-                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
-                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
-
-                    if dist > threshold then
-                        pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
-                        end)
-                    end
-                end
-            end
-            break
+    for _, data in ipairs(seaData) do
+        if myLevel >= data.Min and myLevel <= data.Max then
+            return data
         end
     end
+    return nil
 end
+------------------------------------------------------------------
+-- ÁP DỤNG DỮ LIỆU QUEST
+------------------------------------------------------------------
+local function ApplyQuestData(data)
+    if not data then return end
+    NameMon   = data.Mon
+    NameQuest = data.Quest
+    QuestLv   = data.QLv
+    CFrameQ   = data.QCF
+    CFrameMon = data.MonCF
+end
+------------------------------------------------------------------
+-- XỬ LÝ ENTRANCE
+------------------------------------------------------------------
+local function HandleEntrance(data, currentSea)
+    if not _G.AutoLevel or not data or not data.Entrance then return end
 
+    local character = plr.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    local distance = (data.MonCF.Position - rootPart.Position).Magnitude
+    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
+
+    if distance <= threshold then return end
+
+    -- Cooldown chống gọi requestEntrance liên tục
+    local now = tick()
+    if now - LastEntranceTime < EntranceCooldown then return end
+    LastEntranceTime = now
+
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+    end)
+end
+------------------------------------------------------------------
+-- CHECK LEVEL
+------------------------------------------------------------------
+function CheckLevel()
+    local levelValue = plr.Data:FindFirstChild("Level")
+    if not levelValue then return end
+
+    local myLevel = levelValue.Value
+    local currentSea = GetCurrentSea()
+    if not currentSea or not QuestData[currentSea] then return end
+
+    -- Cache: Nếu Level & Sea không đổi thì dùng lại dữ liệu cũ
+    if myLevel == LastCheckLevel and currentSea == LastCheckSea and LastQuestData then
+        HandleEntrance(LastQuestData, currentSea)
+        return
+    end
+
+    -- Tìm và gán dữ liệu quest mới
+    local data = FindQuestData(myLevel, currentSea)
+    if not data then return end
+
+    LastCheckLevel = myLevel
+    LastCheckSea = currentSea
+    LastQuestData = data
+
+    ApplyQuestData(data)
+    HandleEntrance(data, currentSea)
+end
 ----------------------------------------------------------------
 -- tableMon & AreaList (giữ nguyên logic cũ)
 ----------------------------------------------------------------
