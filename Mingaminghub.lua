@@ -445,18 +445,16 @@ local Tabs = {
 };
 
 ----------------------------------------------------------------
--- CODE KHỎI ĐẦU CHO TOÀN BỘ LOGIC HOẠT ĐỘNG
+-- CODE KHỞI ĐẦU CHO TOÀN BỘ LOGIC HOẠT ĐỘNG
 ----------------------------------------------------------------
-local Options = Fluent.Options;
+local Options = Fluent.Options
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Xác định Sea bằng PlaceId chuẩn hiện tại
+-- Xác định Sea bằng PlaceId
 local Sea1, Sea2, Sea3 = false, false, false
-
 if PlaceId == 85211729168715 then
     Sea1 = true
 elseif PlaceId == 79091703265657 then
@@ -464,109 +462,108 @@ elseif PlaceId == 79091703265657 then
 elseif PlaceId == 100117331123089 then
     Sea3 = true
 else
-    -- Đá người chơi nếu vào sai game hoặc map không hợp lệ
     plr:Kick("[Min Gaming] PlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits (Sea 1, 2, 3).")
     return
 end
 
 ----------------------------------------------------------------
--- DANH SÁCH QUÁI THƯỜNG
+-- DANH SÁCH QUÁI THƯỜNG (QuestData)
 ----------------------------------------------------------------
+local QuestData = {
     Sea1 = {
-        {Min = 1,   Max = 9,   Mon = "Bandit",             Quest = "BanditQuest1",   QLv = 1, QCF = CFrame.new(1060.9383544922, 16.455066680908, 1547.7841796875), MonCF = CFrame.new(1038.5533447266, 41.296249389648, 1576.5098876953)},
-        {Min = 10,  Max = 14,  Mon = "Monkey",            Quest = "JungleQuest",    QLv = 1, QCF = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102), MonCF = CFrame.new(-1448.1446533203, 50.851993560791, 63.60718536377)},
-        {Min = 15,  Max = 29,  Mon = "Gorilla",           Quest = "JungleQuest",    QLv = 2, QCF = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102), MonCF = CFrame.new(-1142.6488037109, 40.462348937988, -515.39227294922)},
-        {Min = 30,  Max = 39,  Mon = "Pirate",            Quest = "BuggyQuest1",    QLv = 1, QCF = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188), MonCF = CFrame.new(-1201.0881347656, 40.628940582275, 3857.5966796875)},
-        {Min = 40,  Max = 59,  Mon = "Brute",             Quest = "BuggyQuest1",    QLv = 2, QCF = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188), MonCF = CFrame.new(-1387.5324707031, 24.592035293579, 4100.9575195313)},
-        {Min = 60,  Max = 74,  Mon = "Desert Bandit",     Quest = "DesertQuest",    QLv = 1, QCF = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625), MonCF = CFrame.new(984.99896240234, 16.109552383423, 4417.91015625)},
-        {Min = 75,  Max = 89,  Mon = "Desert Officer",    Quest = "DesertQuest",    QLv = 2, QCF = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625), MonCF = CFrame.new(1547.1510009766, 14.452038764954, 4381.8002929688)},
-        {Min = 90,  Max = 99,  Mon = "Snow Bandit",       Quest = "SnowQuest",      QLv = 1, QCF = CFrame.new(1386.8073730469, 87.272789001465, -1298.3576660156), MonCF = CFrame.new(1356.3028564453, 105.76865386963, -1328.2418212891)},
-        {Min = 100, Max = 119, Mon = "Snowman",           Quest = "SnowQuest",      QLv = 2, QCF = CFrame.new(1386.8073730469, 87.272789001465, -1298.3576660156), MonCF = CFrame.new(1218.7956542969, 138.01184082031, -1488.0262451172)},
+        {Min = 1, Max = 9, Mon = "Bandit", Quest = "BanditQuest1", QLv = 1, QCF = CFrame.new(1060.9383544922, 16.455066680908, 1547.7841796875), MonCF = CFrame.new(1038.5533447266, 41.296249389648, 1576.5098876953)},
+        {Min = 10, Max = 14, Mon = "Monkey", Quest = "JungleQuest", QLv = 1, QCF = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102), MonCF = CFrame.new(-1448.1446533203, 50.851993560791, 63.60718536377)},
+        {Min = 15, Max = 29, Mon = "Gorilla", Quest = "JungleQuest", QLv = 2, QCF = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102), MonCF = CFrame.new(-1142.6488037109, 40.462348937988, -515.39227294922)},
+        {Min = 30, Max = 39, Mon = "Pirate", Quest = "BuggyQuest1", QLv = 1, QCF = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188), MonCF = CFrame.new(-1201.0881347656, 40.628940582275, 3857.5966796875)},
+        {Min = 40, Max = 59, Mon = "Brute", Quest = "BuggyQuest1", QLv = 2, QCF = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188), MonCF = CFrame.new(-1387.5324707031, 24.592035293579, 4100.9575195313)},
+        {Min = 60, Max = 74, Mon = "Desert Bandit", Quest = "DesertQuest", QLv = 1, QCF = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625), MonCF = CFrame.new(984.99896240234, 16.109552383423, 4417.91015625)},
+        {Min = 75, Max = 89, Mon = "Desert Officer", Quest = "DesertQuest", QLv = 2, QCF = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625), MonCF = CFrame.new(1547.1510009766, 14.452038764954, 4381.8002929688)},
+        {Min = 90, Max = 99, Mon = "Snow Bandit", Quest = "SnowQuest", QLv = 1, QCF = CFrame.new(1386.8073730469, 87.272789001465, -1298.3576660156), MonCF = CFrame.new(1356.3028564453, 105.76865386963, -1328.2418212891)},
+        {Min = 100, Max = 119, Mon = "Snowman", Quest = "SnowQuest", QLv = 2, QCF = CFrame.new(1386.8073730469, 87.272789001465, -1298.3576660156), MonCF = CFrame.new(1218.7956542969, 138.01184082031, -1488.0262451172)},
         {Min = 120, Max = 149, Mon = "Chief Petty Officer", Quest = "MarineQuest2", QLv = 1, QCF = CFrame.new(-5035.49609375, 28.677835464478, 4324.1840820313), MonCF = CFrame.new(-4931.1552734375, 65.793113708496, 4121.8393554688)},
-        {Min = 150, Max = 174, Mon = "Sky Bandit",        Quest = "SkyQuest",       QLv = 1, QCF = CFrame.new(-4842.1372070313, 717.69543457031, -2623.0483398438), MonCF = CFrame.new(-4955.6411132813, 365.46365356445, -2908.1865234375)},
-        {Min = 175, Max = 189, Mon = "Dark Master",       Quest = "SkyQuest",       QLv = 2, QCF = CFrame.new(-4842.1372070313, 717.69543457031, -2623.0483398438), MonCF = CFrame.new(-5148.1650390625, 439.04571533203, -2332.9611816406)},
-        {Min = 190, Max = 209, Mon = "Prisoner",          Quest = "PrisonerQuest",  QLv = 1, QCF = CFrame.new(5310.60547, 0.350014925, 474.946594, 0.0175017118, 0, 0.999846935, 0, 1, 0, -0.999846935, 0, 0.0175017118), MonCF = CFrame.new(4937.31885, 0.332031399, 649.574524, 0.694649816, 0, -0.719348073, 0, 1, 0, 0.719348073, 0, 0.694649816)},
+        {Min = 150, Max = 174, Mon = "Sky Bandit", Quest = "SkyQuest", QLv = 1, QCF = CFrame.new(-4842.1372070313, 717.69543457031, -2623.0483398438), MonCF = CFrame.new(-4955.6411132813, 365.46365356445, -2908.1865234375)},
+        {Min = 175, Max = 189, Mon = "Dark Master", Quest = "SkyQuest", QLv = 2, QCF = CFrame.new(-4842.1372070313, 717.69543457031, -2623.0483398438), MonCF = CFrame.new(-5148.1650390625, 439.04571533203, -2332.9611816406)},
+        {Min = 190, Max = 209, Mon = "Prisoner", Quest = "PrisonerQuest", QLv = 1, QCF = CFrame.new(5310.60547, 0.350014925, 474.946594, 0.0175017118, 0, 0.999846935, 0, 1, 0, -0.999846935, 0, 0.0175017118), MonCF = CFrame.new(4937.31885, 0.332031399, 649.574524, 0.694649816, 0, -0.719348073, 0, 1, 0, 0.719348073, 0, 0.694649816)},
         {Min = 210, Max = 249, Mon = "Dangerous Prisoner", Quest = "PrisonerQuest", QLv = 2, QCF = CFrame.new(5310.60547, 0.350014925, 474.946594, 0.0175017118, 0, 0.999846935, 0, 1, 0, -0.999846935, 0, 0.0175017118), MonCF = CFrame.new(5099.6626, 0.351562679, 1055.7583, 0.898906827, 0, -0.438139856, 0, 1, 0, 0.438139856, 0, 0.898906827)},
-        {Min = 250, Max = 274, Mon = "Toga Warrior",      Quest = "ColosseumQuest", QLv = 1, QCF = CFrame.new(-1577.7890625, 7.4151420593262, -2984.4838867188), MonCF = CFrame.new(-1872.5166015625, 49.080215454102, -2913.810546875)},
-        {Min = 275, Max = 299, Mon = "Gladiator",         Quest = "ColosseumQuest", QLv = 2, QCF = CFrame.new(-1577.7890625, 7.4151420593262, -2984.4838867188), MonCF = CFrame.new(-1521.3740234375, 81.203170776367, -3066.3139648438)},
-        {Min = 300, Max = 324, Mon = "Military Soldier",  Quest = "MagmaQuest",     QLv = 1, QCF = CFrame.new(-5316.1157226563, 12.262831687927, 8517.00390625), MonCF = CFrame.new(-5369.0004882813, 61.24352645874, 8556.4921875)},
-        {Min = 325, Max = 374, Mon = "Military Spy",      Quest = "MagmaQuest",     QLv = 2, QCF = CFrame.new(-5316.1157226563, 12.262831687927, 8517.00390625), MonCF = CFrame.new(-5787.00293, 75.8262634, 8651.69922, 0.838590562, 0, -0.544762194, 0, 1, 0, 0.544762194, 0, 0.838590562)},
-        {Min = 375, Max = 399, Mon = "Fishman Warrior",   Quest = "FishmanQuest",   QLv = 1, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(60844.10546875, 98.462875366211, 1298.3985595703), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
-        {Min = 400, Max = 449, Mon = "Fishman Commando",  Quest = "FishmanQuest",   QLv = 2, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(61738.3984375, 64.207321166992, 1433.8375244141), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
-        {Min = 450, Max = 474, Mon = "God's Guard",       Quest = "SkyExp1Quest",   QLv = 1, QCF = CFrame.new(-4721.8603515625, 845.30297851563, -1953.8489990234), MonCF = CFrame.new(-4628.0498046875, 866.92877197266, -1931.2352294922), Entrance = Vector3.new(-4607.82275, 872.54248, -1667.55688)},
-        {Min = 475, Max = 524, Mon = "Shanda",            Quest = "SkyExp1Quest",   QLv = 2, QCF = CFrame.new(-7863.1596679688, 5545.5190429688, -378.42266845703), MonCF = CFrame.new(-7685.1474609375, 5601.0751953125, -441.38876342773), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
-        {Min = 525, Max = 549, Mon = "Royal Squad",       Quest = "SkyExp2Quest",   QLv = 1, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7654.2514648438, 5637.1079101563, -1407.7550048828), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
-        {Min = 550, Max = 624, Mon = "Royal Soldier",     Quest = "SkyExp2Quest",   QLv = 2, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7760.4106445313, 5679.9077148438, -1884.8112792969), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
-        {Min = 625, Max = 649, Mon = "Galley Pirate",     Quest = "FountainQuest",  QLv = 1, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5557.1684570313, 152.32717895508, 3998.7758789063)},
-        {Min = 650, Max = 9999, Mon = "Galley Captain",   Quest = "FountainQuest",  QLv = 2, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5677.6772460938, 92.786109924316, 4966.6323242188)},
-    }
-
-    Sea2 = {
-        {Min = 700,  Max = 724,  Mon = "Raider",            Quest = "Area1Quest",       QLv = 1, QCF = CFrame.new(-427.72567749023, 72.99634552002, 1835.9426269531), MonCF = CFrame.new(68.874565124512, 93.635643005371, 2429.6752929688)},
-        {Min = 725,  Max = 774,  Mon = "Mercenary",         Quest = "Area1Quest",       QLv = 2, QCF = CFrame.new(-427.72567749023, 72.99634552002, 1835.9426269531), MonCF = CFrame.new(-864.85009765625, 122.47104644775, 1453.1505126953)},
-        {Min = 775,  Max = 799,  Mon = "Swan Pirate",       Quest = "Area2Quest",       QLv = 1, QCF = CFrame.new(635.61151123047, 73.096351623535, 917.81298828125), MonCF = CFrame.new(1065.3669433594, 137.64012145996, 1324.3798828125)},
-        {Min = 800,  Max = 874,  Mon = "Factory Staff",     Quest = "Area2Quest",       QLv = 2, QCF = CFrame.new(635.61151123047, 73.096351623535, 917.81298828125), MonCF = CFrame.new(533.22045898438, 128.46876525879, 355.62615966797)},
-        {Min = 875,  Max = 899,  Mon = "Marine Lieutenant", Quest = "MarineQuest3",     QLv = 1, QCF = CFrame.new(-2440.9934082031, 73.04190826416, -3217.7082519531), MonCF = CFrame.new(-2489.2622070313, 84.613594055176, -3151.8830566406)},
-        {Min = 900,  Max = 949,  Mon = "Marine Captain",    Quest = "MarineQuest3",     QLv = 2, QCF = CFrame.new(-2440.9934082031, 73.04190826416, -3217.7082519531), MonCF = CFrame.new(-2335.2026367188, 79.786659240723, -3245.8674316406)},
-        {Min = 950,  Max = 974,  Mon = "Zombie",            Quest = "ZombieQuest",      QLv = 1, QCF = CFrame.new(-5494.3413085938, 48.505931854248, -794.59094238281), MonCF = CFrame.new(-5536.4970703125, 101.08577728271, -835.59075927734)},
-        {Min = 975,  Max = 999,  Mon = "Vampire",           Quest = "ZombieQuest",      QLv = 2, QCF = CFrame.new(-5494.3413085938, 48.505931854248, -794.59094238281), MonCF = CFrame.new(-5806.1098632813, 16.722528457642, -1164.4384765625)},
-        {Min = 1000, Max = 1049, Mon = "Snow Trooper",      Quest = "SnowMountainQuest", QLv = 1, QCF = CFrame.new(607.05963134766, 401.44781494141, -5370.5546875), MonCF = CFrame.new(535.21051025391, 432.74209594727, -5484.9165039063)},
-        {Min = 1050, Max = 1099, Mon = "Winter Warrior",    Quest = "SnowMountainQuest", QLv = 2, QCF = CFrame.new(607.05963134766, 401.44781494141, -5370.5546875), MonCF = CFrame.new(1234.4449462891, 456.95419311523, -5174.130859375)},
-        {Min = 1100, Max = 1124, Mon = "Lab Subordinate",   Quest = "IceSideQuest",     QLv = 1, QCF = CFrame.new(-6061.841796875, 15.926671981812, -4902.0385742188), MonCF = CFrame.new(-5720.5576171875, 63.309471130371, -4784.6103515625)},
-        {Min = 1125, Max = 1174, Mon = "Horned Warrior",    Quest = "IceSideQuest",     QLv = 2, QCF = CFrame.new(-6061.841796875, 15.926671981812, -4902.0385742188), MonCF = CFrame.new(-6292.751953125, 91.181983947754, -5502.6499023438)},
-        {Min = 1175, Max = 1199, Mon = "Magma Ninja",       Quest = "FireSideQuest",    QLv = 1, QCF = CFrame.new(-5429.0473632813, 15.977565765381, -5297.9614257813), MonCF = CFrame.new(-5461.8388671875, 130.36347961426, -5836.4702148438)},
-        {Min = 1200, Max = 1249, Mon = "Lava Pirate",       Quest = "FireSideQuest",    QLv = 2, QCF = CFrame.new(-5429.0473632813, 15.977565765381, -5297.9614257813), MonCF = CFrame.new(-5251.1889648438, 55.164535522461, -4774.4096679688)},
-        {Min = 1250, Max = 1274, Mon = "Ship Deckhand",     Quest = "ShipQuest1",       QLv = 1, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(921.12365722656, 125.9839553833, 33088.328125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
-        {Min = 1275, Max = 1299, Mon = "Ship Engineer",     Quest = "ShipQuest1",       QLv = 2, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(886.28179931641, 40.47790145874, 32800.83203125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
-        {Min = 1300, Max = 1324, Mon = "Ship Steward",      Quest = "ShipQuest2",       QLv = 1, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(943.85504150391, 129.58183288574, 33444.3671875), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
-        {Min = 1325, Max = 1349, Mon = "Ship Officer",      Quest = "ShipQuest2",       QLv = 2, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(955.38458251953, 181.08335876465, 33331.890625), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
-        {Min = 1350, Max = 1374, Mon = "Arctic Warrior",    Quest = "FrostQuest",       QLv = 1, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5935.4541015625, 77.26016998291, -6472.7568359375)}, 
-        {Min = 1375, Max = 1424, Mon = "Snow Lurker",       Quest = "FrostQuest",       QLv = 2, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5628.482421875, 57.574996948242, -6618.3481445313)},
-        {Min = 1425, Max = 1449, Mon = "Sea Soldier",       Quest = "ForgottenQuest",   QLv = 1, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3185.0153808594, 58.789089202881, -9663.6064453125)},
-        {Min = 1450, Max = 9999, Mon = "Water Fighter",     Quest = "ForgottenQuest",   QLv = 2, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3262.9301757813, 298.69036865234, -10552.529296875)},
+        {Min = 250, Max = 274, Mon = "Toga Warrior", Quest = "ColosseumQuest", QLv = 1, QCF = CFrame.new(-1577.7890625, 7.4151420593262, -2984.4838867188), MonCF = CFrame.new(-1872.5166015625, 49.080215454102, -2913.810546875)},
+        {Min = 275, Max = 299, Mon = "Gladiator", Quest = "ColosseumQuest", QLv = 2, QCF = CFrame.new(-1577.7890625, 7.4151420593262, -2984.4838867188), MonCF = CFrame.new(-1521.3740234375, 81.203170776367, -3066.3139648438)},
+        {Min = 300, Max = 324, Mon = "Military Soldier", Quest = "MagmaQuest", QLv = 1, QCF = CFrame.new(-5316.1157226563, 12.262831687927, 8517.00390625), MonCF = CFrame.new(-5369.0004882813, 61.24352645874, 8556.4921875)},
+        {Min = 325, Max = 374, Mon = "Military Spy", Quest = "MagmaQuest", QLv = 2, QCF = CFrame.new(-5316.1157226563, 12.262831687927, 8517.00390625), MonCF = CFrame.new(-5787.00293, 75.8262634, 8651.69922, 0.838590562, 0, -0.544762194, 0, 1, 0, 0.544762194, 0, 0.838590562)},
+        {Min = 375, Max = 399, Mon = "Fishman Warrior", Quest = "FishmanQuest", QLv = 1, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(60844.10546875, 98.462875366211, 1298.3985595703), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
+        {Min = 400, Max = 449, Mon = "Fishman Commando", Quest = "FishmanQuest", QLv = 2, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(61738.3984375, 64.207321166992, 1433.8375244141), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
+        {Min = 450, Max = 474, Mon = "God's Guard", Quest = "SkyExp1Quest", QLv = 1, QCF = CFrame.new(-4721.8603515625, 845.30297851563, -1953.8489990234), MonCF = CFrame.new(-4628.0498046875, 866.92877197266, -1931.2352294922), Entrance = Vector3.new(-4607.82275, 872.54248, -1667.55688)},
+        {Min = 475, Max = 524, Mon = "Shanda", Quest = "SkyExp1Quest", QLv = 2, QCF = CFrame.new(-7863.1596679688, 5545.5190429688, -378.42266845703), MonCF = CFrame.new(-7685.1474609375, 5601.0751953125, -441.38876342773), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+        {Min = 525, Max = 549, Mon = "Royal Squad", Quest = "SkyExp2Quest", QLv = 1, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7654.2514648438, 5637.1079101563, -1407.7550048828), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+        {Min = 550, Max = 624, Mon = "Royal Soldier", Quest = "SkyExp2Quest", QLv = 2, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7760.4106445313, 5679.9077148438, -1884.8112792969), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+        {Min = 625, Max = 649, Mon = "Galley Pirate", Quest = "FountainQuest", QLv = 1, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5557.1684570313, 152.32717895508, 3998.7758789063)},
+        {Min = 650, Max = 9999, Mon = "Galley Captain", Quest = "FountainQuest", QLv = 2, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5677.6772460938, 92.786109924316, 4966.6323242188)},
     },
-
+    Sea2 = {
+        {Min = 700, Max = 724, Mon = "Raider", Quest = "Area1Quest", QLv = 1, QCF = CFrame.new(-427.72567749023, 72.99634552002, 1835.9426269531), MonCF = CFrame.new(68.874565124512, 93.635643005371, 2429.6752929688)},
+        {Min = 725, Max = 774, Mon = "Mercenary", Quest = "Area1Quest", QLv = 2, QCF = CFrame.new(-427.72567749023, 72.99634552002, 1835.9426269531), MonCF = CFrame.new(-864.85009765625, 122.47104644775, 1453.1505126953)},
+        {Min = 775, Max = 799, Mon = "Swan Pirate", Quest = "Area2Quest", QLv = 1, QCF = CFrame.new(635.61151123047, 73.096351623535, 917.81298828125), MonCF = CFrame.new(1065.3669433594, 137.64012145996, 1324.3798828125)},
+        {Min = 800, Max = 874, Mon = "Factory Staff", Quest = "Area2Quest", QLv = 2, QCF = CFrame.new(635.61151123047, 73.096351623535, 917.81298828125), MonCF = CFrame.new(533.22045898438, 128.46876525879, 355.62615966797)},
+        {Min = 875, Max = 899, Mon = "Marine Lieutenant", Quest = "MarineQuest3", QLv = 1, QCF = CFrame.new(-2440.9934082031, 73.04190826416, -3217.7082519531), MonCF = CFrame.new(-2489.2622070313, 84.613594055176, -3151.8830566406)},
+        {Min = 900, Max = 949, Mon = "Marine Captain", Quest = "MarineQuest3", QLv = 2, QCF = CFrame.new(-2440.9934082031, 73.04190826416, -3217.7082519531), MonCF = CFrame.new(-2335.2026367188, 79.786659240723, -3245.8674316406)},
+        {Min = 950, Max = 974, Mon = "Zombie", Quest = "ZombieQuest", QLv = 1, QCF = CFrame.new(-5494.3413085938, 48.505931854248, -794.59094238281), MonCF = CFrame.new(-5536.4970703125, 101.08577728271, -835.59075927734)},
+        {Min = 975, Max = 999, Mon = "Vampire", Quest = "ZombieQuest", QLv = 2, QCF = CFrame.new(-5494.3413085938, 48.505931854248, -794.59094238281), MonCF = CFrame.new(-5806.1098632813, 16.722528457642, -1164.4384765625)},
+        {Min = 1000, Max = 1049, Mon = "Snow Trooper", Quest = "SnowMountainQuest", QLv = 1, QCF = CFrame.new(607.05963134766, 401.44781494141, -5370.5546875), MonCF = CFrame.new(535.21051025391, 432.74209594727, -5484.9165039063)},
+        {Min = 1050, Max = 1099, Mon = "Winter Warrior", Quest = "SnowMountainQuest", QLv = 2, QCF = CFrame.new(607.05963134766, 401.44781494141, -5370.5546875), MonCF = CFrame.new(1234.4449462891, 456.95419311523, -5174.130859375)},
+        {Min = 1100, Max = 1124, Mon = "Lab Subordinate", Quest = "IceSideQuest", QLv = 1, QCF = CFrame.new(-6061.841796875, 15.926671981812, -4902.0385742188), MonCF = CFrame.new(-5720.5576171875, 63.309471130371, -4784.6103515625)},
+        {Min = 1125, Max = 1174, Mon = "Horned Warrior", Quest = "IceSideQuest", QLv = 2, QCF = CFrame.new(-6061.841796875, 15.926671981812, -4902.0385742188), MonCF = CFrame.new(-6292.751953125, 91.181983947754, -5502.6499023438)},
+        {Min = 1175, Max = 1199, Mon = "Magma Ninja", Quest = "FireSideQuest", QLv = 1, QCF = CFrame.new(-5429.0473632813, 15.977565765381, -5297.9614257813), MonCF = CFrame.new(-5461.8388671875, 130.36347961426, -5836.4702148438)},
+        {Min = 1200, Max = 1249, Mon = "Lava Pirate", Quest = "FireSideQuest", QLv = 2, QCF = CFrame.new(-5429.0473632813, 15.977565765381, -5297.9614257813), MonCF = CFrame.new(-5251.1889648438, 55.164535522461, -4774.4096679688)},
+        {Min = 1250, Max = 1274, Mon = "Ship Deckhand", Quest = "ShipQuest1", QLv = 1, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(921.12365722656, 125.9839553833, 33088.328125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1275, Max = 1299, Mon = "Ship Engineer", Quest = "ShipQuest1", QLv = 2, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(886.28179931641, 40.47790145874, 32800.83203125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1300, Max = 1324, Mon = "Ship Steward", Quest = "ShipQuest2", QLv = 1, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(943.85504150391, 129.58183288574, 33444.3671875), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1325, Max = 1349, Mon = "Ship Officer", Quest = "ShipQuest2", QLv = 2, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(955.38458251953, 181.08335876465, 33331.890625), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1350, Max = 1374, Mon = "Arctic Warrior", Quest = "FrostQuest", QLv = 1, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5935.4541015625, 77.26016998291, -6472.7568359375)},
+        {Min = 1375, Max = 1424, Mon = "Snow Lurker", Quest = "FrostQuest", QLv = 2, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5628.482421875, 57.574996948242, -6618.3481445313)},
+        {Min = 1425, Max = 1449, Mon = "Sea Soldier", Quest = "ForgottenQuest", QLv = 1, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3185.0153808594, 58.789089202881, -9663.6064453125)},
+        {Min = 1450, Max = 9999, Mon = "Water Fighter", Quest = "ForgottenQuest", QLv = 2, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3262.9301757813, 298.69036865234, -10552.529296875)},
+    },
     Sea3 = {
-        {Min = 1500, Max = 1524, Mon = "Pirate Millionaire",   Quest = "PiratePortQuest",    QLv = 1, QCF = CFrame.new(-450.1046447753906, 107.68145751953125, 5950.72607421875), MonCF = CFrame.new(-193.99227905273438, 56.12502670288086, 5755.7880859375)},
-        {Min = 1525, Max = 1574, Mon = "Pistol Billionaire",   Quest = "PiratePortQuest",    QLv = 2, QCF = CFrame.new(-450.1046447753906, 107.68145751953125, 5950.72607421875), MonCF = CFrame.new(-188.14462280273438, 84.49613189697266, 6337.0419921875)},
-        {Min = 1575, Max = 1599, Mon = "Dragon Crew Warrior",  Quest = "DragonCrewQuest",    QLv = 1, QCF = CFrame.new(6735.11083984375, 126.99046325683594, -711.0979614257812), MonCF = CFrame.new(6615.2333984375, 50.847679138183594, -978.93408203125)},
-        {Min = 1600, Max = 1624, Mon = "Dragon Crew Archer",   Quest = "DragonCrewQuest",    QLv = 2, QCF = CFrame.new(6735.11083984375, 126.99046325683594, -711.0979614257812), MonCF = CFrame.new(6818.58935546875, 483.718994140625, 512.726806640625)},
-        {Min = 1625, Max = 1649, Mon = "Hydra Enforcer",       Quest = "VenomCrewQuest",     QLv = 1, QCF = CFrame.new(5446.8793945313, 601.62945556641, 749.45672607422), MonCF = CFrame.new(4547.115234375, 1001.60205078125, 334.1954650878906)},
-        {Min = 1650, Max = 1699, Mon = "Venomous Assailant",   Quest = "VenomCrewQuest",     QLv = 2, QCF = CFrame.new(5446.8793945313, 601.62945556641, 749.45672607422), MonCF = CFrame.new(4637.88525390625, 1077.85595703125, 882.4183959960938)},
-        {Min = 1700, Max = 1724, Mon = "Marine Commodore",     Quest = "MarineTreeIsland",   QLv = 1, QCF = CFrame.new(2179.98828125, 28.731239318848, -6740.0551757813), MonCF = CFrame.new(2198.0063476563, 128.71075439453, -7109.5043945313)},
-        {Min = 1725, Max = 1774, Mon = "Marine Rear Admiral",  Quest = "MarineTreeIsland",   QLv = 2, QCF = CFrame.new(2179.98828125, 28.731239318848, -6740.0551757813), MonCF = CFrame.new(3294.3142089844, 385.41125488281, -7048.6342773438)},
-        {Min = 1775, Max = 1799, Mon = "Fishman Raider",       Quest = "DeepForestIsland3",  QLv = 1, QCF = CFrame.new(-10582.759765625, 331.78845214844, -8757.666015625), MonCF = CFrame.new(-10553.268554688, 521.38439941406, -8176.9458007813)},
-        {Min = 1800, Max = 1824, Mon = "Fishman Captain",      Quest = "DeepForestIsland3",  QLv = 2, QCF = CFrame.new(-10583.099609375, 331.78845214844, -8759.4638671875), MonCF = CFrame.new(-10789.401367188, 427.18637084961, -9131.4423828125)},
-        {Min = 1825, Max = 1849, Mon = "Forest Pirate",        Quest = "DeepForestIsland",   QLv = 1, QCF = CFrame.new(-13232.662109375, 332.40396118164, -7626.4819335938), MonCF = CFrame.new(-13489.397460938, 400.30349731445, -7770.251953125)},
-        {Min = 1850, Max = 1899, Mon = "Mythological Pirate",  Quest = "DeepForestIsland",   QLv = 2, QCF = CFrame.new(-13232.662109375, 332.40396118164, -7626.4819335938), MonCF = CFrame.new(-13508.616210938, 582.46228027344, -6985.3037109375)},
-        {Min = 1900, Max = 1924, Mon = "Jungle Pirate",        Quest = "DeepForestIsland2",  QLv = 1, QCF = CFrame.new(-12682.096679688, 390.88653564453, -9902.1240234375), MonCF = CFrame.new(-12267.103515625, 459.75262451172, -10277.200195313)},
-        {Min = 1925, Max = 1974, Mon = "Musketeer Pirate",     Quest = "DeepForestIsland2",  QLv = 2, QCF = CFrame.new(-12682.096679688, 390.88653564453, -9902.1240234375), MonCF = CFrame.new(-13291.5078125, 520.47338867188, -9904.638671875)},
-        {Min = 1975, Max = 1999, Mon = "Reborn Skeleton",      Quest = "HauntedQuest1",      QLv = 1, QCF = CFrame.new(-9480.80762, 142.130661, 5566.37305, -0.00655503059, 4.5295423e-8, -0.999978542, 2.0492047e-8, 1, 4.5162068e-8, 0.999978542, -2.0195568e-8, -0.00655503059), MonCF = CFrame.new(-8761.77148, 183.431747, 6168.33301, 0.978073597, -0.000013950732, -0.208259016, -0.0000010807393, 1, -0.00007206303, 0.208259016, 0.00007070804, 0.978073597)},
-        {Min = 2000, Max = 2024, Mon = "Living Zombie",        Quest = "HauntedQuest1",      QLv = 2, QCF = CFrame.new(-9480.80762, 142.130661, 5566.37305, -0.00655503059, 4.5295423e-8, -0.999978542, 2.0492047e-8, 1, 4.5162068e-8, 0.999978542, -2.0195568e-8, -0.00655503059), MonCF = CFrame.new(-10103.7529, 238.565979, 6179.75977, 0.999474227, 2.7754714e-8, 0.0324240364, -2.5800633e-8, 1, -6.068485e-8, -0.0324240364, 5.981639e-8, 0.999474227)},
-        {Min = 2025, Max = 2049, Mon = "Demonic Soul",         Quest = "HauntedQuest2",      QLv = 1, QCF = CFrame.new(-9516.9931640625, 178.00651550293, 6078.4653320313), MonCF = CFrame.new(-9712.03125, 204.69589233398, 6193.322265625)},
-        {Min = 2050, Max = 2074, Mon = "Posessed Mummy",       Quest = "HauntedQuest2",      QLv = 2, QCF = CFrame.new(-9516.9931640625, 178.00651550293, 6078.4653320313), MonCF = CFrame.new(-9545.7763671875, 69.619895935059, 6339.5615234375)},
-        {Min = 2075, Max = 2099, Mon = "Peanut Scout",         Quest = "NutsIslandQuest",    QLv = 1, QCF = CFrame.new(-2105.53198, 37.2495995, -10195.5088, -0.766061664, 0, -0.642767608, 0, 1, 0, 0.642767608, 0, -0.766061664), MonCF = CFrame.new(-2150.587890625, 122.49767303467, -10358.994140625)},
-        {Min = 2100, Max = 2124, Mon = "Peanut President",     Quest = "NutsIslandQuest",    QLv = 2, QCF = CFrame.new(-2105.53198, 37.2495995, -10195.5088, -0.766061664, 0, -0.642767608, 0, 1, 0, 0.642767608, 0, -0.766061664), MonCF = CFrame.new(-2150.587890625, 122.49767303467, -10358.994140625)},
-        {Min = 2125, Max = 2149, Mon = "Ice Cream Chef",       Quest = "IceCreamIslandQuest", QLv = 1, QCF = CFrame.new(-819.376709, 64.9259796, -10967.2832, -0.766061664, 0, 0.642767608, 0, 1, 0, -0.642767608, 0, -0.766061664), MonCF = CFrame.new(-789.941528, 209.382889, -11009.9805, -0.0703101531, 0, -0.997525156, 0, 1, 0, 0.997525275, 0, -0.0703101456)},
-        {Min = 2150, Max = 2199, Mon = "Ice Cream Commander",  Quest = "IceCreamIslandQuest", QLv = 2, QCF = CFrame.new(-819.376709, 64.9259796, -10967.2832, -0.766061664, 0, 0.642767608, 0, 1, 0, -0.642767608, 0, -0.766061664), MonCF = CFrame.new(-789.941528, 209.382889, -11009.9805, -0.0703101531, 0, -0.997525156, 0, 1, 0, 0.997525275, 0, -0.0703101456)},
-        {Min = 2200, Max = 2224, Mon = "Cookie Crafter",       Quest = "CakeQuest1",         QLv = 1, QCF = CFrame.new(-2022.29858, 36.9275894, -12030.9766, -0.961273909, 0, -0.275594592, 0, 1, 0, 0.275594592, 0, -0.961273909), MonCF = CFrame.new(-2321.71216, 36.699482, -12216.7871, -0.780074954, 0, 0.625686109, 0, 1, 0, -0.625686109, 0, -0.780074954)},
-        {Min = 2225, Max = 2249, Mon = "Cake Guard",           Quest = "CakeQuest1",         QLv = 2, QCF = CFrame.new(-2022.29858, 36.9275894, -12030.9766, -0.961273909, 0, -0.275594592, 0, 1, 0, 0.275594592, 0, -0.961273909), MonCF = CFrame.new(-1418.11011, 36.6718941, -12255.7324, 0.0677844882, 0, 0.997700036, 0, 1, 0, -0.997700036, 0, 0.0677844882)},
-        {Min = 2250, Max = 2274, Mon = "Baking Staff",         Quest = "CakeQuest2",         QLv = 1, QCF = CFrame.new(-1928.31763, 37.7296638, -12840.626, 0.951068401, 0, -0.308980465, 0, 1, 0, 0.308980465, 0, 0.951068401), MonCF = CFrame.new(-1980.43848, 36.6716766, -12983.8418, -0.254443765, 0, -0.967087567, 0, 1, 0, 0.967087567, 0, -0.254443765)},
-        {Min = 2275, Max = 2299, Mon = "Head Baker",           Quest = "CakeQuest2",         QLv = 2, QCF = CFrame.new(-1928.31763, 37.7296638, -12840.626, 0.951068401, 0, -0.308980465, 0, 1, 0, 0.308980465, 0, 0.951068401), MonCF = CFrame.new(-2251.5791, 52.2714615, -13033.3965, -0.991971016, 0, -0.126466095, 0, 1, 0, 0.126466095, 0, -0.991971016)},
-        {Min = 2300, Max = 2324, Mon = "Cocoa Warrior",        Quest = "ChocQuest1",         QLv = 1, QCF = CFrame.new(231.75, 23.9003029, -12200.292, -1, 0, 0, 0, 1, 0, 0, 0, -1), MonCF = CFrame.new(167.978516, 26.2254658, -12238.874, -0.939700961, 0, 0.341998369, 0, 1, 0, -0.341998369, 0, -0.939700961)},
-        {Min = 2325, Max = 2349, Mon = "Chocolate Bar Battler", Quest = "ChocQuest1",        QLv = 2, QCF = CFrame.new(231.75, 23.9003029, -12200.292, -1, 0, 0, 0, 1, 0, 0, 0, -1), MonCF = CFrame.new(701.312073, 25.5824986, -12708.2148, -0.342042685, 0, -0.939684391, 0, 1, 0, 0.939684391, 0, -0.342042685)},
-        {Min = 2350, Max = 2374, Mon = "Sweet Thief",          Quest = "ChocQuest2",         QLv = 1, QCF = CFrame.new(151.198242, 23.8907146, -12774.6172, 0.422592998, 0, 0.906319618, 0, 1, 0, -0.906319618, 0, 0.422592998), MonCF = CFrame.new(-140.258301, 25.5824986, -12652.3115, 0.173624337, 0, -0.984811902, 0, 1, 0, 0.984811902, 0, 0.173624337)},
-        {Min = 2375, Max = 2399, Mon = "Candy Rebel",          Quest = "ChocQuest2",         QLv = 2, QCF = CFrame.new(151.198242, 23.8907146, -12774.6172, 0.422592998, 0, 0.906319618, 0, 1, 0, -0.906319618, 0, 0.422592998), MonCF = CFrame.new(47.9231453, 25.5824986, -13029.2402, -0.819156051, 0, -0.573571265, 0, 1, 0, 0.573571265, 0, -0.819156051)},
-        {Min = 2400, Max = 2424, Mon = "Candy Pirate",         Quest = "CandyQuest1",        QLv = 1, QCF = CFrame.new(-1149.328, 13.5759039, -14445.6143, -0.156446099, 0, -0.987686574, 0, 1, 0, 0.987686574, 0, -0.156446099), MonCF = CFrame.new(-1437.56348, 17.1481285, -14385.6934, 0.173624337, 0, -0.984811902, 0, 1, 0, 0.984811902, 0, 0.173624337)},
-        {Min = 2425, Max = 2449, Mon = "Snow Demon",           Quest = "CandyQuest1",        QLv = 2, QCF = CFrame.new(-1149.328, 13.5759039, -14445.6143, -0.156446099, 0, -0.987686574, 0, 1, 0, 0.987686574, 0, -0.156446099), MonCF = CFrame.new(-916.222656, 17.1481285, -14638.8125, 0.866007268, 0, 0.500031412, 0, 1, 0, -0.500031412, 0, 0.866007268)},
-        {Min = 2450, Max = 2474, Mon = "Isle Outlaw",          Quest = "TikiQuest1",         QLv = 1, QCF = CFrame.new(-16549.890625, 55.68635559082031, -179.91360473632812), MonCF = CFrame.new(-16162.8193359375, 11.6863374710083, -96.45481872558594)},
-        {Min = 2475, Max = 2499, Mon = "Island Boy",           Quest = "TikiQuest1",         QLv = 2, QCF = CFrame.new(-16549.890625, 55.68635559082031, -179.91360473632812), MonCF = CFrame.new(-16357.3125, 20.632822036743164, 1005.64892578125)},
-        {Min = 2500, Max = 2524, Mon = "Sun-kissed Warrior",   Quest = "TikiQuest2",         QLv = 1, QCF = CFrame.new(-16541.021484375, 54.77081298828125, 1051.461181640625), MonCF = CFrame.new(-16357.3125, 20.632822036743164, 1005.64892578125)},
-        {Min = 2525, Max = 2549, Mon = "Isle Champion",        Quest = "TikiQuest2",         QLv = 2, QCF = CFrame.new(-16541.021484375, 54.77081298828125, 1051.461181640625), MonCF = CFrame.new(-16848.94140625, 21.68633460998535, 1041.4490966796875)},
-        {Min = 2550, Max = 2574, Mon = "Serpent Hunter",       Quest = "TikiQuest3",         QLv = 1, QCF = CFrame.new(-16665.19140625, 104.59640502929688, 1579.6943359375), MonCF = CFrame.new(-16621.4140625, 121.40631103515625, 1290.6881103515625)},
-        {Min = 2575, Max = 9999, Mon = "Skull Slayer",         Quest = "TikiQuest3",         QLv = 2, QCF = CFrame.new(-16665.19140625, 104.59640502929688, 1579.6943359375), MonCF = CFrame.new(-16811.5703125, 84.625244140625, 1542.235107421875)},
+        {Min = 1500, Max = 1524, Mon = "Pirate Millionaire", Quest = "PiratePortQuest", QLv = 1, QCF = CFrame.new(-450.1046447753906, 107.68145751953125, 5950.72607421875), MonCF = CFrame.new(-193.99227905273438, 56.12502670288086, 5755.7880859375)},
+        {Min = 1525, Max = 1574, Mon = "Pistol Billionaire", Quest = "PiratePortQuest", QLv = 2, QCF = CFrame.new(-450.1046447753906, 107.68145751953125, 5950.72607421875), MonCF = CFrame.new(-188.14462280273438, 84.49613189697266, 6337.0419921875)},
+        {Min = 1575, Max = 1599, Mon = "Dragon Crew Warrior", Quest = "DragonCrewQuest", QLv = 1, QCF = CFrame.new(6735.11083984375, 126.99046325683594, -711.0979614257812), MonCF = CFrame.new(6615.2333984375, 50.847679138183594, -978.93408203125)},
+        {Min = 1600, Max = 1624, Mon = "Dragon Crew Archer", Quest = "DragonCrewQuest", QLv = 2, QCF = CFrame.new(6735.11083984375, 126.99046325683594, -711.0979614257812), MonCF = CFrame.new(6818.58935546875, 483.718994140625, 512.726806640625)},
+        {Min = 1625, Max = 1649, Mon = "Hydra Enforcer", Quest = "VenomCrewQuest", QLv = 1, QCF = CFrame.new(5446.8793945313, 601.62945556641, 749.45672607422), MonCF = CFrame.new(4547.115234375, 1001.60205078125, 334.1954650878906)},
+        {Min = 1650, Max = 1699, Mon = "Venomous Assailant", Quest = "VenomCrewQuest", QLv = 2, QCF = CFrame.new(5446.8793945313, 601.62945556641, 749.45672607422), MonCF = CFrame.new(4637.88525390625, 1077.85595703125, 882.4183959960938)},
+        {Min = 1700, Max = 1724, Mon = "Marine Commodore", Quest = "MarineTreeIsland", QLv = 1, QCF = CFrame.new(2179.98828125, 28.731239318848, -6740.0551757813), MonCF = CFrame.new(2198.0063476563, 128.71075439453, -7109.5043945313)},
+        {Min = 1725, Max = 1774, Mon = "Marine Rear Admiral", Quest = "MarineTreeIsland", QLv = 2, QCF = CFrame.new(2179.98828125, 28.731239318848, -6740.0551757813), MonCF = CFrame.new(3294.3142089844, 385.41125488281, -7048.6342773438)},
+        {Min = 1775, Max = 1799, Mon = "Fishman Raider", Quest = "DeepForestIsland3", QLv = 1, QCF = CFrame.new(-10582.759765625, 331.78845214844, -8757.666015625), MonCF = CFrame.new(-10553.268554688, 521.38439941406, -8176.9458007813)},
+        {Min = 1800, Max = 1824, Mon = "Fishman Captain", Quest = "DeepForestIsland3", QLv = 2, QCF = CFrame.new(-10583.099609375, 331.78845214844, -8759.4638671875), MonCF = CFrame.new(-10789.401367188, 427.18637084961, -9131.4423828125)},
+        {Min = 1825, Max = 1849, Mon = "Forest Pirate", Quest = "DeepForestIsland", QLv = 1, QCF = CFrame.new(-13232.662109375, 332.40396118164, -7626.4819335938), MonCF = CFrame.new(-13489.397460938, 400.30349731445, -7770.251953125)},
+        {Min = 1850, Max = 1899, Mon = "Mythological Pirate", Quest = "DeepForestIsland", QLv = 2, QCF = CFrame.new(-13232.662109375, 332.40396118164, -7626.4819335938), MonCF = CFrame.new(-13508.616210938, 582.46228027344, -6985.3037109375)},
+        {Min = 1900, Max = 1924, Mon = "Jungle Pirate", Quest = "DeepForestIsland2", QLv = 1, QCF = CFrame.new(-12682.096679688, 390.88653564453, -9902.1240234375), MonCF = CFrame.new(-12267.103515625, 459.75262451172, -10277.200195313)},
+        {Min = 1925, Max = 1974, Mon = "Musketeer Pirate", Quest = "DeepForestIsland2", QLv = 2, QCF = CFrame.new(-12682.096679688, 390.88653564453, -9902.1240234375), MonCF = CFrame.new(-13291.5078125, 520.47338867188, -9904.638671875)},
+        {Min = 1975, Max = 1999, Mon = "Reborn Skeleton", Quest = "HauntedQuest1", QLv = 1, QCF = CFrame.new(-9480.80762, 142.130661, 5566.37305, -0.00655503059, 4.5295423e-8, -0.999978542, 2.0492047e-8, 1, 4.5162068e-8, 0.999978542, -2.0195568e-8, -0.00655503059), MonCF = CFrame.new(-8761.77148, 183.431747, 6168.33301, 0.978073597, -0.000013950732, -0.208259016, -0.0000010807393, 1, -0.00007206303, 0.208259016, 0.00007070804, 0.978073597)},
+        {Min = 2000, Max = 2024, Mon = "Living Zombie", Quest = "HauntedQuest1", QLv = 2, QCF = CFrame.new(-9480.80762, 142.130661, 5566.37305, -0.00655503059, 4.5295423e-8, -0.999978542, 2.0492047e-8, 1, 4.5162068e-8, 0.999978542, -2.0195568e-8, -0.00655503059), MonCF = CFrame.new(-10103.7529, 238.565979, 6179.75977, 0.999474227, 2.7754714e-8, 0.0324240364, -2.5800633e-8, 1, -6.068485e-8, -0.0324240364, 5.981639e-8, 0.999474227)},
+        {Min = 2025, Max = 2049, Mon = "Demonic Soul", Quest = "HauntedQuest2", QLv = 1, QCF = CFrame.new(-9516.9931640625, 178.00651550293, 6078.4653320313), MonCF = CFrame.new(-9712.03125, 204.69589233398, 6193.322265625)},
+        {Min = 2050, Max = 2074, Mon = "Posessed Mummy", Quest = "HauntedQuest2", QLv = 2, QCF = CFrame.new(-9516.9931640625, 178.00651550293, 6078.4653320313), MonCF = CFrame.new(-9545.7763671875, 69.619895935059, 6339.5615234375)},
+        {Min = 2075, Max = 2099, Mon = "Peanut Scout", Quest = "NutsIslandQuest", QLv = 1, QCF = CFrame.new(-2105.53198, 37.2495995, -10195.5088, -0.766061664, 0, -0.642767608, 0, 1, 0, 0.642767608, 0, -0.766061664), MonCF = CFrame.new(-2150.587890625, 122.49767303467, -10358.994140625)},
+        {Min = 2100, Max = 2124, Mon = "Peanut President", Quest = "NutsIslandQuest", QLv = 2, QCF = CFrame.new(-2105.53198, 37.2495995, -10195.5088, -0.766061664, 0, -0.642767608, 0, 1, 0, 0.642767608, 0, -0.766061664), MonCF = CFrame.new(-2150.587890625, 122.49767303467, -10358.994140625)},
+        {Min = 2125, Max = 2149, Mon = "Ice Cream Chef", Quest = "IceCreamIslandQuest", QLv = 1, QCF = CFrame.new(-819.376709, 64.9259796, -10967.2832, -0.766061664, 0, 0.642767608, 0, 1, 0, -0.642767608, 0, -0.766061664), MonCF = CFrame.new(-789.941528, 209.382889, -11009.9805, -0.0703101531, 0, -0.997525156, 0, 1, 0, 0.997525275, 0, -0.0703101456)},
+        {Min = 2150, Max = 2199, Mon = "Ice Cream Commander", Quest = "IceCreamIslandQuest", QLv = 2, QCF = CFrame.new(-819.376709, 64.9259796, -10967.2832, -0.766061664, 0, 0.642767608, 0, 1, 0, -0.642767608, 0, -0.766061664), MonCF = CFrame.new(-789.941528, 209.382889, -11009.9805, -0.0703101531, 0, -0.997525156, 0, 1, 0, 0.997525275, 0, -0.0703101456)},
+        {Min = 2200, Max = 2224, Mon = "Cookie Crafter", Quest = "CakeQuest1", QLv = 1, QCF = CFrame.new(-2022.29858, 36.9275894, -12030.9766, -0.961273909, 0, -0.275594592, 0, 1, 0, 0.275594592, 0, -0.961273909), MonCF = CFrame.new(-2321.71216, 36.699482, -12216.7871, -0.780074954, 0, 0.625686109, 0, 1, 0, -0.625686109, 0, -0.780074954)},
+        {Min = 2225, Max = 2249, Mon = "Cake Guard", Quest = "CakeQuest1", QLv = 2, QCF = CFrame.new(-2022.29858, 36.9275894, -12030.9766, -0.961273909, 0, -0.275594592, 0, 1, 0, 0.275594592, 0, -0.961273909), MonCF = CFrame.new(-1418.11011, 36.6718941, -12255.7324, 0.0677844882, 0, 0.997700036, 0, 1, 0, -0.997700036, 0, 0.0677844882)},
+        {Min = 2250, Max = 2274, Mon = "Baking Staff", Quest = "CakeQuest2", QLv = 1, QCF = CFrame.new(-1928.31763, 37.7296638, -12840.626, 0.951068401, 0, -0.308980465, 0, 1, 0, 0.308980465, 0, 0.951068401), MonCF = CFrame.new(-1980.43848, 36.6716766, -12983.8418, -0.254443765, 0, -0.967087567, 0, 1, 0, 0.967087567, 0, -0.254443765)},
+        {Min = 2275, Max = 2299, Mon = "Head Baker", Quest = "CakeQuest2", QLv = 2, QCF = CFrame.new(-1928.31763, 37.7296638, -12840.626, 0.951068401, 0, -0.308980465, 0, 1, 0, 0.308980465, 0, 0.951068401), MonCF = CFrame.new(-2251.5791, 52.2714615, -13033.3965, -0.991971016, 0, -0.126466095, 0, 1, 0, 0.126466095, 0, -0.991971016)},
+        {Min = 2300, Max = 2324, Mon = "Cocoa Warrior", Quest = "ChocQuest1", QLv = 1, QCF = CFrame.new(231.75, 23.9003029, -12200.292, -1, 0, 0, 0, 1, 0, 0, 0, -1), MonCF = CFrame.new(167.978516, 26.2254658, -12238.874, -0.939700961, 0, 0.341998369, 0, 1, 0, -0.341998369, 0, -0.939700961)},
+        {Min = 2325, Max = 2349, Mon = "Chocolate Bar Battler", Quest = "ChocQuest1", QLv = 2, QCF = CFrame.new(231.75, 23.9003029, -12200.292, -1, 0, 0, 0, 1, 0, 0, 0, -1), MonCF = CFrame.new(701.312073, 25.5824986, -12708.2148, -0.342042685, 0, -0.939684391, 0, 1, 0, 0.939684391, 0, -0.342042685)},
+        {Min = 2350, Max = 2374, Mon = "Sweet Thief", Quest = "ChocQuest2", QLv = 1, QCF = CFrame.new(151.198242, 23.8907146, -12774.6172, 0.422592998, 0, 0.906319618, 0, 1, 0, -0.906319618, 0, 0.422592998), MonCF = CFrame.new(-140.258301, 25.5824986, -12652.3115, 0.173624337, 0, -0.984811902, 0, 1, 0, 0.984811902, 0, 0.173624337)},
+        {Min = 2375, Max = 2399, Mon = "Candy Rebel", Quest = "ChocQuest2", QLv = 2, QCF = CFrame.new(151.198242, 23.8907146, -12774.6172, 0.422592998, 0, 0.906319618, 0, 1, 0, -0.906319618, 0, 0.422592998), MonCF = CFrame.new(47.9231453, 25.5824986, -13029.2402, -0.819156051, 0, -0.573571265, 0, 1, 0, 0.573571265, 0, -0.819156051)},
+        {Min = 2400, Max = 2424, Mon = "Candy Pirate", Quest = "CandyQuest1", QLv = 1, QCF = CFrame.new(-1149.328, 13.5759039, -14445.6143, -0.156446099, 0, -0.987686574, 0, 1, 0, 0.987686574, 0, -0.156446099), MonCF = CFrame.new(-1437.56348, 17.1481285, -14385.6934, 0.173624337, 0, -0.984811902, 0, 1, 0, 0.984811902, 0, 0.173624337)},
+        {Min = 2425, Max = 2449, Mon = "Snow Demon", Quest = "CandyQuest1", QLv = 2, QCF = CFrame.new(-1149.328, 13.5759039, -14445.6143, -0.156446099, 0, -0.987686574, 0, 1, 0, 0.987686574, 0, -0.156446099), MonCF = CFrame.new(-916.222656, 17.1481285, -14638.8125, 0.866007268, 0, 0.500031412, 0, 1, 0, -0.500031412, 0, 0.866007268)},
+        {Min = 2450, Max = 2474, Mon = "Isle Outlaw", Quest = "TikiQuest1", QLv = 1, QCF = CFrame.new(-16549.890625, 55.68635559082031, -179.91360473632812), MonCF = CFrame.new(-16162.8193359375, 11.6863374710083, -96.45481872558594)},
+        {Min = 2475, Max = 2499, Mon = "Island Boy", Quest = "TikiQuest1", QLv = 2, QCF = CFrame.new(-16549.890625, 55.68635559082031, -179.91360473632812), MonCF = CFrame.new(-16357.3125, 20.632822036743164, 1005.64892578125)},
+        {Min = 2500, Max = 2524, Mon = "Sun-kissed Warrior", Quest = "TikiQuest2", QLv = 1, QCF = CFrame.new(-16541.021484375, 54.77081298828125, 1051.461181640625), MonCF = CFrame.new(-16357.3125, 20.632822036743164, 1005.64892578125)},
+        {Min = 2525, Max = 2549, Mon = "Isle Champion", Quest = "TikiQuest2", QLv = 2, QCF = CFrame.new(-16541.021484375, 54.77081298828125, 1051.461181640625), MonCF = CFrame.new(-16848.94140625, 21.68633460998535, 1041.4490966796875)},
+        {Min = 2550, Max = 2574, Mon = "Serpent Hunter", Quest = "TikiQuest3", QLv = 1, QCF = CFrame.new(-16665.19140625, 104.59640502929688, 1579.6943359375), MonCF = CFrame.new(-16621.4140625, 121.40631103515625, 1290.6881103515625)},
+        {Min = 2575, Max = 9999, Mon = "Skull Slayer", Quest = "TikiQuest3", QLv = 2, QCF = CFrame.new(-16665.19140625, 104.59640502929688, 1579.6943359375), MonCF = CFrame.new(-16811.5703125, 84.625244140625, 1542.235107421875)},
     }
 }
+
 ------------------------------------------------------------------
 -- CACHE / COOLDOWN
 ------------------------------------------------------------------
@@ -575,6 +572,7 @@ local LastCheckSea = nil
 local LastQuestData = nil
 local LastEntranceTime = 0
 local EntranceCooldown = 2
+
 ------------------------------------------------------------------
 -- LẤY SEA HIỆN TẠI
 ------------------------------------------------------------------
@@ -584,13 +582,13 @@ local function GetCurrentSea()
     elseif Sea3 then return "Sea3" end
     return nil
 end
+
 ------------------------------------------------------------------
 -- TÌM QUEST THEO LEVEL
 ------------------------------------------------------------------
 local function FindQuestData(myLevel, currentSea)
     local seaData = QuestData[currentSea]
     if not seaData then return nil end
-
     for _, data in ipairs(seaData) do
         if myLevel >= data.Min and myLevel <= data.Max then
             return data
@@ -598,33 +596,32 @@ local function FindQuestData(myLevel, currentSea)
     end
     return nil
 end
+
 ------------------------------------------------------------------
 -- ÁP DỤNG DỮ LIỆU QUEST
 ------------------------------------------------------------------
 local function ApplyQuestData(data)
     if not data then return end
-    NameMon   = data.Mon
+    NameMon = data.Mon
     NameQuest = data.Quest
-    QuestLv   = data.QLv
-    CFrameQ   = data.QCF
+    QuestLv = data.QLv
+    CFrameQ = data.QCF
     CFrameMon = data.MonCF
 end
+
 ------------------------------------------------------------------
 -- XỬ LÝ ENTRANCE
 ------------------------------------------------------------------
 local function HandleEntrance(data, currentSea)
     if not _G.AutoLevel or not data or not data.Entrance then return end
-
     local character = plr.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
 
     local distance = (data.MonCF.Position - rootPart.Position).Magnitude
     local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
-
     if distance <= threshold then return end
 
-    -- Cooldown chống gọi requestEntrance liên tục
     local now = tick()
     if now - LastEntranceTime < EntranceCooldown then return end
     LastEntranceTime = now
@@ -633,36 +630,35 @@ local function HandleEntrance(data, currentSea)
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
     end)
 end
+
 ------------------------------------------------------------------
 -- CHECK LEVEL
 ------------------------------------------------------------------
 function CheckLevel()
     local levelValue = plr.Data:FindFirstChild("Level")
     if not levelValue then return end
-
     local myLevel = levelValue.Value
     local currentSea = GetCurrentSea()
     if not currentSea or not QuestData[currentSea] then return end
 
-    -- Cache: Nếu Level & Sea không đổi thì dùng lại dữ liệu cũ
+    -- Cache
     if myLevel == LastCheckLevel and currentSea == LastCheckSea and LastQuestData then
         HandleEntrance(LastQuestData, currentSea)
         return
     end
 
-    -- Tìm và gán dữ liệu quest mới
     local data = FindQuestData(myLevel, currentSea)
     if not data then return end
 
     LastCheckLevel = myLevel
     LastCheckSea = currentSea
     LastQuestData = data
-
     ApplyQuestData(data)
     HandleEntrance(data, currentSea)
 end
+
 ----------------------------------------------------------------
--- tableMon & AreaList (giữ nguyên logic cũ)
+-- tableMon & AreaList
 ----------------------------------------------------------------
 if Sea1 then
     tableMon = {"Bandit","Monkey","Gorilla","Pirate","Brute","Desert Bandit","Desert Officer","Snow Bandit","Snowman","Chief Petty Officer","Sky Bandit","Dark Master","Prisoner","Dangerous Prisoner","Toga Warrior","Gladiator","Military Soldier","Military Spy","Fishman Warrior","Fishman Commando","God's Guard","Shanda","Royal Squad","Royal Soldier","Galley Pirate","Galley Captain"}
