@@ -1,9 +1,14 @@
 ----------------------------------------------------------------
--- code phần khung giao diện (UI Framework), và chống sao chép code 
+-- FRAMEWORK GIAO DIỆN (OPTIMIZED & INCLUDED ANTI-SKID COMMENT)
 ----------------------------------------------------------------
 -- discord.gg/25ms
 
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+-- Chống Blox Fruits quét UI: Dùng gethui() nếu có
+local ParentGui = (gethui and gethui()) or CoreGui
 
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
 shared.LoaderKeyFrames = {
@@ -57,15 +62,18 @@ function CreateObject(className, props)
     instance.Parent = parent;
     return instance;
 end
+
 local function AddUICorner(radius, parentObj)
     local corner = Instance.new("UICorner");
     corner.CornerRadius = UDim.new(0, radius);
     corner.Parent = parentObj;
 end
+
 local LoaderGui = CreateObject("ScreenGui", {
     Name = "Core",
-    Parent = game.CoreGui
+    Parent = ParentGui
 });
+
 local MainFrame = CreateObject("Frame", {
     Name = "Main",
     Parent = LoaderGui,
@@ -77,6 +85,7 @@ local MainFrame = CreateObject("Frame", {
     Size = UDim2.new(0, 0, 0, 0)
 });
 AddUICorner(12, MainFrame);
+
 local UserImage = CreateObject("ImageLabel", {
     Name = "UserImage",
     Parent = MainFrame,
@@ -86,6 +95,7 @@ local UserImage = CreateObject("ImageLabel", {
     Size = UDim2.new(0, 50, 0, 50)
 });
 AddUICorner(25, UserImage);
+
 local UserNameLabel = CreateObject("TextLabel", {
     Name = "UserName",
     Parent = MainFrame,
@@ -98,6 +108,7 @@ local UserNameLabel = CreateObject("TextLabel", {
     TextSize = 14,
     TextXAlignment = Enum.TextXAlignment.Left
 });
+
 local TopicLabel = CreateObject("TextLabel", {
     Name = "Top",
     TextTransparency = 1,
@@ -112,6 +123,7 @@ local TopicLabel = CreateObject("TextLabel", {
     TextSize = 10,
     TextXAlignment = Enum.TextXAlignment.Left
 });
+
 local TitleLabel = CreateObject("TextLabel", {
     Name = "Title",
     Parent = MainFrame,
@@ -127,6 +139,7 @@ local TitleLabel = CreateObject("TextLabel", {
     TextSize = 14,
     TextXAlignment = Enum.TextXAlignment.Left
 });
+
 local ProgressBG = CreateObject("Frame", {
     Name = "BG",
     Parent = MainFrame,
@@ -135,9 +148,10 @@ local ProgressBG = CreateObject("Frame", {
     BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground,
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0, 70),
-    Size = UDim2.new(0.8500000238418579, 0, 0, 24)
+    Size = UDim2.new(0.85, 0, 0, 24)
 });
 AddUICorner(8, ProgressBG);
+
 local ProgressBar = CreateObject("Frame", {
     Name = "Progress",
     Parent = ProgressBG,
@@ -147,6 +161,7 @@ local ProgressBar = CreateObject("Frame", {
     Size = UDim2.new(0, 0, 0, 24)
 });
 AddUICorner(8, ProgressBar);
+
 local StepLabel = CreateObject("TextLabel", {
     Name = "StepLabel",
     Parent = MainFrame,
@@ -160,54 +175,47 @@ local StepLabel = CreateObject("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Center,
     AnchorPoint = Vector2.new(0.5, 0.5)
 });
+
 function UpdateStepText(stepIndex)
     StepLabel.Text = LoaderStepTexts[stepIndex] or "" ;
 end
+
 function UpdatePercentage(percent, stepIndex)
     TweenObject(ProgressBar, 0.5, {
         Size = UDim2.new(percent / 100, 0, 0, 24)
     });
     UpdateStepText(stepIndex);
 end
+
 TweenObject(MainFrame, 0.25, {
     Size = UDim2.new(0, 346, 0, 121)
 });
-wait();
-TweenObject(TopicLabel, 0.5, {
-    TextTransparency = 0
-});
-TweenObject(TitleLabel, 0.5, {
-    TextTransparency = 0
-});
-TweenObject(ProgressBG, 0.5, {
-    BackgroundTransparency = 0
-});
-TweenObject(ProgressBar, 0.5, {
-    BackgroundTransparency = 0
-});
-for step, keyframe in pairs(LoaderConfig.Keyframes) do
-    wait(keyframe[1]);
+task.wait(0.1);
+
+TweenObject(TopicLabel, 0.5, { TextTransparency = 0 });
+TweenObject(TitleLabel, 0.5, { TextTransparency = 0 });
+TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 0 });
+TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 0 });
+
+-- Dùng ipairs để chạy chuẩn thứ tự mốc 1 -> 2 -> 3 -> 4
+for step, keyframe in ipairs(LoaderConfig.Keyframes) do
+    task.wait(keyframe[1]);
     UpdatePercentage(keyframe[2], step);
 end
+
 UpdatePercentage(100, 4);
-TweenObject(TopicLabel, 0.5, {
-    TextTransparency = 1
-});
-TweenObject(TitleLabel, 0.5, {
-    TextTransparency = 1
-});
-TweenObject(ProgressBG, 0.5, {
-    BackgroundTransparency = 1
-});
-TweenObject(ProgressBar, 0.5, {
-    BackgroundTransparency = 1
-});
-wait(0.5);
-TweenObject(MainFrame, 0.25, {
-    Size = UDim2.new(0, 0, 0, 0)
-});
-wait(0.25);
+task.wait(0.5);
+
+TweenObject(TopicLabel, 0.5, { TextTransparency = 1 });
+TweenObject(TitleLabel, 0.5, { TextTransparency = 1 });
+TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 1 });
+TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 1 });
+task.wait(0.5);
+
+TweenObject(MainFrame, 0.25, { Size = UDim2.new(0, 0, 0, 0) });
+task.wait(0.25);
 LoaderGui:Destroy();
+
 -- spawn(function()
 --     while wait() do
 --         function print()
@@ -296,6 +304,8 @@ LoaderGui:Destroy();
 --         pcall(checkHookTamper);
 --     end
 -- end);
+
+-- TẢI FLUENT UI
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
@@ -311,14 +321,12 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 })
 
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-
+-- NÚT TOGGLE BẬT/TẮT MENU (ĐÃ FIX KÉO THẢ MƯỢT + KHÔNG NHẦM TAY)
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
 MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-MinGui.Parent = CoreGui
+MinGui.Parent = ParentGui
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "MinButton"
@@ -334,40 +342,25 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
 
--- Kéo nút bằng chuột hoặc cảm ứng
 local Dragging = false
-local DragStart
-local StartPosition
-local DragInput
+local DragStart, StartPosition
+local DraggedFar = false
 
 MinButton.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         Dragging = true
+        DraggedFar = false
         DragStart = Input.Position
         StartPosition = MinButton.Position
-        DragInput = Input
-
-        Input.Changed:Connect(function()
-            if Input.UserInputState == Enum.UserInputState.End then
-                Dragging = false
-            end
-        end)
-    end
-end)
-
-MinButton.InputChanged:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseMovement
-        or Input.UserInputType == Enum.UserInputType.Touch then
-        DragInput = Input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
-    if Dragging and Input == DragInput then
+    if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
         local Delta = Input.Position - DragStart
-
+        if Delta.Magnitude > 5 then
+            DraggedFar = true
+        end
         MinButton.Position = UDim2.new(
             StartPosition.X.Scale,
             StartPosition.X.Offset + Delta.X,
@@ -377,8 +370,16 @@ UserInputService.InputChanged:Connect(function(Input)
     end
 end)
 
+UserInputService.InputEnded:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+        Dragging = false
+    end
+end)
+
 MinButton.Activated:Connect(function()
-    Window:Minimize()
+    if not DraggedFar then
+        Window:Minimize()
+    end
 end)
 
 local Tabs = {
