@@ -594,16 +594,6 @@ function CheckLevel()
 end
 
 ----------------------------------------------------------------
--- AreaList 
-----------------------------------------------------------------
-if Sea1 then
-    AreaList = {"Jungle","Buggy","Desert","Snow","Marine","Sky","Prison","Colosseum","Magma","Fishman","Sky Island","Fountain"}
-elseif Sea2 then
-    AreaList = {"Area 1","Area 2","Zombie","Marine","Snow Mountain","Ice fire","Ship","Frost","Forgotten"}
-elseif Sea3 then
-    AreaList = {"Pirate Port","Amazon","Marine Tree","Deep Forest","Haunted Castle","Nut Island","Ice Cream Island","Cake Island","Choco Island","Candy Island","Tiki Outpost"}
-end
-----------------------------------------------------------------
 -- BOSS
 ----------------------------------------------------------------
 local BossData = {
