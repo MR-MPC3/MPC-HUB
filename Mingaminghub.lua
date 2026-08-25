@@ -1916,7 +1916,7 @@ task.spawn(function()
     end
 end);
 ---------------------------------------------------
--- 1. NÚT TOGGLE NHẬN NHIỆM VỤ (Ở TRÊN)
+-- NÚT TOGGLE NHẬN NHIỆM VỤ (Ở TRÊN)
 ---------------------------------------------------
 local AutoQuestToggle = Tabs.Main:AddToggle("ToggleQuest", {
     Title = "Nhận Nhiệm Vụ",
@@ -1927,9 +1927,9 @@ local AutoQuestToggle = Tabs.Main:AddToggle("ToggleQuest", {
 AutoQuestToggle:OnChanged(function(value)
     _G.AutoQuest = value;
 end);
-Options.ToggleQuest:SetValue(false);
+AutoQuestToggle:SetValue(false)
 ---------------------------------------------------
--- 2. NÚT TOGGLE CÀY CẤP (Ở DƯỚI)
+-- NÚT TOGGLE CÀY CẤP (Ở DƯỚI)
 ---------------------------------------------------
 local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
     Title = "Tự Động Cày Cấp",
@@ -1939,66 +1939,66 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
 AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
 end);
-Options.ToggleLevel:SetValue(false);
+AutoLevelToggle:SetValue(false)
 ---------------------------------------------------
--- 3. VÒNG LẶP CHÍNH (MAIN FARM LOOP)
+-- VÒNG LẶP CHÍNH (MAIN FARM LOOP)
 ---------------------------------------------------
-spawn(function()
+task.spawn(function()
     while task.wait() do
         if _G.AutoLevel then
             pcall(function()
-                CheckLevel();
-
+                CheckLevel()
+                if not NameMon or not CFrameQ then
+                    return
+                end
                 local QuestGui = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest
-                local HasCorrectQuest = QuestGui.Visible and string.find(QuestGui.Container.QuestTitle.Title.Text, NameMon)
-
-                -- CHỈ ĐI NHẬN QUEST KHI: Bật AutoQuest VÀ chưa có quest đúng quái
+                local HasCorrectQuest = QuestGui.Visible 
+                    and QuestGui.Container 
+                    and QuestGui.Container.QuestTitle 
+                    and QuestGui.Container.QuestTitle.Title 
+                    and string.find(QuestGui.Container.QuestTitle.Title.Text, NameMon)
                 if _G.AutoQuest and not HasCorrectQuest then
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
-                    Tween(CFrameQ);
-                    if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
-                        task.wait(0.5);
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+                    Tween(CFrameQ)
+                    if (CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 then
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
+                        task.wait(0.5)
                     end
                 else
-                    -- TRƯỜNG HỢP: Tắt AutoQuest HOẶC (Bật AutoQuest + Đã nhận Quest thành công)
                     for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
                             if (enemy.Name == NameMon) then
                                 repeat
-                                    task.wait(_G.Fast_Delay);
-                                    AttackNoCoolDown();
-                                    bringmob = true;
-                                    AutoHaki();
-                                    EquipTool(SelectWeapon);
-                                    Tween(enemy.HumanoidRootPart.CFrame * Pos);
-                                    enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
-                                    enemy.HumanoidRootPart.Transparency = 1;
-                                    enemy.Humanoid.JumpPower = 0;
-                                    enemy.Humanoid.WalkSpeed = 0;
-                                    enemy.HumanoidRootPart.CanCollide = false;
-                                    FarmPos = enemy.HumanoidRootPart.CFrame;
-                                    MonFarm = enemy.Name;
-                                -- SỬA ĐIỀU KIỆN DỪNG: Chỉ kiểm tra mất Quest (Quest.Visible == false) KHI _G.AutoQuest = true
+                                    task.wait(_G.Fast_Delay)
+                                    AttackNoCoolDown()
+                                    bringmob = true
+                                    AutoHaki()
+                                    EquipTool(SelectWeapon)
+                                    Tween(enemy.HumanoidRootPart.CFrame * Pos)
+                                    enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                                    enemy.HumanoidRootPart.Transparency = 1
+                                    enemy.Humanoid.JumpPower = 0
+                                    enemy.Humanoid.WalkSpeed = 0
+                                    enemy.HumanoidRootPart.CanCollide = false
+                                    FarmPos = enemy.HumanoidRootPart.CFrame
+                                    MonFarm = enemy.Name
                                 until not _G.AutoLevel or not enemy.Parent or (enemy.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) or (_G.AutoQuest and game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
-                                bringmob = false;
+                                bringmob = false
                             end
                         end
                     end
-
-                    -- Di chuyển tới vị trí Spawn nếu chưa thấy quái
                     for _, enemySpawn in pairs(game:GetService("Workspace")['_WorldOrigin'].EnemySpawns:GetChildren()) do
                         if string.find(enemySpawn.Name, NameMon) then
                             if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - enemySpawn.Position).Magnitude >= 10) then
-                                Tween(enemySpawn.CFrame * Pos);
+                                Tween(enemySpawn.CFrame * Pos)
                             end
                         end
                     end
                 end
-            end);
+            end)
         end
     end
-end);
+end)
 local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
     Title = "Đấm Quái Gần",
     Description = "",
