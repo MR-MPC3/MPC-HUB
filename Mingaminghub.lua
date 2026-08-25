@@ -424,33 +424,44 @@ for _, tabInfo in ipairs(TabDefinitions) do
     end
 end
 ----------------------------------------------------------------
--- KHỞI TẠO 
+-- Code khởi đầu cho toàn bộ logic và hoạt động
 ----------------------------------------------------------------
-if not game:IsLoaded() then 
-    game.Loaded:Wait() 
-end
-
+-- 1. Khai báo Service & Player
 local Players = game:GetService("Players")
-local plr = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
-local Sea1_IDs = {[85211729168715] = true}
-local Sea2_IDs = {[79091703265657] = true}
-local Sea3_IDs = {[100117331123089] = true}
+-- Khai báo Fluent Safe (Tránh crash nếu Fluent chưa nạp)
+local Options = (Fluent and Fluent.Options) or {}
 
-local Sea1 = Sea1_IDs[PlaceId] or false
-local Sea2 = Sea2_IDs[PlaceId] or false
-local Sea3 = Sea3_IDs[PlaceId] or false
+-- 2. Danh sách PlaceId hợp lệ (Gồm cả ID chuẩn Blox Fruits & ID tùy chỉnh của bạn)
+local MAP_SEAS = {
+    
+    -- Place ID Mới Nhất
+    [85211729168715] = 1,
+    [79091703265657] = 2,
+    [100117331123089] = 3
+}
 
-if not (Sea1 or Sea2 or Sea3) then
-    plr:Kick("\n[Min Gaming]\nPlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits.")
+-- 3. Xác định Sea
+local currentSea = MAP_SEAS[PlaceId]
+
+if not currentSea then
+    plr:Kick("[Min Gaming] PlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits (Sea 1, 2, 3).")
     return
 end
 
-_G.Sea1, _G.Sea2, _G.Sea3 = Sea1, Sea2, Sea3
+-- 4. Đồng bộ biến cho cả Local Script lẫn các Script khác (Giữ tính năng cũ 100%)
+local Sea1 = (currentSea == 1)
+local Sea2 = (currentSea == 2)
+local Sea3 = (currentSea == 3)
 
-local Fluent = Fluent or _G.Fluent
-local Options = (Fluent and Fluent.Options) or {}
+-- Đồng bộ lên getgenv() để các file script phụ/chức năng khác gọi được mà không bị lỗi undefined
+getgenv().Sea1 = Sea1
+getgenv().Sea2 = Sea2
+getgenv().Sea3 = Sea3
+getgenv().Options = Options
 ----------------------------------------------------------------
 -- QUÁI THƯỜNG
 ----------------------------------------------------------------
