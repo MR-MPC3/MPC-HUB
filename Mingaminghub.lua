@@ -559,7 +559,7 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- Hàm CheckLevel (Đầy đủ an toàn & Viết gọn)
+-- Hàm CheckLevel (Đã loại bỏ SelectMonster không sài)
 ----------------------------------------------------------------
 function CheckLevel()
     local myLevel = plr.Data.Level.Value
@@ -567,7 +567,7 @@ function CheckLevel()
     if not currentSea or not QuestData[currentSea] then return end
 
     for _, data in ipairs(QuestData[currentSea]) do
-        if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
+        if myLevel >= data.Min and myLevel <= data.Max then
             NameMon   = data.Mon
             NameQuest = data.Quest
             QuestLv   = data.QLv
@@ -594,16 +594,13 @@ function CheckLevel()
 end
 
 ----------------------------------------------------------------
--- tableMon & AreaList (giữ nguyên logic cũ)
+-- AreaList 
 ----------------------------------------------------------------
 if Sea1 then
-    tableMon = {"Bandit","Monkey","Gorilla","Pirate","Brute","Desert Bandit","Desert Officer","Snow Bandit","Snowman","Chief Petty Officer","Sky Bandit","Dark Master","Prisoner","Dangerous Prisoner","Toga Warrior","Gladiator","Military Soldier","Military Spy","Fishman Warrior","Fishman Commando","God's Guard","Shanda","Royal Squad","Royal Soldier","Galley Pirate","Galley Captain"}
     AreaList = {"Jungle","Buggy","Desert","Snow","Marine","Sky","Prison","Colosseum","Magma","Fishman","Sky Island","Fountain"}
 elseif Sea2 then
-    tableMon = {"Raider","Mercenary","Swan Pirate","Factory Staff","Marine Lieutenant","Marine Captain","Zombie","Vampire","Snow Trooper","Winter Warrior","Lab Subordinate","Horned Warrior","Magma Ninja","Lava Pirate","Ship Deckhand","Ship Engineer","Ship Steward","Ship Officer","Arctic Warrior","Snow Lurker","Sea Soldier","Water Fighter"}
     AreaList = {"Area 1","Area 2","Zombie","Marine","Snow Mountain","Ice fire","Ship","Frost","Forgotten"}
 elseif Sea3 then
-    tableMon = {"Pirate Millionaire","Pistol Billionaire","Dragon Crew Warrior","Dragon Crew Archer","Hydra Enforcer","Venomous Assailant","Marine Commodore","Marine Rear Admiral","Fishman Raider","Fishman Captain","Forest Pirate","Mythological Pirate","Jungle Pirate","Musketeer Pirate","Reborn Skeleton","Living Zombie","Demonic Soul","Posessed Mummy","Peanut Scout","Peanut President","Ice Cream Chef","Ice Cream Commander","Cookie Crafter","Cake Guard","Baking Staff","Head Baker","Cocoa Warrior","Chocolate Bar Battler","Sweet Thief","Candy Rebel","Candy Pirate","Snow Demon","Isle Outlaw","Island Boy","Sun-kissed Warrior","Isle Champion","Serpent Hunter","Skull Slayer"}
     AreaList = {"Pirate Port","Amazon","Marine Tree","Deep Forest","Haunted Castle","Nut Island","Ice Cream Island","Cake Island","Choco Island","Candy Island","Tiki Outpost"}
 end
 ----------------------------------------------------------------
