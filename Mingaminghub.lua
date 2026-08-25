@@ -561,12 +561,15 @@ local QuestData = {
 ----------------------------------------------------------------
 -- Hàm CheckLevel (Đã loại bỏ SelectMonster không sài)
 ----------------------------------------------------------------
+local lastEntranceTime = 0 
 function CheckLevel()
-    local myLevel = plr.Data.Level.Value
-    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSea or not QuestData[currentSea] then return end
+    local myLevel = plr.Data and plr.Data:FindFirstChild("Level") and plr.Data.Level.Value
+    if not myLevel then return end
 
-    for _, data in ipairs(QuestData[currentSea]) do
+    local currentSeaName = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
+    if not currentSeaName or not QuestData[currentSeaName] then return end
+
+    for _, data in ipairs(QuestData[currentSeaName]) do
         if myLevel >= data.Min and myLevel <= data.Max then
             NameMon   = data.Mon
             NameQuest = data.Quest
@@ -574,16 +577,21 @@ function CheckLevel()
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
 
-            -- Bypass Cổng an toàn
+            -- Xử lý Bypass Cổng
             if _G.AutoLevel and data.Entrance then
-                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                local char = plr.Character
+                local rootPart = char and char:FindFirstChild("HumanoidRootPart")
                 if rootPart then
+                    -- Kiểm tra khoảng cách từ người chơi đến vị trí Quái
                     local dist = (CFrameMon.Position - rootPart.Position).Magnitude
-                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
 
-                    if dist > threshold then
-                        pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                    -- Nếu ở khác khu vực (> 2000 studs) và đã hết thời gian chờ (3s cooldown)
+                    if dist > 2000 and (tick() - lastEntranceTime) > 3 then
+                        lastEntranceTime = tick()
+                        task.spawn(function()
+                            pcall(function()
+                                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                            end)
                         end)
                     end
                 end
@@ -592,7 +600,6 @@ function CheckLevel()
         end
     end
 end
-
 ----------------------------------------------------------------
 -- BOSS
 ----------------------------------------------------------------
@@ -1906,7 +1913,7 @@ spawn(function()
     while task.wait() do
         if _G.AutoLevel then
             pcall(function()
-                CheckLevel();
+                ;
                 if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
                     game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
                     Tween(CFrameQ);
