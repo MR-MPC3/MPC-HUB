@@ -196,7 +196,6 @@ TweenObject(TitleLabel, 0.5, { TextTransparency = 0 });
 TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 0 });
 TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 0 });
 
--- Dùng ipairs để chạy chuẩn thứ tự mốc 1 -> 2 -> 3 -> 4
 for step, keyframe in ipairs(LoaderConfig.Keyframes) do
     task.wait(keyframe[1]);
     UpdatePercentage(keyframe[2], step);
@@ -302,7 +301,9 @@ LoaderGui:Destroy();
 --     end
 -- end);
 
+---------------------------------
 -- TẢI FLUENT UI
+---------------------------------
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
@@ -318,7 +319,7 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 })
 
--- NÚT TOGGLE BẬT/TẮT MENU (ĐÃ FIX KÉO THẢ MƯỢT + KHÔNG NHẦM TAY)
+-- NÚT TOGGLE BẬT/TẮT MENU
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
@@ -382,11 +383,9 @@ end)
 ----------------------------------------------------------------
 -- CÁC TAB CHÍNH 
 ----------------------------------------------------------------
+assert(Window, "Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
 
--- Kiểm tra an toàn: Đảm bảo Window đã tồn tại trước khi tạo Tab để không bị văng Script
-assert(Window, "[Min Gaming Error] Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
-
--- Bảng cấu hình danh sách Tab (Dễ dàng thêm/bớt/sửa Icon mà không làm rối code)
+-- Bảng cấu hình danh sách Tab
 local TabDefinitions = {
     { Key = "Home",     Title = "Thông Tin",   Icon = "info" },
     { Key = "Main",     Title = "Cày",         Icon = "sword" },
@@ -404,10 +403,7 @@ local TabDefinitions = {
     { Key = "Misc",     Title = "Khác",        Icon = "layers" }
 }
 
--- Khai báo bảng chứa Tab dạng 'local' hoàn toàn (Ngăn chặn Anti-Cheat quét bộ nhớ toàn cục)
 local Tabs = {}
-
--- Vòng lặp khởi tạo tự động (Mượt hơn, không tốn tài nguyên hệ thống)
 for _, tabInfo in ipairs(TabDefinitions) do
     local success, tabObject = pcall(function()
         return Window:AddTab({
@@ -415,7 +411,7 @@ for _, tabInfo in ipairs(TabDefinitions) do
             Icon = tabInfo.Icon
         })
     end)
-
+    
     if success and tabObject then
         Tabs[tabInfo.Key] = tabObject
     else
@@ -426,7 +422,7 @@ end
 ----------------------------------------------------------------
 -- Code khởi đầu cho toàn bộ logic và hoạt động
 ----------------------------------------------------------------
--- 1. Khai báo Service & Player
+--Khai báo Service & Player
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local plr = Players.LocalPlayer
@@ -435,16 +431,15 @@ local PlaceId = game.PlaceId
 -- Khai báo Fluent Safe (Tránh crash nếu Fluent chưa nạp)
 local Options = (Fluent and Fluent.Options) or {}
 
--- 2. Danh sách PlaceId hợp lệ (Gồm cả ID chuẩn Blox Fruits & ID tùy chỉnh của bạn)
+--Danh sách PlaceId hợp lệ mới nhất mã 14 số
 local MAP_SEAS = {
     
-    -- Place ID Mới Nhất
     [85211729168715] = 1,
     [79091703265657] = 2,
     [100117331123089] = 3
 }
 
--- 3. Xác định Sea
+--Xác định Sea
 local currentSea = MAP_SEAS[PlaceId]
 
 if not currentSea then
@@ -452,7 +447,7 @@ if not currentSea then
     return
 end
 
--- 4. Đồng bộ biến cho cả Local Script lẫn các Script khác (Giữ tính năng cũ 100%)
+--Đồng bộ biến cho cả Local Script lẫn các Script khác (Giữ tính năng cũ 100%)
 local Sea1 = (currentSea == 1)
 local Sea2 = (currentSea == 2)
 local Sea3 = (currentSea == 3)
@@ -462,6 +457,7 @@ getgenv().Sea1 = Sea1
 getgenv().Sea2 = Sea2
 getgenv().Sea3 = Sea3
 getgenv().Options = Options
+
 ----------------------------------------------------------------
 -- QUÁI THƯỜNG
 ----------------------------------------------------------------
