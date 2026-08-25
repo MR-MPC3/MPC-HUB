@@ -424,53 +424,33 @@ for _, tabInfo in ipairs(TabDefinitions) do
     end
 end
 ----------------------------------------------------------------
-
--- Code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
-
+-- KHỞI TẠO 
 ----------------------------------------------------------------
-
-local Options = Fluent.Options;
-
-local Players = game:GetService("Players")
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-
-
-local plr = Players.LocalPlayer
-
-local PlaceId = game.PlaceId
-
-
-
--- Xác định Sea bằng PlaceId chuẩn hiện tại
-
-local Sea1, Sea2, Sea3 = false, false, false
-
-
-
-if PlaceId == 85211729168715 then
-
-    Sea1 = true
-
-elseif PlaceId == 79091703265657 then
-
-    Sea2 = true
-
-elseif PlaceId == 100117331123089 then
-
-    Sea3 = true
-
-else
-
-    -- Đá người chơi nếu vào sai game hoặc map không hợp lệ
-
-    plr:Kick("[Min Gaming] PlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits (Sea 1, 2, 3).")
-
-    return
-
+if not game:IsLoaded() then 
+    game.Loaded:Wait() 
 end
 
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local PlaceId = game.PlaceId
+
+local Sea1_IDs = {[85211729168715] = true}
+local Sea2_IDs = {[79091703265657] = true}
+local Sea3_IDs = {[100117331123089] = true}
+
+local Sea1 = Sea1_IDs[PlaceId] or false
+local Sea2 = Sea2_IDs[PlaceId] or false
+local Sea3 = Sea3_IDs[PlaceId] or false
+
+if not (Sea1 or Sea2 or Sea3) then
+    plr:Kick("\n[Min Gaming]\nPlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits.")
+    return
+end
+
+_G.Sea1, _G.Sea2, _G.Sea3 = Sea1, Sea2, Sea3
+
+local Fluent = Fluent or _G.Fluent
+local Options = (Fluent and Fluent.Options) or {}
 ----------------------------------------------------------------
 -- QUÁI THƯỜNG
 ----------------------------------------------------------------
