@@ -382,6 +382,8 @@ end)
 ----------------------------------------------------------------
 -- CÁC TAB CHÍNH 
 ----------------------------------------------------------------
+
+-- Kiểm tra an toàn: Đảm bảo Window đã tồn tại trước khi tạo Tab để không bị văng Script
 assert(Window, "[Min Gaming Error] Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
 
 -- Bảng cấu hình danh sách Tab (Dễ dàng thêm/bớt/sửa Icon mà không làm rối code)
@@ -402,7 +404,7 @@ local TabDefinitions = {
     { Key = "Misc",     Title = "Khác",        Icon = "layers" }
 }
 
--- Khai báo bảng chứa Tab dạng 'local' 
+-- Khai báo bảng chứa Tab dạng 'local' hoàn toàn (Ngăn chặn Anti-Cheat quét bộ nhớ toàn cục)
 local Tabs = {}
 
 -- Vòng lặp khởi tạo tự động (Mượt hơn, không tốn tài nguyên hệ thống)
@@ -422,7 +424,7 @@ for _, tabInfo in ipairs(TabDefinitions) do
     end
 end
 ----------------------------------------------------------------
--- KHỞI TẠO MÔI TRƯỜNG & KIỂM TRA PLACEID
+-- Code khởi đầu cho toàn bộ logic và hoạt động
 ----------------------------------------------------------------
 -- 1. Khai báo Service & Player
 local Players = game:GetService("Players")
@@ -461,7 +463,7 @@ getgenv().Sea2 = Sea2
 getgenv().Sea3 = Sea3
 getgenv().Options = Options
 ----------------------------------------------------------------
--- DỮ LIỆU QUÁI THƯỜNG
+-- QUÁI THƯỜNG
 ----------------------------------------------------------------
 local QuestData = {
     Sea1 = {
@@ -561,42 +563,29 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- HÀM CHECKLEVEL (TỰ ĐỘNG LẤY NHIỆM VỤ THEO LEVEL)
+-- Hàm CheckLevel (Đầy đủ an toàn & Viết gọn)
 ----------------------------------------------------------------
-local lastEntranceTime = 0
-
 function CheckLevel()
-    local levelData = plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Level")
-    if not levelData then return end
-    local myLevel = levelData.Value
+    local myLevel = plr.Data.Level.Value
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
+    if not currentSea or not QuestData[currentSea] then return end
 
-    local currentSeaKey = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSeaKey or not QuestData[currentSeaKey] then return end
-
-    for _, data in ipairs(QuestData[currentSeaKey]) do
-        if myLevel >= data.Min and myLevel <= data.Max then
-            getgenv().NameMon   = data.Mon
-            getgenv().NameQuest = data.Quest
-            getgenv().QuestLv   = data.QLv
-            getgenv().CFrameQ   = data.QCF
-            getgenv().CFrameMon = data.MonCF
-
+    for _, data in ipairs(QuestData[currentSea]) do
+        if (myLevel >= data.Min and myLevel <= data.Max) or (SelectMonster == data.Mon) then
             NameMon   = data.Mon
             NameQuest = data.Quest
             QuestLv   = data.QLv
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
 
-            local autoLevel = getgenv().AutoLevel or _G.AutoLevel
-            if autoLevel and data.Entrance and (tick() - lastEntranceTime > 2) then
-                local character = plr.Character
-                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+            -- Bypass Cổng an toàn
+            if _G.AutoLevel and data.Entrance then
+                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
                 if rootPart then
-                    local dist = (data.MonCF.Position - rootPart.Position).Magnitude
-                    local threshold = (currentSeaKey == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
+                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
+                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
 
                     if dist > threshold then
-                        lastEntranceTime = tick()
                         pcall(function()
                             ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
                         end)
@@ -609,17 +598,18 @@ function CheckLevel()
 end
 
 ----------------------------------------------------------------
--- DANH SÁCH MONSTER VÀ KHU VỰC FẢRM (TABLEMON & AREALIST)
+-- tableMon & AreaList (giữ nguyên logic cũ)
 ----------------------------------------------------------------
-local AreaList = {}
 if Sea1 then
+    tableMon = {"Bandit","Monkey","Gorilla","Pirate","Brute","Desert Bandit","Desert Officer","Snow Bandit","Snowman","Chief Petty Officer","Sky Bandit","Dark Master","Prisoner","Dangerous Prisoner","Toga Warrior","Gladiator","Military Soldier","Military Spy","Fishman Warrior","Fishman Commando","God's Guard","Shanda","Royal Squad","Royal Soldier","Galley Pirate","Galley Captain"}
     AreaList = {"Jungle","Buggy","Desert","Snow","Marine","Sky","Prison","Colosseum","Magma","Fishman","Sky Island","Fountain"}
 elseif Sea2 then
+    tableMon = {"Raider","Mercenary","Swan Pirate","Factory Staff","Marine Lieutenant","Marine Captain","Zombie","Vampire","Snow Trooper","Winter Warrior","Lab Subordinate","Horned Warrior","Magma Ninja","Lava Pirate","Ship Deckhand","Ship Engineer","Ship Steward","Ship Officer","Arctic Warrior","Snow Lurker","Sea Soldier","Water Fighter"}
     AreaList = {"Area 1","Area 2","Zombie","Marine","Snow Mountain","Ice fire","Ship","Frost","Forgotten"}
 elseif Sea3 then
+    tableMon = {"Pirate Millionaire","Pistol Billionaire","Dragon Crew Warrior","Dragon Crew Archer","Hydra Enforcer","Venomous Assailant","Marine Commodore","Marine Rear Admiral","Fishman Raider","Fishman Captain","Forest Pirate","Mythological Pirate","Jungle Pirate","Musketeer Pirate","Reborn Skeleton","Living Zombie","Demonic Soul","Posessed Mummy","Peanut Scout","Peanut President","Ice Cream Chef","Ice Cream Commander","Cookie Crafter","Cake Guard","Baking Staff","Head Baker","Cocoa Warrior","Chocolate Bar Battler","Sweet Thief","Candy Rebel","Candy Pirate","Snow Demon","Isle Outlaw","Island Boy","Sun-kissed Warrior","Isle Champion","Serpent Hunter","Skull Slayer"}
     AreaList = {"Pirate Port","Amazon","Marine Tree","Deep Forest","Haunted Castle","Nut Island","Ice Cream Island","Cake Island","Choco Island","Candy Island","Tiki Outpost"}
 end
-getgenv().AreaList = AreaList
 ----------------------------------------------------------------
 -- BOSS
 ----------------------------------------------------------------
@@ -1915,90 +1905,67 @@ task.spawn(function()
         end);
     end
 end);
----------------------------------------------------
--- NÚT TOGGLE NHẬN NHIỆM VỤ (Ở TRÊN)
----------------------------------------------------
-local AutoQuestToggle = Tabs.Main:AddToggle("ToggleQuest", {
-    Title = "Nhận Nhiệm Vụ",
-    Description = "",
-    Default = false
-});
-
-AutoQuestToggle:OnChanged(function(value)
-    _G.AutoQuest = value;
-end);
-AutoQuestToggle:SetValue(false)
----------------------------------------------------
--- NÚT TOGGLE CÀY CẤP (Ở DƯỚI)
----------------------------------------------------
 local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
-    Title = "Tự Động Cày Cấp",
-    Description = "Bật để bắt đầu tự động cày cấp",
+    Title = "Cày Cấp",
+    Description = "",
     Default = false
 });
 AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
+    if (value== false) then
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
+    end
 end);
-AutoLevelToggle:SetValue(false)
----------------------------------------------------
--- VÒNG LẶP CHÍNH (MAIN FARM LOOP)
----------------------------------------------------
-task.spawn(function()
+Options.ToggleLevel:SetValue(false);
+spawn(function()
     while task.wait() do
         if _G.AutoLevel then
             pcall(function()
-                CheckLevel()
-                if not NameMon or not CFrameQ then
-                    return
-                end
-                local QuestGui = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest
-                local HasCorrectQuest = QuestGui.Visible 
-                    and QuestGui.Container 
-                    and QuestGui.Container.QuestTitle 
-                    and QuestGui.Container.QuestTitle.Title 
-                    and string.find(QuestGui.Container.QuestTitle.Title.Text, NameMon)
-                if _G.AutoQuest and not HasCorrectQuest then
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                    Tween(CFrameQ)
-                    if (CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 then
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
-                        task.wait(0.5)
+                CheckLevel();
+                if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
+                    Tween(CFrameQ);
+                    if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
+                        task.wait(0.5);
                     end
-                else
+                elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name == NameMon) then
+                            if (enemy.Name ==  NameMon) then
                                 repeat
-                                    task.wait(_G.Fast_Delay)
-                                    AttackNoCoolDown()
-                                    bringmob = true
-                                    AutoHaki()
-                                    EquipTool(SelectWeapon)
-                                    Tween(enemy.HumanoidRootPart.CFrame * Pos)
-                                    enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                                    enemy.HumanoidRootPart.Transparency = 1
-                                    enemy.Humanoid.JumpPower = 0
-                                    enemy.Humanoid.WalkSpeed = 0
-                                    enemy.HumanoidRootPart.CanCollide = false
-                                    FarmPos = enemy.HumanoidRootPart.CFrame
-                                    MonFarm = enemy.Name
-                                until not _G.AutoLevel or not enemy.Parent or (enemy.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) or (_G.AutoQuest and game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
-                                bringmob = false
+                                    wait(_G.Fast_Delay);
+                                    AttackNoCoolDown();
+                                    bringmob = true;
+                                    AutoHaki();
+                                    EquipTool(SelectWeapon);
+                                    Tween(enemy.HumanoidRootPart.CFrame * Pos);
+                                    enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                    enemy.HumanoidRootPart.Transparency = 1;
+                                    enemy.Humanoid.JumpPower = 0;
+                                    enemy.Humanoid.WalkSpeed = 0;
+                                    enemy.HumanoidRootPart.CanCollide = false;
+                                    FarmPos = enemy.HumanoidRootPart.CFrame;
+                                    MonFarm = enemy.Name;
+                                until not _G.AutoLevel or not enemy.Parent or (enemy.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) or (game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
+                                bringmob = false;
                             end
                         end
                     end
                     for _, enemySpawn in pairs(game:GetService("Workspace")['_WorldOrigin'].EnemySpawns:GetChildren()) do
                         if string.find(enemySpawn.Name, NameMon) then
                             if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - enemySpawn.Position).Magnitude >= 10) then
-                                Tween(enemySpawn.CFrame * Pos)
+                                Tween(enemySpawn.CFrame * Pos);
                             end
                         end
                     end
                 end
-            end)
+            end);
         end
     end
-end)
+end);
 local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
     Title = "Đấm Quái Gần",
     Description = "",
