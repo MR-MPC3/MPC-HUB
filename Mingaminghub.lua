@@ -424,29 +424,33 @@ for _, tabInfo in ipairs(TabDefinitions) do
     end
 end
 ----------------------------------------------------------------
--- Code khởi đầu cho toàn bộ logic và hoạt động của Blox Fruits.
+-- CODE KHỞI ĐẦU
 ----------------------------------------------------------------
-local Options = Fluent.Options;
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
-
--- Xác định Sea bằng PlaceId chuẩn hiện tại
-local Sea1, Sea2, Sea3 = false, false, false
-
-if PlaceId == 85211729168715 then
-    Sea1 = true
-elseif PlaceId == 79091703265657 then
-    Sea2 = true
-elseif PlaceId == 100117331123089 then
-    Sea3 = true
-else
-    -- Đá người chơi nếu vào sai game hoặc map không hợp lệ
+-- Danh sách PlaceId Blox Fruits (ID Chính thức & Sub-place)
+local SeaMapIDs = {
+    -- Sea 1
+    [85211729168715] = 1,
+    -- Sea 2
+    [79091703265657] = 2,
+    -- Sea 3
+    [100117331123089] = 3
+}
+-- Xác định Sea hiện tại
+local currentSea = SeaMapIDs[PlaceId]
+-- Kiểm tra an toàn
+if not currentSea then
     plr:Kick("[Min Gaming] PlaceId không hợp lệ! Vui lòng vào đúng Blox Fruits (Sea 1, 2, 3).")
     return
 end
+-- Tự động gán True/False cho biến Toàn Cực (Ngắn gọn & Tối ưu logic)
+getgenv().Sea1 = (currentSea == 1)
+getgenv().Sea2 = (currentSea == 2)
+getgenv().Sea3 = (currentSea == 3)
+-- Alias cục bộ cho file hiện tại
+local Sea1, Sea2, Sea3 = getgenv().Sea1, getgenv().Sea2, getgenv().Sea3
 
 ----------------------------------------------------------------
 -- QUÁI THƯỜNG
