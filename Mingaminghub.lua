@@ -559,35 +559,42 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- HÀM CHECK LEVEL BỎ SELECMONTER
+-- HÀM CHECK LEVEL BỎ SELECTMONSTER
 ----------------------------------------------------------------
 function CheckLevel()
     local myLevel = plr.Data.Level.Value
     local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSea or not QuestData[currentSea] then return end
 
+    if not currentSea or not QuestData[currentSea] then
+        return
+    end
     for _, data in ipairs(QuestData[currentSea]) do
         if myLevel >= data.Min and myLevel <= data.Max then
+
             NameMon   = data.Mon
             NameQuest = data.Quest
             QuestLv   = data.QLv
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
-
-            -- Bypass Cổng an toàn
+            
+            -- BYPASS ENTRANCE
             if _G.AutoLevel and data.Entrance then
-                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                local character = plr.Character
+                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
                 if rootPart then
-                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
-                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
-
-                    if dist > threshold then
+                    local distance = (CFrameMon.Position - rootPart.Position).Magnitude
+                    -- Tất cả Sea đều dùng ngưỡng 3000
+                    if distance > 3000 then
                         pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                                "requestEntrance",
+                                data.Entrance
+                            )
                         end)
                     end
                 end
             end
+
             break
         end
     end
