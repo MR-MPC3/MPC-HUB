@@ -1905,7 +1905,7 @@ spawn(function()
     while task.wait() do
         if _G.AutoLevel then
             pcall(function()
-                ;
+                CheckLevel();
                 if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
                     game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
                     Tween(CFrameQ);
@@ -1916,7 +1916,7 @@ spawn(function()
                 elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name ==  NameMon) then
+                            if (enemy.Name == Ms) then
                                 repeat
                                     wait(_G.Fast_Delay);
                                     AttackNoCoolDown();
