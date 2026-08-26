@@ -307,7 +307,7 @@ LoaderGui:Destroy();
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
-assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+assert(success and Fluent, "Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
 
 local Window = Fluent:CreateWindow({
     Title = "Min Gaming",
@@ -558,61 +558,38 @@ local QuestData = {
     }
 }
 
-----------------------------------------------------------------
--- Biến hỗ trợ Bypass Cổng (Chống spam Remote)
-----------------------------------------------------------------
-local lastEntranceTp = 0
-local ENTRANCE_COOLDOWN = 1.5 -- Thời gian chờ giữa mỗi lần dịch chuyển cổng (giây)
-
-----------------------------------------------------------------
--- Hàm Bypass Cổng An Toàn
-----------------------------------------------------------------
-local function BypassEntrance(targetPos, entrancePos)
-    if not entrancePos or not _G.AutoLevel then return end
-    
-    local char = plr.Character
-    local rootPart = char and char:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
-
-    -- Tính khoảng cách thực tế từ player tới vị trí đích
-    local distance = (targetPos - rootPart.Position).Magnitude
-
-    -- Nếu khoảng cách > 1500 studs (tức là đang ở bên ngoài chiều không gian/đảo chính)
-    if distance > 1500 and (tick() - lastEntranceTp) > ENTRANCE_COOLDOWN then
-        lastEntranceTp = tick()
-        pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", entrancePos)
-        end)
-        task.wait(0.5) -- Chờ server xử lý dịch chuyển
-    end
+---------------------------------------------------------------- 
+-- Hàm CheckLevel (Đã loại bỏ SelectMonster không sài) 
+---------------------------------------------------------------- 
+function CheckLevel() 
+    local myLevel = plr.Data.Level.Value 
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3" 
+    if not currentSea or not QuestData[currentSea] then return end 
+    for _, data in ipairs(QuestData[currentSea]) do 
+        if myLevel >= data.Min and myLevel <= data.Max then 
+            NameMon = data.Mon 
+            NameQuest = data.Quest 
+            QuestLv = data.QLv 
+            CFrameQ = data.QCF 
+            CFrameMon = data.MonCF 
+            -- Bypass Cổng an toàn 
+            if _G.AutoLevel and data.Entrance then 
+                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") 
+                if rootPart then 
+                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude 
+                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000 
+                    if dist > threshold then 
+                        pcall(function() 
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance) 
+                        end) 
+                    end 
+                end 
+            end 
+            break 
+        end 
+    end 
 end
 
-----------------------------------------------------------------
--- Hàm CheckLevel (Đã tối ưu & sửa lỗi Bypass Cổng)
-----------------------------------------------------------------
-function CheckLevel()
-    local myLevel = plr.Data.Level.Value
-    local currentSeaName = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-    if not currentSeaName or not QuestData[currentSeaName] then return end
-
-    for _, data in ipairs(QuestData[currentSeaName]) do
-        if myLevel >= data.Min and myLevel <= data.Max then
-            NameMon   = data.Mon
-            NameQuest = data.Quest
-            QuestLv   = data.QLv
-            CFrameQ   = data.QCF
-            CFrameMon = data.MonCF
-
-            -- Xử lý Bypass Cổng tự động cho cả Quest NPC lẫn Quái
-            if data.Entrance then
-                -- Kiểm tra khoảng cách tới Quái hoặc tới NPC nhận Q
-                BypassEntrance(CFrameMon.Position, data.Entrance)
-            end
-            
-            break
-        end
-    end
-end
 ----------------------------------------------------------------
 -- BOSS
 ----------------------------------------------------------------
@@ -851,6 +828,7 @@ function CheckBossQuest()
         CFrameBoss = data.CFrameBoss
     end
 end
+
 ----------------------------------------------------------------
 -- MATERIAL
 ----------------------------------------------------------------
@@ -1005,6 +983,7 @@ function MaterialMon()
         end
     end
 end
+
 ------------------------------------------------------------------
 -- ESP helpers (PHẢI đứng trước mọi hàm ESP — Round không được local)
 ------------------------------------------------------------------
