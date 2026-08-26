@@ -420,7 +420,7 @@ for _, tabInfo in ipairs(TabDefinitions) do
     end
 end
 ----------------------------------------------------------------
--- Code khởi đầu cho toàn bộ logic và hoạt động
+-- LOGIC VÀ HOẠT ĐỘNG 
 ----------------------------------------------------------------
 --Khai báo Service & Player
 local Players = game:GetService("Players")
@@ -459,7 +459,7 @@ getgenv().Sea3 = Sea3
 getgenv().Options = Options
 
 ----------------------------------------------------------------
--- QUÁI THƯỜNG
+-- DÁNH SÁCH QUÁI THƯỜNG
 ----------------------------------------------------------------
 local QuestData = {
     Sea1 = {
@@ -559,7 +559,7 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- Hàm CheckLevel (Đã loại bỏ SelectMonster không sài)
+-- HÀM CHECK LEVEL BỎ SELECMONTER
 ----------------------------------------------------------------
 function CheckLevel()
     local myLevel = plr.Data.Level.Value
@@ -594,7 +594,7 @@ function CheckLevel()
 end
 
 ----------------------------------------------------------------
--- BOSS
+-- DANH SÁCH BOSS
 ----------------------------------------------------------------
 local BossData = {
     -- ========== Sea 1 ==========
@@ -832,7 +832,7 @@ function CheckBossQuest()
     end
 end
 ----------------------------------------------------------------
--- MATERIAL
+-- DANH SÁCH MATERIAL
 ----------------------------------------------------------------
 local MaterialData = {
     -- ========== Flat (không phụ thuộc Sea) ==========
