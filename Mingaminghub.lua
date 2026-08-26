@@ -307,7 +307,7 @@ LoaderGui:Destroy();
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
-assert(success and Fluent, "Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
 
 local Window = Fluent:CreateWindow({
     Title = "Min Gaming",
@@ -558,36 +558,39 @@ local QuestData = {
     }
 }
 
----------------------------------------------------------------- 
--- Hàm CheckLevel (Đã loại bỏ SelectMonster không sài) 
----------------------------------------------------------------- 
-function CheckLevel() 
-    local myLevel = plr.Data.Level.Value 
-    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3" 
-    if not currentSea or not QuestData[currentSea] then return end 
-    for _, data in ipairs(QuestData[currentSea]) do 
-        if myLevel >= data.Min and myLevel <= data.Max then 
-            NameMon = data.Mon 
-            NameQuest = data.Quest 
-            QuestLv = data.QLv 
-            CFrameQ = data.QCF 
-            CFrameMon = data.MonCF 
-            -- Bypass Cổng an toàn 
-            if _G.AutoLevel and data.Entrance then 
-                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") 
-                if rootPart then 
-                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude 
-                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000 
-                    if dist > threshold then 
-                        pcall(function() 
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance) 
-                        end) 
-                    end 
-                end 
-            end 
-            break 
-        end 
-    end 
+----------------------------------------------------------------
+-- Hàm CheckLevel (Đã loại bỏ SelectMonster không sài)
+----------------------------------------------------------------
+function CheckLevel()
+    local myLevel = plr.Data.Level.Value
+    local currentSea = Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
+    if not currentSea or not QuestData[currentSea] then return end
+
+    for _, data in ipairs(QuestData[currentSea]) do
+        if myLevel >= data.Min and myLevel <= data.Max then
+            NameMon   = data.Mon
+            NameQuest = data.Quest
+            QuestLv   = data.QLv
+            CFrameQ   = data.QCF
+            CFrameMon = data.MonCF
+
+            -- Bypass Cổng an toàn
+            if _G.AutoLevel and data.Entrance then
+                local rootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local dist = (CFrameMon.Position - rootPart.Position).Magnitude
+                    local threshold = (currentSea == "Sea2" and data.Entrance.Y > 100) and 20000 or 3000
+
+                    if dist > threshold then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                        end)
+                    end
+                end
+            end
+            break
+        end
+    end
 end
 
 ----------------------------------------------------------------
@@ -828,7 +831,6 @@ function CheckBossQuest()
         CFrameBoss = data.CFrameBoss
     end
 end
-
 ----------------------------------------------------------------
 -- MATERIAL
 ----------------------------------------------------------------
@@ -983,7 +985,6 @@ function MaterialMon()
         end
     end
 end
-
 ------------------------------------------------------------------
 -- ESP helpers (PHẢI đứng trước mọi hàm ESP — Round không được local)
 ------------------------------------------------------------------
@@ -1916,7 +1917,7 @@ spawn(function()
                 elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name == Ms) then
+                            if (enemy.Name ==  NameMon) then
                                 repeat
                                     wait(_G.Fast_Delay);
                                     AttackNoCoolDown();
