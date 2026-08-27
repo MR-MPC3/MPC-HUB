@@ -4,6 +4,7 @@
 
 local cloneref=cloneref or function(o)return o end
 local TweenService=cloneref(game:GetService("TweenService"))
+local UserInputService=cloneref(game:GetService("UserInputService"))
 local CoreGui=cloneref(game:GetService("CoreGui"))
 local ParentGui=(gethui and gethui()) or CoreGui
 
