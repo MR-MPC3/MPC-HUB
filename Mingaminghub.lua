@@ -1501,36 +1501,23 @@ spawn(function()
 end)
 
 ----------------------------------------------------------------
--- HỆ THỐNG DI CHUYỂN (toAdvanced) — đúng sơ đồ
+----------------------------------------------------------------
+-- HỆ THỐNG DI CHUYỂN (toAdvanced) — đúng sơ đồ mới
 ----------------------------------------------------------------
 -- toAdvanced(TargetCF)
---        │
---        ▼
---  Phân tích Target
---        │
--- ┌──────┴──────┐
--- ▼             ▼
--- CÓ ENTRANCE   KHÔNG CÓ
--- ▼             ▼
--- khả dụng?   Distance < 2000?
--- ┌──┴──┐     ┌──┴──┐
--- CÓ  KHÔNG  CÓ   ≥2000
--- │     │     │      │
--- ▼     ▼     ▼      ▼
--- request  Tween  Tween  Tìm Entrance
--- Entrance thẳng  thẳng     │
--- │                         ▼
--- Tween(Target)        Tiết kiệm ≥300m?
---                        ┌──┴──┐
---                       CÓ   KHÔNG
---                        │      │
---                        ▼      ▼
---               requestEntrance  Tween
---               (Position gần       thẳng
---                Player/Target)
---                        │
---                        ▼
---                  Tween(TargetCF)
+--   Phân tích Target
+--   ├─ TARGET CÓ ENTRANCE KHẢ DỤNG
+--   │     → Chọn Entrance → Gọi Entrance → Dịch chuyển qua Entrance → Tween(TargetCF)
+--   └─ TARGET KHÔNG CÓ / CHƯA KHẢ DỤNG
+--         ├─ Distance < 2000  → Tween thẳng
+--         └─ ≥ 2000
+--               → Tìm tất cả Entrance
+--               → Bỏ qua Entrance chưa dùng được (chưa mở / chưa Rip Indra...)
+--               → Chỉ giữ Entrance ĐANG SỬ DỤNG ĐƯỢC
+--               → Với mỗi Entrance: tính đường qua cổng vs bay thẳng
+--               → Tiết kiệm ≥ 300m?
+--                    CÓ  → Gọi Entrance → Dịch chuyển → Tween(TargetCF)
+--                    KHÔNG → Tween thẳng
 ----------------------------------------------------------------
 
 function BTPZ(cf)
@@ -1546,151 +1533,161 @@ local CurrentTween = nil
 _G.StopTween = false
 
 -- ==================== DATABASE ENTRANCE ====================
--- Position1 = phía "ngoài" / điểm gọi vào
--- Position2 = phía "trong" / điểm sau khi qua cổng
--- RequestPos = vector truyền vào requestEntrance (thường = Position2 hoặc Position1 tùy cổng)
--- NeedRipIndra = true chỉ Sea 3 Castle Portal (chưa đánh Rip Indra → không khả dụng)
+-- Position1 = phía ngoài / điểm gọi vào
+-- Position2 = phía trong sau khi qua cổng
+-- RequestPos = vector truyền vào requestEntrance
+-- NeedRipIndra = true → Sea 3 Castle Portal (chưa đánh Rip Indra = không khả dụng)
 
 local EntranceDB = {
     -- SEA 1
     {
         Name = "UnderwaterCity",
         Sea = 1,
-        Position1 = Vector3.new(3864.68, 6.70, -1926.21),          -- xoáy nước ngoài
-        Position2 = Vector3.new(61163.85, 11.68, 1819.78),         -- trong đảo cá
+        Position1 = Vector3.new(3864.68, 6.70, -1926.21),
+        Position2 = Vector3.new(61163.85, 11.68, 1819.78),
         RequestPos = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875),
-        Radius1 = 100,
-        Radius2 = 3500,
+        Radius1 = 120,
+        Radius2 = 4000,
     },
     {
         Name = "UpperSkylands1",
         Sea = 1,
-        Position1 = Vector3.new(-4607.82, 872.54, -1667.56),       -- suối mây thấp
-        Position2 = Vector3.new(-7894.62, 5547.14, -380.41),       -- mây cao 1
+        Position1 = Vector3.new(-4607.82, 872.54, -1667.56),
+        Position2 = Vector3.new(-7894.62, 5547.14, -380.41),
         RequestPos = Vector3.new(-4607.82275, 872.54248, -1667.55688),
-        Radius1 = 120,
-        Radius2 = 900,
+        Radius1 = 150,
+        Radius2 = 1200,
     },
     {
         Name = "UpperSkylands2",
         Sea = 1,
-        Position1 = Vector3.new(-7927.09, 5545.53, -320.70),       -- gốc cây tầng 1
-        Position2 = Vector3.new(-11455.37, 431.14, -831.62),       -- thần điện Enel
+        Position1 = Vector3.new(-7927.09, 5545.53, -320.70),
+        Position2 = Vector3.new(-11455.37, 431.14, -831.62),
         RequestPos = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047),
-        Radius1 = 100,
-        Radius2 = 800,
+        Radius1 = 120,
+        Radius2 = 1000,
     },
 
     -- SEA 2
     {
         Name = "CursedShip",
         Sea = 2,
-        Position1 = Vector3.new(923.21, 125.06, 32852.83),         -- cửa ngoài tàu
-        Position2 = Vector3.new(-1344.20, 332.22, -9805.21),       -- trong tàu (theo tọa độ bạn)
+        Position1 = Vector3.new(923.21, 125.06, 32852.83),
+        Position2 = Vector3.new(-1344.20, 332.22, -9805.21),
         RequestPos = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125),
-        Radius1 = 200,
-        Radius2 = 3000,
+        Radius1 = 250,
+        Radius2 = 3500,
     },
     {
         Name = "SwanRoom",
         Sea = 2,
-        Position1 = Vector3.new(2284.91, 15.15, 905.48),           -- cửa Trevor
-        Position2 = Vector3.new(2285.42, 15.15, 867.72),           -- phòng Swan
+        Position1 = Vector3.new(2284.91, 15.15, 905.48),
+        Position2 = Vector3.new(2285.42, 15.15, 867.72),
         RequestPos = Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625),
-        Radius1 = 50,
+        Radius1 = 40,
         Radius2 = 80,
     },
 
-    -- SEA 3
+    -- SEA 3 — Castle Portals (cần đánh Rip Indra)
     {
-        Name = "CastlePortal",
+        Name = "CastlePortal_PortTown",
         Sea = 3,
-        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),       -- phòng portal lâu đài
+        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
+        Position2 = Vector3.new(-290.73, 6.72, 5343.55),
+        RequestPos = Vector3.new(-5058.92, 314.52, -3155.88),
+        Radius1 = 200,
+        Radius2 = 400,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "CastlePortal_Mansion",
+        Sea = 3,
+        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
+        Position2 = Vector3.new(-12463.87, 374.91, -7565.52),
+        RequestPos = Vector3.new(-12463.87, 374.91, -7565.52),
+        Radius1 = 200,
+        Radius2 = 400,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "CastlePortal_GreatTree",
+        Sea = 3,
+        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
+        Position2 = Vector3.new(2381.18, 28.52, -7370.47),
+        RequestPos = Vector3.new(2381.18, 28.52, -7370.47),
+        Radius1 = 200,
+        Radius2 = 400,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "CastleOnTheSea",
+        Sea = 3,
+        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
         Position2 = Vector3.new(-5058.92, 314.52, -3155.88),
         RequestPos = Vector3.new(-5075.50927734375, 314.5155029296875, -3150.0224609375),
-        Radius1 = 150,
+        Radius1 = 250,
         Radius2 = 250,
         NeedRipIndra = true,
     },
-    {
-        Name = "PortTownPortal",
-        Sea = 3,
-        Position1 = Vector3.new(-290.73, 6.72, 5343.55),
-        Position2 = Vector3.new(-290.73, 6.72, 5343.55),
-        RequestPos = Vector3.new(-290.7376708984375, 6.729952812194824, 5343.5537109375),
-        Radius1 = 100,
-        Radius2 = 180,
-        NeedRipIndra = true,
-    },
-    {
-        Name = "MansionPortal",
-        Sea = 3,
-        Position1 = Vector3.new(-12463.87, 374.91, -7565.52),
-        Position2 = Vector3.new(-12463.87, 374.91, -7565.52),
-        RequestPos = Vector3.new(-12468.5380859375, 375.0094299316406, -7554.62548828125),
-        Radius1 = 120,
-        Radius2 = 220,
-        NeedRipIndra = true,
-    },
-    {
-        Name = "GreatTreePortal",
-        Sea = 3,
-        Position1 = Vector3.new(2381.18, 28.52, -7370.47),
-        Position2 = Vector3.new(2381.18, 28.52, -7370.47),
-        RequestPos = Vector3.new(2381.18, 28.52, -7370.47),
-        Radius1 = 120,
-        Radius2 = 220,
-        NeedRipIndra = true,
-    },
+
+    -- SEA 3 — Temple of Time
     {
         Name = "TempleOfTime",
         Sea = 3,
-        Position1 = Vector3.new(2870.33, 2362.21, -7237.90),       -- cổng sứ giả trên cây
-        Position2 = Vector3.new(28282.57, 14896.85, 105.10),       -- trong đền thời gian
+        Position1 = Vector3.new(2870.33, 2362.21, -7237.90),
+        Position2 = Vector3.new(28282.57, 14896.85, 105.10),
         RequestPos = Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875),
-        Radius1 = 100,
-        Radius2 = 600,
-    },
-    {
-        Name = "HydraEntrance",
-        Sea = 3,
-        Position1 = Vector3.new(5661.53, 1013.09, -334.96),
-        Position2 = Vector3.new(5661.53, 1013.09, -334.96),
-        RequestPos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
         Radius1 = 150,
-        Radius2 = 450,
+        Radius2 = 2500,
+    },
+
+    -- SEA 3 — Hydra
+    {
+        Name = "HydraIsland",
+        Sea = 3,
+        Position1 = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
+        Position2 = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
+        RequestPos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
+        Radius1 = 200,
+        Radius2 = 200,
     },
 }
 
 local function HasDefeatedRipIndra()
     local ok, result = pcall(function()
-        return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "General")
+        return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "Check")
     end)
-    if ok then
-        return result ~= 0 and result ~= nil
+    if not ok then return false end
+    if type(result) == "table" and result.KilledRipIndra then
+        return true
     end
     return false
 end
 
+-- Entrance khả dụng? (đúng sea + điều kiện Rip Indra nếu cần)
 local function IsEntranceAvailable(entry)
     if not entry then return false end
-    local currentSeaNum = Sea1 and 1 or Sea2 and 2 or Sea3 and 3
-    if entry.Sea ~= currentSeaNum then return false end
+    if entry.Sea and entry.Sea ~= currentSea then
+        return false
+    end
     if entry.NeedRipIndra then
-        return HasDefeatedRipIndra()
+        if not HasDefeatedRipIndra() then
+            return false
+        end
     end
     return true
 end
 
 local function Near(pos, point, radius)
-    return pos and point and (pos - point).Magnitude <= (radius or 100)
+    return (pos - point).Magnitude <= (radius or 200)
 end
 
--- Target nằm trong vùng Position2 (phía "trong") của entrance này?
+-- Target nằm trong vùng của Entrance nào (và entrance đó khả dụng)?
 local function FindDirectEntranceForTarget(targetPos)
     for _, entry in ipairs(EntranceDB) do
         if IsEntranceAvailable(entry) then
-            if Near(targetPos, entry.Position2, entry.Radius2) then
+            if Near(targetPos, entry.Position2, entry.Radius2)
+                or Near(targetPos, entry.Position1, entry.Radius1) then
                 return entry
             end
         end
@@ -1698,6 +1695,7 @@ local function FindDirectEntranceForTarget(targetPos)
     return nil
 end
 
+-- Danh sách Entrance ĐANG SỬ DỤNG ĐƯỢC (bỏ qua chưa mở / chưa Rip Indra)
 local function GetAvailableEntrances()
     local list = {}
     for _, entry in ipairs(EntranceDB) do
@@ -1708,29 +1706,36 @@ local function GetAvailableEntrances()
     return list
 end
 
--- Tìm entrance trung gian tiết kiệm ≥ 300 studs
--- Chọn Position gần Player và Position gần Target để tính đường đi
+-- Tìm Entrance trung gian: tiết kiệm ≥ 300m so với bay thẳng
 local function FindOptimalEntrance(playerPos, targetPos)
     local directDist = (targetPos - playerPos).Magnitude
     local best = nil
     local bestSave = 0
 
     for _, entry in ipairs(GetAvailableEntrances()) do
-        -- Hướng A: Player gần Position1 → Target gần Position2
+        -- Tuyến A: gần Position1 → qua cổng → tới Target (gần Position2)
         local viaA = (entry.Position1 - playerPos).Magnitude + (targetPos - entry.Position2).Magnitude
         local saveA = directDist - viaA
 
-        -- Hướng B: Player gần Position2 → Target gần Position1
+        -- Tuyến B: gần Position2 → qua cổng → tới Target (gần Position1)
         local viaB = (entry.Position2 - playerPos).Magnitude + (targetPos - entry.Position1).Magnitude
         local saveB = directDist - viaB
 
         if saveA > bestSave and saveA >= 300 then
             bestSave = saveA
-            best = { Entry = entry, RequestPos = entry.RequestPos or entry.Position2, Save = saveA }
+            best = {
+                Entry = entry,
+                RequestPos = entry.RequestPos or entry.Position2,
+                Save = saveA,
+            }
         end
         if saveB > bestSave and saveB >= 300 then
             bestSave = saveB
-            best = { Entry = entry, RequestPos = entry.RequestPos or entry.Position1, Save = saveB }
+            best = {
+                Entry = entry,
+                RequestPos = entry.RequestPos or entry.Position1,
+                Save = saveB,
+            }
         end
     end
     return best
@@ -1828,19 +1833,18 @@ function to(targetCF)
 end
 
 --[[
-    toAdvanced(TargetCF) — đúng sơ đồ bạn gửi:
+    toAdvanced(TargetCF) — sơ đồ:
 
-    1. TARGET CÓ ENTRANCE & khả dụng?
-       → requestEntrance NGAY (không bay tới cổng)
-       → Tween(TargetCF)
+    TARGET CÓ ENTRANCE KHẢ DỤNG
+        → Chọn Entrance → Gọi Entrance → Dịch chuyển qua Entrance → Tween(TargetCF)
 
-    2. TARGET KHÔNG CÓ ENTRANCE:
-       ├─ Distance < 2000 → Tween thẳng
-       └─ ≥ 2000 → Tìm Entrance trung gian
-            ├─ Tiết kiệm ≥ 300m → requestEntrance (Position gần Player/Target) → Tween(Target)
-            └─ Không → Tween / to() thẳng
-
-    Sea 3 Castle Portal: chưa đánh Rip Indra → KHÔNG khả dụng → bỏ qua
+    TARGET KHÔNG CÓ / CHƯA KHẢ DỤNG
+        Distance < 2000  → Tween thẳng
+        ≥ 2000
+            → Lọc Entrance khả dụng (bỏ chưa mở / chưa Rip Indra)
+            → Tiết kiệm ≥ 300m?
+                 CÓ  → Gọi Entrance → Tween(TargetCF)
+                 KHÔNG → Tween / to() thẳng
 ]]
 function toAdvanced(targetCF)
     pcall(function()
@@ -1848,6 +1852,8 @@ function toAdvanced(targetCF)
         local char = game.Players.LocalPlayer.Character
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         if char.Humanoid.Health <= 0 then return end
+
+        -- Raid: luôn tween thẳng
         if Auto_Raid then
             Tween(targetCF)
             return
@@ -1858,12 +1864,11 @@ function toAdvanced(targetCF)
         local directDist = (targetPos - playerPos).Magnitude
 
         ------------------------------------------------------------------
-        -- NHÁNH 1: TARGET CÓ ENTRANCE
+        -- NHÁNH 1: TARGET CÓ ENTRANCE KHẢ DỤNG
         ------------------------------------------------------------------
         local directEntry = FindDirectEntranceForTarget(targetPos)
         if directEntry then
-            -- Entrance khả dụng (đã lọc trong FindDirectEntranceForTarget)
-            -- → Gọi requestEntrance NGAY → Tween(Target)
+            -- Chọn Entrance → Gọi → Dịch chuyển qua Entrance → Tween(Target)
             RequestEntrance(directEntry.RequestPos or directEntry.Position2)
             task.wait(0.4)
             Tween(targetCF)
@@ -1871,14 +1876,14 @@ function toAdvanced(targetCF)
         end
 
         ------------------------------------------------------------------
-        -- NHÁNH 2: TARGET KHÔNG CÓ ENTRANCE
+        -- NHÁNH 2: TARGET KHÔNG CÓ / CHƯA KHẢ DỤNG
         ------------------------------------------------------------------
         if directDist < 2000 then
             Tween(targetCF)
             return
         end
 
-        -- ≥ 2000 → tìm entrance trung gian tiết kiệm ≥ 300m
+        -- ≥ 2000 → chỉ xét Entrance ĐANG SỬ DỤNG ĐƯỢC, tiết kiệm ≥ 300m
         local optimal = FindOptimalEntrance(playerPos, targetPos)
         if optimal then
             RequestEntrance(optimal.RequestPos)
