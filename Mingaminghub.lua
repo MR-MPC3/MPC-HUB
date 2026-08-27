@@ -17,24 +17,29 @@ local LoaderConfig = {
         [4] = "Thành công!"
     },
     Keyframes = {
-        {Time = 0.4, Percent = 20, Step = 1},
-        {Time = 0.6, Percent = 55, Step = 2},
-        {Time = 0.8, Percent = 85, Step = 3},
-        {Time = 0.4, Percent = 100, Step = 4}
+        {Time = 0.7, Percent = 20, Step = 1},
+        {Time = 1.0, Percent = 55, Step = 2},
+        {Time = 1.2, Percent = 85, Step = 3},
+        {Time = 0.7, Percent = 100, Step = 4}
     }
 }
 
 -- Hàm tạo Object
 local function Create(className, props, cornerRadius)
     local inst = Instance.new(className)
+
     for k, v in pairs(props) do
-        if k ~= "Parent" then inst[k] = v end
+        if k ~= "Parent" then
+            inst[k] = v
+        end
     end
+
     if cornerRadius then
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, cornerRadius)
         corner.Parent = inst
     end
+
     inst.Parent = props.Parent
     return inst
 end
@@ -42,16 +47,24 @@ end
 -- Tween với Quart Easing
 local function Tween(obj, duration, props, style, direction)
     local tween = TweenService:Create(
-        obj, 
-        TweenInfo.new(duration, style or Enum.EasingStyle.Quart, direction or Enum.EasingDirection.Out), 
+        obj,
+        TweenInfo.new(
+            duration,
+            style or Enum.EasingStyle.Quart,
+            direction or Enum.EasingDirection.Out
+        ),
         props
     )
+
     tween:Play()
     return tween
 end
 
 -- Khởi tạo UI
-local LoaderGui = Create("ScreenGui", {Name = "MinLoader", Parent = ParentGui})
+local LoaderGui = Create("ScreenGui", {
+    Name = "MinLoader",
+    Parent = ParentGui
+})
 
 local MainFrame = Create("Frame", {
     Name = "Main",
@@ -118,6 +131,7 @@ local ProgressBar = Create("Frame", {
     Size = UDim2.new(0, 0, 0, 24),
     BackgroundTransparency = 1
 }, 8)
+
 local StepLabel = Create("TextLabel", {
     Name = "StepLabel",
     Parent = MainFrame,
@@ -133,11 +147,21 @@ local StepLabel = Create("TextLabel", {
 })
 
 -- Chuỗi Animation 
-Tween(MainFrame, 0.4, {Size = UDim2.new(0, 340, 0, 125)}).Completed:Wait()
+Tween(MainFrame, 0.5, {
+    Size = UDim2.new(0, 346, 0, 121)
+}).Completed:Wait()
 
-Tween(ProgressBG, 0.3, {BackgroundTransparency = 0})
-Tween(ProgressBar, 0.3, {BackgroundTransparency = 0})
-Tween(StepLabel, 0.3, {TextTransparency = 0})
+Tween(ProgressBG, 0.4, {
+    BackgroundTransparency = 0
+})
+
+Tween(ProgressBar, 0.4, {
+    BackgroundTransparency = 0
+})
+
+Tween(StepLabel, 0.4, {
+    TextTransparency = 0
+})
 
 for _, keyframe in ipairs(LoaderConfig.Keyframes) do
     StepLabel.Text = LoaderConfig.Steps[keyframe.Step] or ""
@@ -150,12 +174,24 @@ end
 task.wait(0.4)
 
 -- Thu nhỏ và Dọn dẹp
-Tween(StepLabel, 0.2, {TextTransparency = 1})
-Tween(ProgressBG, 0.2, {BackgroundTransparency = 1})
-Tween(ProgressBar, 0.2, {BackgroundTransparency = 1})
-task.wait(0.2)
+Tween(StepLabel, 0.3, {
+    TextTransparency = 1
+})
 
-Tween(MainFrame, 0.3, {Size = UDim2.new(0, 0, 0, 0)}).Completed:Wait()
+Tween(ProgressBG, 0.3, {
+    BackgroundTransparency = 1
+})
+
+Tween(ProgressBar, 0.3, {
+    BackgroundTransparency = 1
+})
+
+task.wait(0.3)
+
+Tween(MainFrame, 0.4, {
+    Size = UDim2.new(0, 0, 0, 0)
+}).Completed:Wait()
+
 LoaderGui:Destroy()
 
 -- spawn(function()
