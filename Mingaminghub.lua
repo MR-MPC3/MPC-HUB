@@ -493,12 +493,12 @@ local QuestData = {
         {Min = 275, Max = 299, Mon = "Gladiator",         Quest = "ColosseumQuest", QLv = 2, QCF = CFrame.new(-1577.7890625, 7.4151420593262, -2984.4838867188), MonCF = CFrame.new(-1521.3740234375, 81.203170776367, -3066.3139648438)},
         {Min = 300, Max = 324, Mon = "Military Soldier",  Quest = "MagmaQuest",     QLv = 1, QCF = CFrame.new(-5316.1157226563, 12.262831687927, 8517.00390625), MonCF = CFrame.new(-5369.0004882813, 61.24352645874, 8556.4921875)},
         {Min = 325, Max = 374, Mon = "Military Spy",      Quest = "MagmaQuest",     QLv = 2, QCF = CFrame.new(-5316.1157226563, 12.262831687927, 8517.00390625), MonCF = CFrame.new(-5787.00293, 75.8262634, 8651.69922, 0.838590562, 0, -0.544762194, 0, 1, 0, 0.544762194, 0, 0.838590562)},
-        {Min = 375, Max = 399, Mon = "Fishman Warrior",   Quest = "FishmanQuest",   QLv = 1, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(60844.10546875, 98.462875366211, 1298.3985595703)}, 
-        {Min = 400, Max = 449, Mon = "Fishman Commando",  Quest = "FishmanQuest",   QLv = 2, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(61738.3984375, 64.207321166992, 1433.8375244141)}, 
-        {Min = 450, Max = 474, Mon = "God's Guard",       Quest = "SkyExp1Quest",   QLv = 1, QCF = CFrame.new(-4721.8603515625, 845.30297851563, -1953.8489990234), MonCF = CFrame.new(-4628.0498046875, 866.92877197266, -1931.2352294922)}, 
-        {Min = 475, Max = 524, Mon = "Shanda",            Quest = "SkyExp1Quest",   QLv = 2, QCF = CFrame.new(-7863.1596679688, 5545.5190429688, -378.42266845703), MonCF = CFrame.new(-7685.1474609375, 5601.0751953125, -441.38876342773)}, 
-        {Min = 525, Max = 549, Mon = "Royal Squad",       Quest = "SkyExp2Quest",   QLv = 1, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7654.2514648438, 5637.1079101563, -1407.7550048828)},
-        {Min = 550, Max = 624, Mon = "Royal Soldier",     Quest = "SkyExp2Quest",   QLv = 2, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7760.4106445313, 5679.9077148438, -1884.8112792969)},
+        {Min = 375, Max = 399, Mon = "Fishman Warrior",   Quest = "FishmanQuest",   QLv = 1, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(60844.10546875, 98.462875366211, 1298.3985595703), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
+        {Min = 400, Max = 449, Mon = "Fishman Commando",  Quest = "FishmanQuest",   QLv = 2, QCF = CFrame.new(61122.65234375, 18.497442245483, 1569.3997802734), MonCF = CFrame.new(61738.3984375, 64.207321166992, 1433.8375244141), Entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
+        {Min = 450, Max = 474, Mon = "God's Guard",       Quest = "SkyExp1Quest",   QLv = 1, QCF = CFrame.new(-4721.8603515625, 845.30297851563, -1953.8489990234), MonCF = CFrame.new(-4628.0498046875, 866.92877197266, -1931.2352294922), Entrance = Vector3.new(-4607.82275, 872.54248, -1667.55688)},
+        {Min = 475, Max = 524, Mon = "Shanda",            Quest = "SkyExp1Quest",   QLv = 2, QCF = CFrame.new(-7863.1596679688, 5545.5190429688, -378.42266845703), MonCF = CFrame.new(-7685.1474609375, 5601.0751953125, -441.38876342773), Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+        {Min = 525, Max = 549, Mon = "Royal Squad",       Quest = "SkyExp2Quest",   QLv = 1, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7654.2514648438, 5637.1079101563, -1407.7550048828),Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+        {Min = 550, Max = 624, Mon = "Royal Soldier",     Quest = "SkyExp2Quest",   QLv = 2, QCF = CFrame.new(-7903.3828125, 5635.9897460938, -1410.923828125), MonCF = CFrame.new(-7760.4106445313, 5679.9077148438, -1884.8112792969),Entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
         {Min = 625, Max = 649, Mon = "Galley Pirate",     Quest = "FountainQuest",  QLv = 1, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5557.1684570313, 152.32717895508, 3998.7758789063)},
         {Min = 650, Max = 9999, Mon = "Galley Captain",   Quest = "FountainQuest",  QLv = 2, QCF = CFrame.new(5258.2788085938, 38.526931762695, 4050.044921875), MonCF = CFrame.new(5677.6772460938, 92.786109924316, 4966.6323242188)},
     },
@@ -518,10 +518,10 @@ local QuestData = {
         {Min = 1125, Max = 1174, Mon = "Horned Warrior",    Quest = "IceSideQuest",     QLv = 2, QCF = CFrame.new(-6061.841796875, 15.926671981812, -4902.0385742188), MonCF = CFrame.new(-6292.751953125, 91.181983947754, -5502.6499023438)},
         {Min = 1175, Max = 1199, Mon = "Magma Ninja",       Quest = "FireSideQuest",    QLv = 1, QCF = CFrame.new(-5429.0473632813, 15.977565765381, -5297.9614257813), MonCF = CFrame.new(-5461.8388671875, 130.36347961426, -5836.4702148438)},
         {Min = 1200, Max = 1249, Mon = "Lava Pirate",       Quest = "FireSideQuest",    QLv = 2, QCF = CFrame.new(-5429.0473632813, 15.977565765381, -5297.9614257813), MonCF = CFrame.new(-5251.1889648438, 55.164535522461, -4774.4096679688)},
-        {Min = 1250, Max = 1274, Mon = "Ship Deckhand",     Quest = "ShipQuest1",       QLv = 1, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(921.12365722656, 125.9839553833, 33088.328125)}, 
-        {Min = 1275, Max = 1299, Mon = "Ship Engineer",     Quest = "ShipQuest1",       QLv = 2, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(886.28179931641, 40.47790145874, 32800.83203125)}, 
-        {Min = 1300, Max = 1324, Mon = "Ship Steward",      Quest = "ShipQuest2",       QLv = 1, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(943.85504150391, 129.58183288574, 33444.3671875)}, 
-        {Min = 1325, Max = 1349, Mon = "Ship Officer",      Quest = "ShipQuest2",       QLv = 2, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(955.38458251953, 181.08335876465, 33331.890625)}, 
+        {Min = 1250, Max = 1274, Mon = "Ship Deckhand",     Quest = "ShipQuest1",       QLv = 1, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(921.12365722656, 125.9839553833, 33088.328125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1275, Max = 1299, Mon = "Ship Engineer",     Quest = "ShipQuest1",       QLv = 2, QCF = CFrame.new(1040.2927246094, 125.08293151855, 32911.0390625), MonCF = CFrame.new(886.28179931641, 40.47790145874, 32800.83203125), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1300, Max = 1324, Mon = "Ship Steward",      Quest = "ShipQuest2",       QLv = 1, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(943.85504150391, 129.58183288574, 33444.3671875), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+        {Min = 1325, Max = 1349, Mon = "Ship Officer",      Quest = "ShipQuest2",       QLv = 2, QCF = CFrame.new(971.42065429688, 125.08293151855, 33245.54296875), MonCF = CFrame.new(955.38458251953, 181.08335876465, 33331.890625), Entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
         {Min = 1350, Max = 1374, Mon = "Arctic Warrior",    Quest = "FrostQuest",       QLv = 1, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5935.4541015625, 77.26016998291, -6472.7568359375)},
         {Min = 1375, Max = 1424, Mon = "Snow Lurker",       Quest = "FrostQuest",       QLv = 2, QCF = CFrame.new(5668.1372070313, 28.202531814575, -6484.6005859375), MonCF = CFrame.new(5628.482421875, 57.574996948242, -6618.3481445313)},
         {Min = 1425, Max = 1449, Mon = "Sea Soldier",       Quest = "ForgottenQuest",   QLv = 1, QCF = CFrame.new(-3054.5827636719, 236.87213134766, -10147.790039063), MonCF = CFrame.new(-3185.0153808594, 58.789089202881, -9663.6064453125)},
@@ -580,14 +580,33 @@ function CheckLevel()
     if not currentSea or not QuestData[currentSea] then
         return
     end
-
     for _, data in ipairs(QuestData[currentSea]) do
         if myLevel >= data.Min and myLevel <= data.Max then
-            NameMon = data.Mon
+
+            NameMon   = data.Mon
             NameQuest = data.Quest
-            QuestLv = data.QLv
-            CFrameQ = data.QCF
+            QuestLv   = data.QLv
+            CFrameQ   = data.QCF
             CFrameMon = data.MonCF
+            
+            -- BYPASS ENTRANCE
+            if _G.AutoLevel and data.Entrance then
+                local character = plr.Character
+                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local distance = (CFrameMon.Position - rootPart.Position).Magnitude
+                    -- Tất cả Sea đều dùng ngưỡng 3000
+                    if distance > 3000 then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                                "requestEntrance",
+                                data.Entrance
+                            )
+                        end)
+                    end
+                end
+            end
+
             break
         end
     end
@@ -1760,68 +1779,46 @@ function to(targetCF)
         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
     until (targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 2000
 end
----------------------------------
--- TO ADVANCED
----------------------------------
 function toAdvanced(targetCF)
     pcall(function()
-        local character=plr.Character
-        local rootPart=character and character:FindFirstChild("HumanoidRootPart")
-        local humanoid=character and character:FindFirstChild("Humanoid")
-        if not rootPart or not humanoid or humanoid.Health<=0 then return end
-        if Auto_Raid then return end
-        if (targetCF.Position-rootPart.Position).Magnitude<2000 then return end
-
-        -- ENTRANCE DATA
-        local EntranceData={
-            Sea1={
-                ["Fishman Warrior"]=Vector3.new(61163.8515625,11.6796875,1819.7841796875),
-                ["Fishman Commando"]=Vector3.new(61163.8515625,11.6796875,1819.7841796875),
-                ["God's Guard"]=Vector3.new(-4607.82275,872.54248,-1667.55688),
-                ["Shanda"]=Vector3.new(-7894.6176757813,5547.1416015625,-380.29119873047),
-                ["Royal Squad"]=Vector3.new(-7894.6176757813,5547.1416015625,-380.29119873047),
-                ["Royal Soldier"]=Vector3.new(-7894.6176757813,5547.1416015625,-380.29119873047)
-            },
-            Sea2={
-                ["Ship Deckhand"]=Vector3.new(923.21252441406,126.9760055542,32852.83203125),
-                ["Ship Engineer"]=Vector3.new(923.21252441406,126.9760055542,32852.83203125),
-                ["Ship Steward"]=Vector3.new(923.21252441406,126.9760055542,32852.83203125),
-                ["Ship Officer"]=Vector3.new(923.21252441406,126.9760055542,32852.83203125)
-            },
-            Sea3={}
-        }
-
-        -- XÁC ĐỊNH SEA
-        local currentSea=Sea1 and "Sea1" or Sea2 and "Sea2" or Sea3 and "Sea3"
-        if not currentSea then return end
-
-        -- TÌM ENTRANCE
-        local seaData=EntranceData[currentSea]
-        local entrance=seaData and seaData[NameMon]
-
-        if entrance then
-            Tween(rootPart.CFrame)
-            task.wait()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance",entrance)
-            return
+        if (((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >= 2000) and not Auto_Raid and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)) then
+            if (NameMon == "FishmanQuest") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
+            elseif (Mon == "God's Guard") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
+            elseif (NameMon == "SkyExp1Quest") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
+            elseif (NameMon == "ShipQuest1") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
+            elseif (NameMon == "ShipQuest2") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
+            elseif (NameMon == "FrostQuest") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 6508.5581054688, 89.034996032715, - 132.83953857422));
+            else
+                repeat
+                    wait(_G.Fast_Delay);
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
+                    wait(0.05);
+                    game.Players.LocalPlayer.Character.Head:Destroy();
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
+                until ((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 2500) and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)
+                wait();
+            end
         end
-
-        -- KHÔNG CÓ ENTRANCE
-        repeat
-            task.wait(_G.Fast_Delay)
-            if not character.Parent or humanoid.Health<=0 then break end
-
-            rootPart.CFrame=targetCF
-            task.wait(0.05)
-
-            local head=character:FindFirstChild("Head")
-            if head then head:Destroy() end
-
-            rootPart.CFrame=targetCF
-        until (targetCF.Position-rootPart.Position).Magnitude<2500 or humanoid.Health<=0
-    end)
+    end);
 end
-                                        
 local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
     and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
 
@@ -1912,104 +1909,67 @@ task.spawn(function()
         end);
     end
 end);
----------------------------------
--- CÀY CẤP
----------------------------------
-local AutoLevelToggle=Tabs.Main:AddToggle("ToggleLevel",{
-    Title="Cày Cấp",
-    Description="",
-    Default=false
-})
-
+local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
+    Title = "Cày Cấp",
+    Description = "",
+    Default = false
+});
 AutoLevelToggle:OnChanged(function(value)
-    _G.AutoLevel=value
-    if not value then
-        task.wait()
-        local character=plr.Character
-        local rootPart=character and character:FindFirstChild("HumanoidRootPart")
-        if rootPart then Tween(rootPart.CFrame) end
-        task.wait()
+    _G.AutoLevel = value;
+    if (value== false) then
+        wait();
+        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame);
+        wait();
     end
-end)
-
-Options.ToggleLevel:SetValue(false)
-
+end);
+Options.ToggleLevel:SetValue(false);
 spawn(function()
     while task.wait() do
         if _G.AutoLevel then
             pcall(function()
-                -- CHECK LEVEL
-                CheckLevel()
-
-                -- QUEST UI
-                local questGui=plr.PlayerGui.Main.Quest
-                local questTitle=questGui.Container.QuestTitle.Title
-
-                -- NHẬN QUEST
-                if not string.find(questTitle.Text,NameMon) or not questGui.Visible then
-                    ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
-                    Tween(CFrameQ)
-
-                    local character=plr.Character
-                    local rootPart=character and character:FindFirstChild("HumanoidRootPart")
-
-                    if rootPart and (CFrameQ.Position-rootPart.Position).Magnitude<=5 then
-                        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest",NameQuest,QuestLv)
-                        task.wait(0.5)
+                CheckLevel();
+                if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
+                    Tween(CFrameQ);
+                    if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
+                        task.wait(0.5);
                     end
-
-                -- ĐANG CÓ QUEST
-                elseif string.find(questTitle.Text,NameMon) or questGui.Visible then
-                    -- TÌM QUÁI
-                    for _,enemy in pairs(Workspace.Enemies:GetChildren()) do
-                        if enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart")
-                            and enemy.Humanoid.Health>0 and enemy.Name==NameMon then
-
-                            repeat
-                                task.wait(_G.Fast_Delay)
-                                AttackNoCoolDown()
-                                bringmob=true
-                                AutoHaki()
-                                EquipTool(SelectWeapon)
-
-                                -- TOADVANCED
-                                toAdvanced(enemy.HumanoidRootPart.CFrame*Pos)
-
-                                -- FARM SETTINGS
-                                enemy.HumanoidRootPart.Size=Vector3.new(60,60,60)
-                                enemy.HumanoidRootPart.Transparency=1
-                                enemy.Humanoid.JumpPower=0
-                                enemy.Humanoid.WalkSpeed=0
-                                enemy.HumanoidRootPart.CanCollide=false
-                                FarmPos=enemy.HumanoidRootPart.CFrame
-                                MonFarm=enemy.Name
-                            until not _G.AutoLevel
-                                or not enemy.Parent
-                                or enemy.Humanoid.Health<=0
-                                or not Workspace.Enemies:FindFirstChild(enemy.Name)
-                                or not questGui.Visible
-
-                            bringmob=false
+                elseif (string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true)) then
+                    for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                        if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
+                            if (enemy.Name ==  NameMon) then
+                                repeat
+                                    wait(_G.Fast_Delay);
+                                    AttackNoCoolDown();
+                                    bringmob = true;
+                                    AutoHaki();
+                                    EquipTool(SelectWeapon);
+                                    Tween(enemy.HumanoidRootPart.CFrame * Pos);
+                                    enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
+                                    enemy.HumanoidRootPart.Transparency = 1;
+                                    enemy.Humanoid.JumpPower = 0;
+                                    enemy.Humanoid.WalkSpeed = 0;
+                                    enemy.HumanoidRootPart.CanCollide = false;
+                                    FarmPos = enemy.HumanoidRootPart.CFrame;
+                                    MonFarm = enemy.Name;
+                                until not _G.AutoLevel or not enemy.Parent or (enemy.Humanoid.Health <= 0) or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) or (game.Players.LocalPlayer.PlayerGui.Main.Quest.Visible == false)
+                                bringmob = false;
+                            end
                         end
                     end
-
-                    -- TÌM SPAWN QUÁI
-                    for _,enemySpawn in pairs(Workspace["_WorldOrigin"].EnemySpawns:GetChildren()) do
-                        if string.find(enemySpawn.Name,NameMon) then
-                            local character=plr.Character
-                            local rootPart=character and character:FindFirstChild("HumanoidRootPart")
-
-                            if rootPart and (rootPart.Position-enemySpawn.Position).Magnitude>=10 then
-                                -- TOADVANCED
-                                toAdvanced(enemySpawn.CFrame*Pos)
+                    for _, enemySpawn in pairs(game:GetService("Workspace")['_WorldOrigin'].EnemySpawns:GetChildren()) do
+                        if string.find(enemySpawn.Name, NameMon) then
+                            if ((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - enemySpawn.Position).Magnitude >= 10) then
+                                Tween(enemySpawn.CFrame * Pos);
                             end
                         end
                     end
                 end
-            end)
+            end);
         end
     end
-end)
+end);
 local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
     Title = "Đấm Quái Gần",
     Description = "",
