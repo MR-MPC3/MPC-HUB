@@ -1,216 +1,259 @@
-----------------------------------------------------------------
--- FRAMEWORK GIAO DIỆN (OPTIMIZED & INCLUDED ANTI-SKID COMMENT)
-----------------------------------------------------------------
--- discord.gg/25ms
+--------------------------------------
+-- LOADER UI
+--------------------------------------
 
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
+local cloneref=cloneref or function(o)return o end
+local TweenService=cloneref(game:GetService("TweenService"))
+local CoreGui=cloneref(game:GetService("CoreGui"))
 
-local ParentGui = (gethui and gethui()) or CoreGui
+local LoaderTitle="Đăng Ký Kênh Min Gaming"
+local LoaderColors={
+    Main=Color3.fromRGB(0,0,0),
+    Topic=Color3.fromRGB(200,200,200),
+    Title=Color3.fromRGB(255,255,255),
+    LoaderBackground=Color3.fromRGB(40,40,40),
+    LoaderSplash=Color3.fromRGB(3,252,3)
+}
+local LoaderStepTexts={
+    [1]="Đang kiểm tra dữ liệu...",
+    [2]="Đang nạp thư viện UI...",
+    [3]="Đang kết nối Server...",
+    [4]="Thành công!"
+}
+local LoaderKeyFrames={
+    [1]={1,10},
+    [2]={2,30},
+    [3]={3,60},
+    [4]={2,100}
+}
 
-shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
-shared.LoaderKeyFrames = {
-    [1] = {1, 10},
-    [2] = {2, 30},
-    [3] = {3, 60},
-    [4] = {2, 100}
-};
+--------------------------------------
+-- CLEANUP CŨ
+--------------------------------------
 
-local LoaderConfig = {
-    LoaderData = {
-        Name = shared.LoaderTitle or "A Loader",
-        Colors = shared.LoaderColors or {
-            Main = Color3.fromRGB(0, 0, 0),
-            Topic = Color3.fromRGB(200, 200, 200),
-            Title = Color3.fromRGB(255, 255, 255),
-            LoaderBackground = Color3.fromRGB(40, 40, 40),
-            LoaderSplash = Color3.fromRGB(3, 252, 3)
-        }
-    },
-    Keyframes = shared.LoaderKeyFrames
-};
+local OldLoader=CoreGui:FindFirstChild("MPC_HUB_LOADER")
+if OldLoader then OldLoader:Destroy() end
 
-local LoaderStepTexts = {
-    [1] = "Đang kiểm tra dữ liệu...",
-    [2] = "Đang nạp thư viện UI...",
-    [3] = "Đang kết nối Server...",
-    [4] = "Thành công!"
-};
+local LoaderGui=Instance.new("ScreenGui")
+LoaderGui.Name="MPC_HUB_LOADER"
+LoaderGui.ResetOnSpawn=false
+LoaderGui.IgnoreGuiInset=true
+LoaderGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+LoaderGui.Parent=gethui and gethui() or CoreGui
 
-function TweenObject(object, duration, goals)
-    if not object then return end
-    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals)
+--------------------------------------
+-- HELPERS
+--------------------------------------
+
+local ActiveTweens={}
+local function TweenObject(object,duration,goals,easingStyle,easingDirection)
+    if not object or not object.Parent then return end
+    local oldTween=ActiveTweens[object]
+    if oldTween then
+        pcall(function()oldTween:Cancel()end)
+        ActiveTweens[object]=nil
+    end
+    local tween=TweenService:Create(object,TweenInfo.new(
+        duration,
+        easingStyle or Enum.EasingStyle.Quart,
+        easingDirection or Enum.EasingDirection.Out
+    ),goals)
+    ActiveTweens[object]=tween
+    tween.Completed:Connect(function()
+        if ActiveTweens[object]==tween then ActiveTweens[object]=nil end
+    end)
     tween:Play()
     return tween
 end
 
-_G.LoaderConfig = LoaderConfig
-_G.LoaderStepTexts = LoaderStepTexts
-
-function CreateObject(className, props)
-    local instance = Instance.new(className);
-    local parent;
-    for propName, propValue in pairs(props) do
-        if (propName ~= "Parent") then
-            instance[propName] = propValue;
+local function CreateObject(className,props)
+    local object=Instance.new(className)
+    local parent
+    for property,value in pairs(props) do
+        if property=="Parent" then
+            parent=value
         else
-            parent = propValue;
+            object[property]=value
         end
     end
-    instance.Parent = parent;
-    return instance;
+    if parent then object.Parent=parent end
+    return object
 end
 
-local function AddUICorner(radius, parentObj)
-    local corner = Instance.new("UICorner");
-    corner.CornerRadius = UDim.new(0, radius);
-    corner.Parent = parentObj;
+local function AddUICorner(radius,object)
+    local corner=Instance.new("UICorner")
+    corner.CornerRadius=UDim.new(0,radius)
+    corner.Parent=object
 end
 
-local LoaderGui = CreateObject("ScreenGui", {
-    Name = "Core",
-    Parent = ParentGui
-});
+--------------------------------------
+-- UI
+--------------------------------------
 
-local MainFrame = CreateObject("Frame", {
-    Name = "Main",
-    Parent = LoaderGui,
-    BackgroundColor3 = LoaderConfig.LoaderData.Colors.Main,
-    BorderSizePixel = 0,
-    ClipsDescendants = true,
-    Position = UDim2.new(0.5, 0, 0.5, 0),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    Size = UDim2.new(0, 0, 0, 0)
-});
-AddUICorner(12, MainFrame);
+local MainFrame=CreateObject("Frame",{
+    Name="Main",
+    Parent=LoaderGui,
+    BackgroundColor3=LoaderColors.Main,
+    BorderSizePixel=0,
+    ClipsDescendants=true,
+    AnchorPoint=Vector2.new(.5,.5),
+    Position=UDim2.fromScale(.5,.5),
+    Size=UDim2.fromOffset(0,0)
+})
+AddUICorner(12,MainFrame)
 
-local UserImage = CreateObject("ImageLabel", {
-    Name = "UserImage",
-    Parent = MainFrame,
-    BackgroundTransparency = 1,
-    Image = "rbxassetid://13717478897",
-    Position = UDim2.new(0, 15, 0, 10),
-    Size = UDim2.new(0, 50, 0, 50)
-});
-AddUICorner(25, UserImage);
+local UserImage=CreateObject("ImageLabel",{
+    Name="UserImage",
+    Parent=MainFrame,
+    BackgroundTransparency=1,
+    Image="rbxassetid://13717478897",
+    Position=UDim2.fromOffset(15,10),
+    Size=UDim2.fromOffset(50,50)
+})
+AddUICorner(25,UserImage)
 
-local UserNameLabel = CreateObject("TextLabel", {
-    Name = "UserName",
-    Parent = MainFrame,
-    BackgroundTransparency = 1,
-    Text = "Youtube: Min Gaming",
-    Position = UDim2.new(0, 75, 0, 10),
-    Size = UDim2.new(0, 200, 0, 50),
-    Font = Enum.Font.GothamBold,
-    TextColor3 = LoaderConfig.LoaderData.Colors.Title,
-    TextSize = 14,
-    TextXAlignment = Enum.TextXAlignment.Left
-});
+CreateObject("TextLabel",{
+    Name="UserName",
+    Parent=MainFrame,
+    BackgroundTransparency=1,
+    Text="Youtube: Min Gaming",
+    Position=UDim2.fromOffset(75,10),
+    Size=UDim2.fromOffset(200,50),
+    Font=Enum.Font.GothamBold,
+    TextColor3=LoaderColors.Title,
+    TextSize=14,
+    TextXAlignment=Enum.TextXAlignment.Left
+})
 
-local TopicLabel = CreateObject("TextLabel", {
-    Name = "Top",
-    TextTransparency = 1,
-    Parent = MainFrame,
-    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-    BackgroundTransparency = 1,
-    Position = UDim2.new(0, 30, 0, 70),
-    Size = UDim2.new(0, 301, 0, 20),
-    Font = Enum.Font.Gotham,
-    Text = "Loader",
-    TextColor3 = LoaderConfig.LoaderData.Colors.Topic,
-    TextSize = 10,
-    TextXAlignment = Enum.TextXAlignment.Left
-});
+local TopicLabel=CreateObject("TextLabel",{
+    Name="Top",
+    Parent=MainFrame,
+    BackgroundTransparency=1,
+    Position=UDim2.fromOffset(30,70),
+    Size=UDim2.fromOffset(301,20),
+    Font=Enum.Font.Gotham,
+    Text="Loader",
+    TextColor3=LoaderColors.Topic,
+    TextSize=10,
+    TextTransparency=1,
+    TextXAlignment=Enum.TextXAlignment.Left
+})
 
-local TitleLabel = CreateObject("TextLabel", {
-    Name = "Title",
-    Parent = MainFrame,
-    TextTransparency = 1,
-    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-    BackgroundTransparency = 1,
-    Position = UDim2.new(0, 30, 0, 90),
-    Size = UDim2.new(0, 301, 0, 46),
-    Font = Enum.Font.Gotham,
-    RichText = true,
-    Text = "<b>" .. LoaderConfig.LoaderData.Name .. "</b>",
-    TextColor3 = LoaderConfig.LoaderData.Colors.Title,
-    TextSize = 14,
-    TextXAlignment = Enum.TextXAlignment.Left
-});
+local TitleLabel=CreateObject("TextLabel",{
+    Name="Title",
+    Parent=MainFrame,
+    BackgroundTransparency=1,
+    Position=UDim2.fromOffset(30,90),
+    Size=UDim2.fromOffset(301,46),
+    Font=Enum.Font.Gotham,
+    RichText=true,
+    Text="<b>"..LoaderTitle.."</b>",
+    TextColor3=LoaderColors.Title,
+    TextSize=14,
+    TextTransparency=1,
+    TextXAlignment=Enum.TextXAlignment.Left
+})
 
-local ProgressBG = CreateObject("Frame", {
-    Name = "BG",
-    Parent = MainFrame,
-    AnchorPoint = Vector2.new(0.5, 0),
-    BackgroundTransparency = 1,
-    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground,
-    BorderSizePixel = 0,
-    Position = UDim2.new(0.5, 0, 0, 70),
-    Size = UDim2.new(0.85, 0, 0, 24)
-});
-AddUICorner(8, ProgressBG);
+local ProgressBG=CreateObject("Frame",{
+    Name="BG",
+    Parent=MainFrame,
+    AnchorPoint=Vector2.new(.5,0),
+    BackgroundColor3=LoaderColors.LoaderBackground,
+    BackgroundTransparency=1,
+    BorderSizePixel=0,
+    Position=UDim2.new(.5,0,0,70),
+    Size=UDim2.new(.85,0,0,24)
+})
+AddUICorner(8,ProgressBG)
 
-local ProgressBar = CreateObject("Frame", {
-    Name = "Progress",
-    Parent = ProgressBG,
-    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderSplash,
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    Size = UDim2.new(0, 0, 0, 24)
-});
-AddUICorner(8, ProgressBar);
+local ProgressBar=CreateObject("Frame",{
+    Name="Progress",
+    Parent=ProgressBG,
+    BackgroundColor3=LoaderColors.LoaderSplash,
+    BackgroundTransparency=1,
+    BorderSizePixel=0,
+    Size=UDim2.new(0,0,0,24)
+})
+AddUICorner(8,ProgressBar)
 
-local StepLabel = CreateObject("TextLabel", {
-    Name = "StepLabel",
-    Parent = MainFrame,
-    BackgroundTransparency = 1,
-    Position = UDim2.new(0.5, 0, 1, - 25),
-    Size = UDim2.new(1, - 20, 0, 20),
-    Font = Enum.Font.Gotham,
-    Text = "",
-    TextColor3 = LoaderConfig.LoaderData.Colors.Topic,
-    TextSize = 14,
-    TextXAlignment = Enum.TextXAlignment.Center,
-    AnchorPoint = Vector2.new(0.5, 0.5)
-});
+local StepLabel=CreateObject("TextLabel",{
+    Name="StepLabel",
+    Parent=MainFrame,
+    BackgroundTransparency=1,
+    Position=UDim2.new(.5,0,1,-25),
+    Size=UDim2.new(1,-20,0,20),
+    AnchorPoint=Vector2.new(.5,.5),
+    Font=Enum.Font.Gotham,
+    Text="",
+    TextColor3=LoaderColors.Topic,
+    TextSize=14,
+    TextXAlignment=Enum.TextXAlignment.Center
+})
 
-function UpdateStepText(stepIndex)
-    StepLabel.Text = LoaderStepTexts[stepIndex] or "" ;
+--------------------------------------
+-- LOADING
+--------------------------------------
+
+local function UpdateStepText(step)
+    StepLabel.Text=LoaderStepTexts[step] or ""
 end
 
-function UpdatePercentage(percent, stepIndex)
-    TweenObject(ProgressBar, 0.5, {
-        Size = UDim2.new(percent / 100, 0, 0, 24)
-    });
-    UpdateStepText(stepIndex);
+local function UpdatePercentage(percent,step)
+    percent=math.clamp(tonumber(percent) or 0,0,100)
+    TweenObject(ProgressBar,.45,{
+        Size=UDim2.new(percent/100,0,0,24)
+    },Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    UpdateStepText(step)
 end
 
-TweenObject(MainFrame, 0.25, {
-    Size = UDim2.new(0, 346, 0, 121)
-});
-task.wait(0.1);
+local OpenTween=TweenObject(MainFrame,.35,{
+    Size=UDim2.fromOffset(346,121)
+},Enum.EasingStyle.Back,Enum.EasingDirection.Out)
 
-TweenObject(TopicLabel, 0.5, { TextTransparency = 0 });
-TweenObject(TitleLabel, 0.5, { TextTransparency = 0 });
-TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 0 });
-TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 0 });
+if OpenTween then OpenTween.Completed:Wait() end
 
-for step, keyframe in ipairs(LoaderConfig.Keyframes) do
-    task.wait(keyframe[1]);
-    UpdatePercentage(keyframe[2], step);
+TweenObject(TopicLabel,.3,{TextTransparency=0})
+TweenObject(TitleLabel,.3,{TextTransparency=0})
+TweenObject(ProgressBG,.3,{BackgroundTransparency=0})
+TweenObject(ProgressBar,.3,{BackgroundTransparency=0})
+
+task.wait(.15)
+
+for step,keyframe in ipairs(LoaderKeyFrames) do
+    task.wait(keyframe[1])
+    UpdatePercentage(keyframe[2],step)
 end
-task.wait(0.5);
 
-TweenObject(TopicLabel, 0.5, { TextTransparency = 1 });
-TweenObject(TitleLabel, 0.5, { TextTransparency = 1 });
-TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 1 });
-TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 1 });
-task.wait(0.5);
+task.wait(.4)
 
-TweenObject(MainFrame, 0.25, { Size = UDim2.new(0, 0, 0, 0) });
-task.wait(0.25);
-LoaderGui:Destroy();
+--------------------------------------
+-- CLOSE
+--------------------------------------
+
+TweenObject(TopicLabel,.3,{TextTransparency=1})
+TweenObject(TitleLabel,.3,{TextTransparency=1})
+TweenObject(ProgressBG,.3,{BackgroundTransparency=1})
+TweenObject(ProgressBar,.3,{BackgroundTransparency=1})
+TweenObject(StepLabel,.3,{TextTransparency=1})
+
+task.wait(.3)
+
+local CloseTween=TweenObject(MainFrame,.25,{
+    Size=UDim2.fromOffset(0,0)
+},Enum.EasingStyle.Quart,Enum.EasingDirection.In)
+
+if CloseTween then CloseTween.Completed:Wait() end
+
+--------------------------------------
+-- CLEANUP
+--------------------------------------
+
+for object,tween in pairs(ActiveTweens) do
+    pcall(function()tween:Cancel()end)
+    ActiveTweens[object]=nil
+end
+
+if LoaderGui then LoaderGui:Destroy() end
 
 -- spawn(function()
 --     while wait() do
