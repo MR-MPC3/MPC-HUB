@@ -400,45 +400,37 @@ MinButton.Activated:Connect(function()
     if not DraggedFar then Window:Minimize() end
 end)
 
-----------------------------------------------------------------
--- CÁC TAB CHÍNH 
-----------------------------------------------------------------
-assert(Window, "Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
+---------------------------------
+-- CÁC TAB CHÍNH
+---------------------------------
+assert(Window, "Không tìm thấy Window! Hãy kiểm tra phần khởi tạo Fluent UI.")
 
--- Bảng cấu hình danh sách Tab
 local TabDefinitions = {
-    { Key = "Home",     Title = "Thông Tin",   Icon = "info" },
-    { Key = "Main",     Title = "Cày",         Icon = "sword" },
-    { Key = "Sea",      Title = "Sự Kiện",     Icon = "waves" },
-    { Key = "ITM",      Title = "Vật Phẩm",    Icon = "package" },
-    { Key = "Setting",  Title = "Cài Đặt",     Icon = "settings" },
-    { Key = "Status",   Title = "Máy Chủ",     Icon = "server" },
-    { Key = "Stats",    Title = "Chỉ Số",      Icon = "bar-chart-2" },
-    { Key = "Player",   Title = "Người Chơi",  Icon = "user" },
-    { Key = "Teleport", Title = "Dịch Chuyển", Icon = "map-pin" },
-    { Key = "Fruit",    Title = "Trái",        Icon = "apple" },
-    { Key = "Raid",     Title = "Tập Kích",    Icon = "swords" },
-    { Key = "Race",     Title = "Tộc",         Icon = "shield" },
-    { Key = "Shop",     Title = "Cửa Hàng",    Icon = "shopping-cart" },
-    { Key = "Misc",     Title = "Khác",        Icon = "layers" }
+    {"Home",     "Thông Tin",   "info"},
+    {"Main",     "Cày",         "sword"},
+    {"Sea",      "Sự Kiện",     "waves"},
+    {"ITM",      "Vật Phẩm",    "package"},
+    {"Setting",  "Cài Đặt",     "settings"},
+    {"Status",   "Máy Chủ",     "server"},
+    {"Stats",    "Chỉ Số",      "bar-chart-2"},
+    {"Player",   "Người Chơi",  "user"},
+    {"Teleport", "Dịch Chuyển", "map-pin"},
+    {"Fruit",    "Trái",        "apple"},
+    {"Raid",     "Tập Kích",    "swords"},
+    {"Race",     "Tộc",         "shield"},
+    {"Shop",     "Cửa Hàng",    "shopping-cart"},
+    {"Misc",     "Khác",        "layers"}
 }
 
 local Tabs = {}
-for _, tabInfo in ipairs(TabDefinitions) do
-    local success, tabObject = pcall(function()
-        return Window:AddTab({
-            Title = tabInfo.Title,
-            Icon = tabInfo.Icon
-        })
-    end)
-    
-    if success and tabObject then
-        Tabs[tabInfo.Key] = tabObject
-    else
-        -- Thử lại không dùng Icon nếu thư viện Fluent của bạn bản cũ không hỗ trợ Icon
-        Tabs[tabInfo.Key] = Window:AddTab({ Title = tabInfo.Title })
-    end
+
+for _, info in ipairs(TabDefinitions) do
+    Tabs[info[1]] = Window:AddTab({
+        Title = info[2],
+        Icon = info[3]
+    })
 end
+
 ----------------------------------------------------------------
 -- LOGIC VÀ HOẠT ĐỘNG 
 ----------------------------------------------------------------
