@@ -589,24 +589,6 @@ function CheckLevel()
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
             
-            -- BYPASS ENTRANCE
-            if _G.AutoLevel and data.Entrance then
-                local character = plr.Character
-                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    local distance = (CFrameMon.Position - rootPart.Position).Magnitude
-                    -- Tất cả Sea đều dùng ngưỡng 3000
-                    if distance > 3000 then
-                        pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                                "requestEntrance",
-                                data.Entrance
-                            )
-                        end)
-                    end
-                end
-            end
-
             break
         end
     end
@@ -992,17 +974,6 @@ function MaterialMon()
     MMon = data.MMon
     MPos = data.MPos
 
-    -- Xử lý Entrance an toàn
-    if data.Entrance and data.Distance then
-        local char = game.Players.LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if root then
-            local dist = (root.Position - data.Entrance).Magnitude
-            if dist >= data.Distance then
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
-            end
-        end
-    end
 end
 ------------------------------------------------------------------
 -- ESP helpers (PHẢI đứng trước mọi hàm ESP — Round không được local)
@@ -1529,14 +1500,251 @@ spawn(function()
     end
 end)
 
+----------------------------------------------------------------
+-- HỆ THỐNG DI CHUYỂN (toAdvanced) — đúng sơ đồ
+----------------------------------------------------------------
+-- toAdvanced(TargetCF)
+--        │
+--        ▼
+--  Phân tích Target
+--        │
+-- ┌──────┴──────┐
+-- ▼             ▼
+-- CÓ ENTRANCE   KHÔNG CÓ
+-- ▼             ▼
+-- khả dụng?   Distance < 2000?
+-- ┌──┴──┐     ┌──┴──┐
+-- CÓ  KHÔNG  CÓ   ≥2000
+-- │     │     │      │
+-- ▼     ▼     ▼      ▼
+-- request  Tween  Tween  Tìm Entrance
+-- Entrance thẳng  thẳng     │
+-- │                         ▼
+-- Tween(Target)        Tiết kiệm ≥300m?
+--                        ┌──┴──┐
+--                       CÓ   KHÔNG
+--                        │      │
+--                        ▼      ▼
+--               requestEntrance  Tween
+--               (Position gần       thẳng
+--                Player/Target)
+--                        │
+--                        ▼
+--                  Tween(TargetCF)
+----------------------------------------------------------------
+
 function BTPZ(cf)
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
-    task.wait();
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
+    local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    root.CFrame = cf
+    task.wait()
+    root.CFrame = cf
 end
+
 local TweenSpeed = 270
 local CurrentTween = nil
 _G.StopTween = false
+
+-- ==================== DATABASE ENTRANCE ====================
+-- Position1 = phía "ngoài" / điểm gọi vào
+-- Position2 = phía "trong" / điểm sau khi qua cổng
+-- RequestPos = vector truyền vào requestEntrance (thường = Position2 hoặc Position1 tùy cổng)
+-- NeedRipIndra = true chỉ Sea 3 Castle Portal (chưa đánh Rip Indra → không khả dụng)
+
+local EntranceDB = {
+    -- SEA 1
+    {
+        Name = "UnderwaterCity",
+        Sea = 1,
+        Position1 = Vector3.new(3864.68, 6.70, -1926.21),          -- xoáy nước ngoài
+        Position2 = Vector3.new(61163.85, 11.68, 1819.78),         -- trong đảo cá
+        RequestPos = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875),
+        Radius1 = 100,
+        Radius2 = 3500,
+    },
+    {
+        Name = "UpperSkylands1",
+        Sea = 1,
+        Position1 = Vector3.new(-4607.82, 872.54, -1667.56),       -- suối mây thấp
+        Position2 = Vector3.new(-7894.62, 5547.14, -380.41),       -- mây cao 1
+        RequestPos = Vector3.new(-4607.82275, 872.54248, -1667.55688),
+        Radius1 = 120,
+        Radius2 = 900,
+    },
+    {
+        Name = "UpperSkylands2",
+        Sea = 1,
+        Position1 = Vector3.new(-7927.09, 5545.53, -320.70),       -- gốc cây tầng 1
+        Position2 = Vector3.new(-11455.37, 431.14, -831.62),       -- thần điện Enel
+        RequestPos = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047),
+        Radius1 = 100,
+        Radius2 = 800,
+    },
+
+    -- SEA 2
+    {
+        Name = "CursedShip",
+        Sea = 2,
+        Position1 = Vector3.new(923.21, 125.06, 32852.83),         -- cửa ngoài tàu
+        Position2 = Vector3.new(-1344.20, 332.22, -9805.21),       -- trong tàu (theo tọa độ bạn)
+        RequestPos = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125),
+        Radius1 = 200,
+        Radius2 = 3000,
+    },
+    {
+        Name = "SwanRoom",
+        Sea = 2,
+        Position1 = Vector3.new(2284.91, 15.15, 905.48),           -- cửa Trevor
+        Position2 = Vector3.new(2285.42, 15.15, 867.72),           -- phòng Swan
+        RequestPos = Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625),
+        Radius1 = 50,
+        Radius2 = 80,
+    },
+
+    -- SEA 3
+    {
+        Name = "CastlePortal",
+        Sea = 3,
+        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),       -- phòng portal lâu đài
+        Position2 = Vector3.new(-5058.92, 314.52, -3155.88),
+        RequestPos = Vector3.new(-5075.50927734375, 314.5155029296875, -3150.0224609375),
+        Radius1 = 150,
+        Radius2 = 250,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "PortTownPortal",
+        Sea = 3,
+        Position1 = Vector3.new(-290.73, 6.72, 5343.55),
+        Position2 = Vector3.new(-290.73, 6.72, 5343.55),
+        RequestPos = Vector3.new(-290.7376708984375, 6.729952812194824, 5343.5537109375),
+        Radius1 = 100,
+        Radius2 = 180,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "MansionPortal",
+        Sea = 3,
+        Position1 = Vector3.new(-12463.87, 374.91, -7565.52),
+        Position2 = Vector3.new(-12463.87, 374.91, -7565.52),
+        RequestPos = Vector3.new(-12468.5380859375, 375.0094299316406, -7554.62548828125),
+        Radius1 = 120,
+        Radius2 = 220,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "GreatTreePortal",
+        Sea = 3,
+        Position1 = Vector3.new(2381.18, 28.52, -7370.47),
+        Position2 = Vector3.new(2381.18, 28.52, -7370.47),
+        RequestPos = Vector3.new(2381.18, 28.52, -7370.47),
+        Radius1 = 120,
+        Radius2 = 220,
+        NeedRipIndra = true,
+    },
+    {
+        Name = "TempleOfTime",
+        Sea = 3,
+        Position1 = Vector3.new(2870.33, 2362.21, -7237.90),       -- cổng sứ giả trên cây
+        Position2 = Vector3.new(28282.57, 14896.85, 105.10),       -- trong đền thời gian
+        RequestPos = Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875),
+        Radius1 = 100,
+        Radius2 = 600,
+    },
+    {
+        Name = "HydraEntrance",
+        Sea = 3,
+        Position1 = Vector3.new(5661.53, 1013.09, -334.96),
+        Position2 = Vector3.new(5661.53, 1013.09, -334.96),
+        RequestPos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
+        Radius1 = 150,
+        Radius2 = 450,
+    },
+}
+
+local function HasDefeatedRipIndra()
+    local ok, result = pcall(function()
+        return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "General")
+    end)
+    if ok then
+        return result ~= 0 and result ~= nil
+    end
+    return false
+end
+
+local function IsEntranceAvailable(entry)
+    if not entry then return false end
+    local currentSeaNum = Sea1 and 1 or Sea2 and 2 or Sea3 and 3
+    if entry.Sea ~= currentSeaNum then return false end
+    if entry.NeedRipIndra then
+        return HasDefeatedRipIndra()
+    end
+    return true
+end
+
+local function Near(pos, point, radius)
+    return pos and point and (pos - point).Magnitude <= (radius or 100)
+end
+
+-- Target nằm trong vùng Position2 (phía "trong") của entrance này?
+local function FindDirectEntranceForTarget(targetPos)
+    for _, entry in ipairs(EntranceDB) do
+        if IsEntranceAvailable(entry) then
+            if Near(targetPos, entry.Position2, entry.Radius2) then
+                return entry
+            end
+        end
+    end
+    return nil
+end
+
+local function GetAvailableEntrances()
+    local list = {}
+    for _, entry in ipairs(EntranceDB) do
+        if IsEntranceAvailable(entry) then
+            table.insert(list, entry)
+        end
+    end
+    return list
+end
+
+-- Tìm entrance trung gian tiết kiệm ≥ 300 studs
+-- Chọn Position gần Player và Position gần Target để tính đường đi
+local function FindOptimalEntrance(playerPos, targetPos)
+    local directDist = (targetPos - playerPos).Magnitude
+    local best = nil
+    local bestSave = 0
+
+    for _, entry in ipairs(GetAvailableEntrances()) do
+        -- Hướng A: Player gần Position1 → Target gần Position2
+        local viaA = (entry.Position1 - playerPos).Magnitude + (targetPos - entry.Position2).Magnitude
+        local saveA = directDist - viaA
+
+        -- Hướng B: Player gần Position2 → Target gần Position1
+        local viaB = (entry.Position2 - playerPos).Magnitude + (targetPos - entry.Position1).Magnitude
+        local saveB = directDist - viaB
+
+        if saveA > bestSave and saveA >= 300 then
+            bestSave = saveA
+            best = { Entry = entry, RequestPos = entry.RequestPos or entry.Position2, Save = saveA }
+        end
+        if saveB > bestSave and saveB >= 300 then
+            bestSave = saveB
+            best = { Entry = entry, RequestPos = entry.RequestPos or entry.Position1, Save = saveB }
+        end
+    end
+    return best
+end
+
+local function RequestEntrance(pos)
+    if not pos then return end
+    pcall(function()
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", pos)
+    end)
+    task.wait(0.35)
+end
+
+-- ==================== TWEEN CƠ BẢN ====================
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
@@ -1558,9 +1766,9 @@ function Tween(targetCFrame)
     })
     CurrentTween:Play()
 end
+
 function CancelTween()
     _G.StopTween = true
-
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -1574,6 +1782,7 @@ function CancelTween()
     task.wait(0.15)
     _G.StopTween = false
 end
+
 function Tween2(targetCFrame)
     if not game.Players.LocalPlayer.Character then return end
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -1586,7 +1795,7 @@ function Tween2(targetCFrame)
     _G.StopTween = false
     _G.Clip2 = true
     Tween(targetCFrame)
-    while (root.Position - targetCFrame.Position).Magnitude > 6 do
+    while root.Parent and (root.Position - targetCFrame.Position).Magnitude > 6 do
         if _G.StopTween then break end
         task.wait()
     end
@@ -1594,231 +1803,97 @@ function Tween2(targetCFrame)
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
     end
-
     _G.Clip2 = false
 end
-function EquipTool(toolName)
-    if game.Players.LocalPlayer.Backpack:FindFirstChild(toolName) then
-        local foundTool = game.Players.LocalPlayer.Backpack:FindFirstChild(toolName)
-        task.wait()
-        game.Players.LocalPlayer.Character.Humanoid:EquipTool(foundTool)
-    end
-end
-spawn(function()
-    local ref1 = getrawmetatable(game);
-    local oldNamecall = ref1.__namecall;
-    setreadonly(ref1, false);
-    ref1.__namecall = newcclosure(function(...)
-        local method = getnamecallmethod();
-        local part = {
-            ...
-        };
-        if (tostring(method) == "FireServer") then
-            if (tostring(part[1]) == "RemoteEvent") then
-                if ((tostring(part[2]) ~= "true") and (tostring(part[2]) ~= "false")) then
-                    if _G.UseSkill then
-                        if (type(part[2]) == "vector") then
-                            part[2] = PositionSkillMasteryDevilFruit;
-                        else
-                            part[2] = CFrame.new(PositionSkillMasteryDevilFruit);
-                        end
-                        return oldNamecall(unpack(part));
-                    end
-                end
-            end
-        end
-        return oldNamecall(...);
-    end);
-end);
-spawn(function()
-    while task.wait() do
-        pcall(function()
-            if (_G.AutoEvoRace or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.Tweenfruit or _G.AutoFishCrew or _G.Auto_Saber or _G.AutoShark or _G.Auto_Warden or _G.Auto_RainbowHaki or AutoFarmRace or _G.AutoQuestRace or Auto_Law or AutoTushita or _G.AutoHolyTorch or _G.AutoTerrorshark or _G.farmpiranya or _G.Auto_MusketeerHat or _G.Auto_ObservationV2 or _G.AutoNear or _G.Auto_PoleV1 or _G.Auto_Buddy or _G.Ectoplasm or AutoEvoRace or AutoBartilo or _G.Auto_Canvander or _G.AutoLevel or _G.Auto_DualKatana or Auto_Quest_Yama_3 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or _G.Clip2 or _G.Auto_Regoku or _G.AutoBone or _G.AutoBoneNoQuest or _G.AutoBoss or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.Auto_SkullGuitar or _G.AutoFarmSwan or _G.DoughKing or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or AutoFarmRaceQuest or _G.Factory or _G.Auto_Saw or _G.AutoFrozenDimension or _G.AutoKillTrial or _G.AutoUpgrade or _G.TweenToFrozenDimension) then
-                if not game:GetService("Players").LocalPlayer.Character.HumanoidRootPart:FindFirstChild("BodyClip") then
-                    local ref2 = Instance.new("BodyVelocity");
-                    ref2.Name = "BodyClip";
-                    ref2.Parent = game:GetService("Players").LocalPlayer.Character.HumanoidRootPart;
-                    ref2.MaxForce = Vector3.new(0, 100000, 0);
-                    ref2.Velocity = Vector3.new(0, 0, 0);
-                end
-            else
-                game:GetService("Players").LocalPlayer.Character.HumanoidRootPart:FindFirstChild("BodyClip"):Destroy();
-            end
-        end);
-    end
-end);
-spawn(function()
-    pcall(function()
-        game:GetService("RunService").Stepped:Connect(function()
-            if (_G.AutoEvoRace or _G.Auto_RainbowHaki or _G.Auto_SkullGuitar or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Tweenfruit or _G.Auto_Saber or _G.Auto_PoleV1 or _G.Auto_MusketeerHat or _G.AutoFishCrew or _G.AutoShark or AutoFarmRace or _G.AutoQuestRace or _G.Auto_Warden or Auto_Law or _G.Auto_DualKatana or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or AutoTushita or _G.AutoHolyTorch or _G.Auto_Buddy or _G.AutoTerrorshark or _G.farmpiranya or Auto_Quest_Yama_3 or _G.Auto_ObservationV2 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or _G.AutoNear or _G.Ectoplasm or AutoEvoRace or _G.AutoKillTrial or AutoBartilo or _G.Auto_Regoku or _G.AutoLevel or _G.Clip2 or _G.AutoBone or _G.Auto_Canvander or _G.AutoBoneNoQuest or _G.AutoBoss or _G.Auto_Saw or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.DoughKing or _G.AutoFarmSwan or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or _G.Factory or _G.AutoFrozenDimension or AutoFarmRaceQuest or _G.AutoUpgrade or _G.TweenToFrozenDimension) then
-                for _, part in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false;
-                    end
-                end
-            end
-        end);
-    end);
-end);
-task.spawn(function()
-    if game.Players.LocalPlayer.Character:FindFirstChild("Stun") then
-        game.Players.LocalPlayer.Character.Stun.Changed:connect(function()
-            pcall(function()
-                if game.Players.LocalPlayer.Character:FindFirstChild("Stun") then
-                    game.Players.LocalPlayer.Character.Stun.Value = 0;
-                end
-            end);
-        end);
-    end
-end);
-function CheckMaterial(matName)
-    for _, invItem in pairs(game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory")) do
-        if (type(invItem) == "table") then
-            if (invItem.Type == "Material") then
-                if (invItem.Name == matName) then
-                    return invItem.Count;
-                end
-            end
-        end
-    end
-    return 0;
-end
-function GetWeaponInventory(weaponName)
-    for _, invItem in pairs(game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory")) do
-        if (type(invItem) == "table") then
-            if (invItem.Type == "Sword") then
-                if (invItem.Name == weaponName) then
-                    return true;
-                end
-            end
-        end
-    end
-    return false;
-end
-local LocalPlayer = game.Players.LocalPlayer;
-function FindEnemiesInRange(resultTable, enemyList)
-    local myPos = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):GetPivot().Position;
-    local ref4 = nil;
-    for _, child in ipairs(enemyList) do
-        if (not child:GetAttribute("IsBoat") and child:FindFirstChildOfClass("Humanoid") and (child.Humanoid.Health > 0)) then
-            local headPart = child:FindFirstChild("Head");
-            if (headPart and ((myPos - headPart.Position).Magnitude <= 60)) then
-                if (child ~= LocalPlayer.Character) then
-                    table.insert(resultTable, {
-                        child,
-                        headPart
-                    });
-                    ref4 = headPart;
-                end
-            end
-        end
-    end
-    for _, plr in ipairs(game.Players:GetPlayers()) do
-        if (plr.Character and (plr ~= LocalPlayer)) then
-            local head = plr.Character:FindFirstChild("Head");
-            if (head and ((myPos - head.Position).Magnitude <= 60)) then
-                table.insert(resultTable, {
-                    plr.Character,
-                    head
-                });
-                ref4 = head;
-            end
-        end
-    end
-    return ref4;
-end
-function GetEquippedTool()
-    local char = LocalPlayer.Character;
-    if not char then
-        return nil;
-    end
-    for _, item in ipairs(char:GetChildren()) do
-        if item:IsA("Tool") then
-            return item;
-        end
-    end
-    return nil;
-end
-function AttackNoCoolDown()
-    local enemiesInRange = {};
-    local enemies = game:GetService("Workspace").Enemies:GetChildren();
-    local hitPart = FindEnemiesInRange(enemiesInRange, enemies);
-    if not hitPart then
-        return;
-    end
-    local equipped = GetEquippedTool();
-    if not equipped then
-        return;
-    end
-    pcall(function()
-        local delay = _G.Fast_Delay or 0.5
-        local RS = game:GetService("ReplicatedStorage");
-        local regAttack = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack");
-        local regHit = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit");
-        if (# enemiesInRange > 0) then
-            regAttack:FireServer(delay);
-            regHit:FireServer(hitPart, enemiesInRange);
-        else
-            task.wait(delay);
-        end
-    end);
-end
-Type = 1
-Pos = CFrame.new(0, 30, 0)
-function AutoHaki()
-    if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
-    end
-end
+
 function to(targetCF)
+    local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
     repeat
-        wait(_G.Fast_Delay);
-        game.Players.LocalPlayer.Character.Humanoid:ChangeState(15);
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
-        task.wait();
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
-    until (targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 2000
+        task.wait(_G.Fast_Delay or 0.1)
+        pcall(function()
+            local char = game.Players.LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid:ChangeState(15)
+            end
+            root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.CFrame = targetCF
+                task.wait()
+                root.CFrame = targetCF
+            end
+        end)
+        root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    until not root or (targetCF.Position - root.Position).Magnitude <= 2000
 end
+
+--[[
+    toAdvanced(TargetCF) — đúng sơ đồ bạn gửi:
+
+    1. TARGET CÓ ENTRANCE & khả dụng?
+       → requestEntrance NGAY (không bay tới cổng)
+       → Tween(TargetCF)
+
+    2. TARGET KHÔNG CÓ ENTRANCE:
+       ├─ Distance < 2000 → Tween thẳng
+       └─ ≥ 2000 → Tìm Entrance trung gian
+            ├─ Tiết kiệm ≥ 300m → requestEntrance (Position gần Player/Target) → Tween(Target)
+            └─ Không → Tween / to() thẳng
+
+    Sea 3 Castle Portal: chưa đánh Rip Indra → KHÔNG khả dụng → bỏ qua
+]]
 function toAdvanced(targetCF)
     pcall(function()
-        if (((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >= 2000) and not Auto_Raid and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)) then
-            if (NameMon == "FishmanQuest") then
-                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
-                wait();
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
-            elseif (Mon == "God's Guard") then
-                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
-                wait();
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
-            elseif (NameMon == "SkyExp1Quest") then
-                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
-                wait();
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
-            elseif (NameMon == "ShipQuest1") then
-                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
-                wait();
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
-            elseif (NameMon == "ShipQuest2") then
-                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
-                wait();
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
-            elseif (NameMon == "FrostQuest") then
-                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
-                wait();
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 6508.5581054688, 89.034996032715, - 132.83953857422));
+        if not targetCF then return end
+        local char = game.Players.LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        if char.Humanoid.Health <= 0 then return end
+        if Auto_Raid then
+            Tween(targetCF)
+            return
+        end
+
+        local playerPos = char.HumanoidRootPart.Position
+        local targetPos = targetCF.Position
+        local directDist = (targetPos - playerPos).Magnitude
+
+        ------------------------------------------------------------------
+        -- NHÁNH 1: TARGET CÓ ENTRANCE
+        ------------------------------------------------------------------
+        local directEntry = FindDirectEntranceForTarget(targetPos)
+        if directEntry then
+            -- Entrance khả dụng (đã lọc trong FindDirectEntranceForTarget)
+            -- → Gọi requestEntrance NGAY → Tween(Target)
+            RequestEntrance(directEntry.RequestPos or directEntry.Position2)
+            task.wait(0.4)
+            Tween(targetCF)
+            return
+        end
+
+        ------------------------------------------------------------------
+        -- NHÁNH 2: TARGET KHÔNG CÓ ENTRANCE
+        ------------------------------------------------------------------
+        if directDist < 2000 then
+            Tween(targetCF)
+            return
+        end
+
+        -- ≥ 2000 → tìm entrance trung gian tiết kiệm ≥ 300m
+        local optimal = FindOptimalEntrance(playerPos, targetPos)
+        if optimal then
+            RequestEntrance(optimal.RequestPos)
+            task.wait(0.4)
+            Tween(targetCF)
+        else
+            if directDist > 5000 then
+                to(targetCF)
             else
-                repeat
-                    wait(_G.Fast_Delay);
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
-                    wait(0.05);
-                    game.Players.LocalPlayer.Character.Head:Destroy();
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
-                until ((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 2500) and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)
-                wait();
+                Tween(targetCF)
             end
         end
-    end);
+    end)
 end
+
 local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
     and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
 
@@ -1930,7 +2005,7 @@ spawn(function()
                 CheckLevel();
                 if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
                     game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
-                    Tween(CFrameQ);
+                    toAdvanced(CFrameQ);
                     if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
                         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
                         task.wait(0.5);
@@ -2621,11 +2696,7 @@ if Sea2 then
                             end
                         end
                     else
-                        local ectoplasmDist = (Vector3.new(904.4072265625, 181.05767822266, 33341.38671875) - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude;
-                        if (ectoplasmDist > 20000) then
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
-                        end
-                        Tween(CFrame.new(904.4072265625, 181.05767822266, 33341.38671875));
+                        toAdvanced(CFrame.new(904.4072265625, 181.05767822266, 33341.38671875));
                     end
                 end
             end);
@@ -2817,7 +2888,7 @@ spawn(function()
         if _G.AutoMaterial then
             pcall(function()
                 MaterialMon(SelectMaterial);
-                Tween(MPos);
+                toAdvanced(MPos);
                 if game:GetService("Workspace").Enemies:FindFirstChild(MMon) then
                     for _, enemy in pairs(game.Workspace.Enemies:GetChildren()) do
                         if (varB:FindFirstChild("Humanoid") and varB:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
@@ -5339,10 +5410,7 @@ spawn(function()
                         end
                     end
                 else
-                    repeat
-                        task.wait();
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(2284.912109375, 15.537666320801, 905.48291015625));
-                    until ((CFrame.new(2284.912109375, 15.537666320801, 905.48291015625).Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 4) or (_G.AutoFarmSwan == false)
+                    toAdvanced(CFrame.new(2285.42, 15.15, 867.72));
                 end
             end
         end
@@ -6294,15 +6362,15 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Sky Island 1") then
             Tween2(CFrame.new(- 4869.1025390625, 733.46051025391, - 2667.0180664063));
         elseif (_G.SelectIsland == "Sky Island 2") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
+            toAdvanced(CFrame.new(-7894.62, 5547.14, -380.41));
         elseif (_G.SelectIsland == "Sky Island 3") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
+            toAdvanced(CFrame.new(-7894.62, 5547.14, -380.41));
         elseif (_G.SelectIsland == "Prison") then
             Tween2(CFrame.new(4875.330078125, 5.6519818305969, 734.85021972656));
         elseif (_G.SelectIsland == "Magma Village") then
             Tween2(CFrame.new(- 5247.7163085938, 12.883934020996, 8504.96875));
         elseif (_G.SelectIsland == "Under Water Island") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
+            toAdvanced(CFrame.new(61163.85, 11.68, 1819.78));
         elseif (_G.SelectIsland == "Fountain City") then
             Tween2(CFrame.new(5127.1284179688, 59.501365661621, 4105.4458007813));
         elseif (_G.SelectIsland == "Shank Room") then
@@ -6310,17 +6378,15 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Mob Island") then
             Tween2(CFrame.new(- 2850.20068, 7.39224768, 5354.99268));
         elseif (_G.SelectIsland == "The Cafe") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
-            wait();
-            Tween2(CFrame.new(- 380.47927856445, 77.220390319824, 255.82550048828));
+            toAdvanced(CFrame.new(-380.47927856445, 77.220390319824, 255.82550048828));
         elseif (_G.SelectIsland == "Frist Spot") then
             Tween2(CFrame.new(- 11.311455726624, 29.276733398438, 2771.5224609375));
         elseif (_G.SelectIsland == "Dark Area") then
             Tween2(CFrame.new(3780.0302734375, 22.652164459229, - 3498.5859375));
         elseif (_G.SelectIsland == "Flamingo Mansion") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
+            toAdvanced(CFrame.new(-380.47927856445, 77.220390319824, 255.82550048828));
         elseif (_G.SelectIsland == "Flamingo Room") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625));
+            toAdvanced(CFrame.new(2285.42, 15.15, 867.72));
         elseif (_G.SelectIsland == "Green Zone") then
             Tween2(CFrame.new(- 2448.5300292969, 73.016105651855, - 3210.6306152344));
         elseif (_G.SelectIsland == "Factory") then
@@ -6334,7 +6400,7 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Punk Hazard") then
             Tween2(CFrame.new(- 6127.654296875, 15.951762199402, - 5040.2861328125));
         elseif (_G.SelectIsland == "Cursed Ship") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.40197753906, 125.05712890625, 32885.875));
+            toAdvanced(CFrame.new(923.21, 125.06, 32852.83));
         elseif (_G.SelectIsland == "Ice Castle") then
             Tween2(CFrame.new(6148.4116210938, 294.38687133789, - 6741.1166992188));
         elseif (_G.SelectIsland == "Forgotten Island") then
@@ -6346,17 +6412,17 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Great Tree") then
             Tween2(CFrame.new(2681.2736816406, 1682.8092041016, - 7190.9853515625));
         elseif (_G.SelectIsland == "Castle On The Sea") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
+            toAdvanced(CFrame.new(-5058.92, 314.52, -3155.88));
         elseif (_G.SelectIsland == "MiniSky") then
             Tween2(CFrame.new(- 260.65557861328, 49325.8046875, - 35253.5703125));
         elseif (_G.SelectIsland == "Port Town") then
             Tween2(CFrame.new(- 290.7376708984375, 6.729952812194824, 5343.5537109375));
         elseif (_G.SelectIsland == "Hydra Island") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
+            toAdvanced(CFrame.new(5661.53, 1013.09, -334.96));
         elseif (_G.SelectIsland == "Floating Turtle") then
             Tween2(CFrame.new(- 13274.528320313, 531.82073974609, - 7579.22265625));
         elseif (_G.SelectIsland == "Mansion") then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 12468.5380859375, 375.0094299316406, - 7554.62548828125));
+            toAdvanced(CFrame.new(-12463.87, 374.91, -7565.52));
         elseif (_G.SelectIsland == "Haunted Castle") then
             Tween2(CFrame.new(- 9515.3720703125, 164.00624084473, 5786.0610351562));
         elseif (_G.SelectIsland == "Ice Cream Island") then
@@ -6790,8 +6856,7 @@ spawn(function()
                             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(setSpawnArgs));
                             fireclickdetector(game:GetService("Workspace").Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector);
                         elseif Sea3 then
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
-                            Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
+                            toAdvanced(CFrame.new(-5017.40869, 314.844055, -2823.0127));
                             local setSpawnArgs2 = {
                                 [1] = "SetSpawnPoint"
                             };
@@ -6993,8 +7058,7 @@ elseif Sea3 then
         Title = "Bay Đến Chỗ Tập Kích",
         Description = "",
         Callback = function()
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
-            Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
+            toAdvanced(CFrame.new(-5017.40869, 314.844055, -2823.0127));
         end
     });
 end
@@ -7057,23 +7121,21 @@ Tabs.Race:AddButton({
     Title = "Đền Thời Gian",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        toAdvanced(CFrame.new(28282.57, 14896.85, 105.10));
     end
 });
 Tabs.Race:AddButton({
     Title = "Cần Gạt",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
-        Tween2(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734));
+        toAdvanced(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734));
     end
 });
 Tabs.Race:AddButton({
     Title = "Chỗ Mua Gear",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
-        Tween2(CFrame.new(28981.552734375, 14888.4267578125, - 120.245849609375));
+        toAdvanced(CFrame.new(28981.552734375, 14888.4267578125, -120.245849609375));
     end
 });
 local _section = Tabs.Race:AddSection("Tộc");
@@ -7081,19 +7143,21 @@ Tabs.Race:AddButton({
     Title = "Cửa Tộc",
     Description = "",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
-        if (game:GetService("Players").LocalPlayer.Data.Race.Value == "Human") then
-            Tween2(CFrame.new(29221.822265625, 14890.9755859375, - 205.99114990234375));
-        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Skypiea") then
-            Tween2(CFrame.new(28960.158203125, 14919.6240234375, 235.03948974609375));
-        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Fishman") then
-            Tween2(CFrame.new(28231.17578125, 14890.9755859375, - 211.64173889160156));
-        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Cyborg") then
-            Tween2(CFrame.new(28502.681640625, 14895.9755859375, - 423.7279357910156));
-        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Ghoul") then
-            Tween2(CFrame.new(28674.244140625, 14890.6767578125, 445.4310607910156));
-        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Mink") then
-            Tween2(CFrame.new(29012.341796875, 14890.9755859375, - 380.1492614746094));
+        local race = game:GetService("Players").LocalPlayer.Data.Race.Value
+        if race == "Human" then
+            toAdvanced(CFrame.new(29221.822265625, 14890.9755859375, -205.99114990234375));
+        elseif race == "Skypiea" then
+            toAdvanced(CFrame.new(28960.158203125, 14919.6240234375, 235.03948974609375));
+        elseif race == "Fishman" then
+            toAdvanced(CFrame.new(28231.17578125, 14890.9755859375, -211.64173889160156));
+        elseif race == "Cyborg" then
+            toAdvanced(CFrame.new(28502.681640625, 14895.9755859375, -423.7279357910156));
+        elseif race == "Ghoul" then
+            toAdvanced(CFrame.new(28674.244140625, 14890.6767578125, 445.4310607910156));
+        elseif race == "Mink" then
+            toAdvanced(CFrame.new(29012.341796875, 14890.9755859375, -380.1492614746094));
+        else
+            toAdvanced(CFrame.new(28282.57, 14896.85, 105.10));
         end
     end
 });
@@ -7474,8 +7538,7 @@ Tabs.Shop:AddButton({
     Title = "Đổi Tộc Draco",
     Description = "Chỉ Ở Biển 3",
     Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
-        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938));
+        toAdvanced(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938));
         local dracoPos = Vector3.new(5814.42724609375, 1208.3267822265625, 884.5785522460938);
         local dracoPlayer = game.Players.LocalPlayer;
         local dracoChar = dracoPlayer.Character or dracoPlayer.CharacterAdded:Wait() ;
@@ -7819,8 +7882,7 @@ local ReceiveQuestToggle = Tabs.Sea:AddToggle("ToggleReceiveQuest", {
 ReceiveQuestToggle:OnChanged(function(value)
     _G.AutoReceiveQuest = value
     if _G.AutoReceiveQuest then
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
-        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
+        toAdvanced(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
         spawn(function()
             pcall(function()
                 while task.wait() do
@@ -7940,8 +8002,7 @@ DracoSection:AddButton({
     Title = "Bay Đến Khu Vực Dragon Dojo",
     Description = "",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
-        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
+        toAdvanced(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
     end
 })
 
