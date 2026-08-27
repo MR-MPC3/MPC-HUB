@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- FRAMEWORK GIAO DIỆN (OPTIMIZED & INCLUDED ANTI-SKID COMMENT)
+-- FRAMEWORK GIAO DIỆN (LOADER DISABLED)
 ----------------------------------------------------------------
 -- discord.gg/25ms
 
@@ -9,6 +9,10 @@ local CoreGui = game:GetService("CoreGui")
 
 local ParentGui = (gethui and gethui()) or CoreGui
 
+-- =============================================================
+-- PHẦN LOADER ĐÃ ĐƯỢC COMMENT OUT (TẮT GIAO DIỆN CHỜ)
+-- =============================================================
+--[[
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
 shared.LoaderKeyFrames = {
     [1] = {1, 10},
@@ -211,6 +215,7 @@ task.wait(0.5);
 TweenObject(MainFrame, 0.25, { Size = UDim2.new(0, 0, 0, 0) });
 task.wait(0.25);
 LoaderGui:Destroy();
+--]]
 
 -- spawn(function()
 --     while wait() do
