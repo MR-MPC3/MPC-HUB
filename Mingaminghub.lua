@@ -1,7 +1,6 @@
 --------------------------------------
 -- LOADER UI
 --------------------------------------
-
 local cloneref=cloneref or function(o)return o end
 local TweenService=cloneref(game:GetService("TweenService"))
 local UserInputService=cloneref(game:GetService("UserInputService"))
@@ -316,80 +315,89 @@ if LoaderGui then LoaderGui:Destroy() end
 ---------------------------------
 -- TẢI FLUENT UI
 ---------------------------------
-local success, Fluent = pcall(function()
+local success,Fluent=pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
-assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+assert(success and Fluent,"[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
 
-local Window = Fluent:CreateWindow({
-    Title = "Min Gaming",
-    SubTitle = "",
-    TabWidth = 160,
-    Theme = "Light",
-    Acrylic = false,
-    Size = UDim2.fromOffset(500, 320),
-    MinimizeKey = Enum.KeyCode.End
+local Window=Fluent:CreateWindow({
+    Title="Min Gaming",
+    SubTitle="",
+    TabWidth=160,
+    Theme="Light",
+    Acrylic=false,
+    Size=UDim2.fromOffset(500,320),
+    MinimizeKey=Enum.KeyCode.End
 })
 
--- NÚT TOGGLE BẬT/TẮT MENU
-local MinGui = Instance.new("ScreenGui")
-MinGui.Name = "MinGamingToggle"
-MinGui.ResetOnSpawn = false
-MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-MinGui.Parent = ParentGui
+---------------------------------
+-- MINIMIZE / TOGGLE BUTTON
+---------------------------------
+local OldMinGui=ParentGui:FindFirstChild("MinGamingToggle")
+if OldMinGui then OldMinGui:Destroy() end
 
-local MinButton = Instance.new("ImageButton")
-MinButton.Name = "MinButton"
-MinButton.Parent = MinGui
-MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-MinButton.BorderSizePixel = 0
-MinButton.Position = UDim2.fromOffset(20, 100)
-MinButton.Size = UDim2.fromOffset(50, 50)
-MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
-MinButton.AutoButtonColor = false
+local MinGui=Instance.new("ScreenGui")
+MinGui.Name="MinGamingToggle"
+MinGui.ResetOnSpawn=false
+MinGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+MinGui.Parent=ParentGui
 
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 12)
-MinCorner.Parent = MinButton
+local MinButton=Instance.new("ImageButton")
+MinButton.Name="MinButton"
+MinButton.BackgroundColor3=Color3.fromRGB(0,0,0)
+MinButton.BorderSizePixel=0
+MinButton.Position=UDim2.fromOffset(20,100)
+MinButton.Size=UDim2.fromOffset(50,50)
+MinButton.Image="rbxassetid://13717478897"
+MinButton.AutoButtonColor=false
+MinButton.Parent=MinGui
 
-local Dragging = false
-local DragStart, StartPosition
-local DraggedFar = false
+local MinCorner=Instance.new("UICorner")
+MinCorner.CornerRadius=UDim.new(0,12)
+MinCorner.Parent=MinButton
+
+---------------------------------
+-- DRAG
+---------------------------------
+local Dragging=false
+local DragStart
+local StartPosition
+local DraggedFar=false
 
 MinButton.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = true
-        DraggedFar = false
-        DragStart = Input.Position
-        StartPosition = MinButton.Position
+    local InputType=Input.UserInputType
+    if InputType==Enum.UserInputType.MouseButton1 or InputType==Enum.UserInputType.Touch then
+        Dragging=true
+        DraggedFar=false
+        DragStart=Input.Position
+        StartPosition=MinButton.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
-    if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-        local Delta = Input.Position - DragStart
-        if Delta.Magnitude > 5 then
-            DraggedFar = true
-        end
-        MinButton.Position = UDim2.new(
-            StartPosition.X.Scale,
-            StartPosition.X.Offset + Delta.X,
-            StartPosition.Y.Scale,
-            StartPosition.Y.Offset + Delta.Y
-        )
-    end
+    if not Dragging then return end
+    local InputType=Input.UserInputType
+    if InputType~=Enum.UserInputType.MouseMovement and InputType~=Enum.UserInputType.Touch then return end
+    local Delta=Input.Position-DragStart
+    if Delta.Magnitude>5 then DraggedFar=true end
+    MinButton.Position=UDim2.new(
+        StartPosition.X.Scale,StartPosition.X.Offset+Delta.X,
+        StartPosition.Y.Scale,StartPosition.Y.Offset+Delta.Y
+    )
 end)
 
 UserInputService.InputEnded:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = false
+    local InputType=Input.UserInputType
+    if InputType==Enum.UserInputType.MouseButton1 or InputType==Enum.UserInputType.Touch then
+        Dragging=false
     end
 end)
 
+---------------------------------
+-- CLICK TOGGLE
+---------------------------------
 MinButton.Activated:Connect(function()
-    if not DraggedFar then
-        Window:Minimize()
-    end
+    if not DraggedFar then Window:Minimize() end
 end)
 
 ----------------------------------------------------------------
