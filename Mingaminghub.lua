@@ -1,28 +1,22 @@
 ----------------------------------------------------------------
--- code phần khung giao diện (UI Framework), và chống sao chép code 
+-- FRAMEWORK GIAO DIỆN (OPTIMIZED & INCLUDED ANTI-SKID COMMENT)
 ----------------------------------------------------------------
 -- discord.gg/25ms
 
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local ParentGui = (gethui and gethui()) or CoreGui
 
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
 shared.LoaderKeyFrames = {
-    [1] = {
-        1,
-        10
-    },
-    [2] = {
-        2,
-        30
-    },
-    [3] = {
-        3,
-        60
-    },
-    [4] = {
-        2,
-        100
-    }
+    [1] = {1, 10},
+    [2] = {2, 30},
+    [3] = {3, 60},
+    [4] = {2, 100}
 };
+
 local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "A Loader",
@@ -34,34 +28,26 @@ local LoaderConfig = {
             LoaderSplash = Color3.fromRGB(3, 252, 3)
         }
     },
-    Keyframes = shared.LoaderKeyFrames or {
-        [1] = {
-            1,
-            10
-        },
-        [2] = {
-            2,
-            30
-        },
-        [3] = {
-            3,
-            60
-        },
-        [4] = {
-            2,
-            100
-        }
-    }
+    Keyframes = shared.LoaderKeyFrames
 };
+
 local LoaderStepTexts = {
     [1] = "Đang kiểm tra dữ liệu...",
     [2] = "Đang nạp thư viện UI...",
     [3] = "Đang kết nối Server...",
     [4] = "Thành công!"
 };
+
 function TweenObject(object, duration, goals)
-    game.TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals):Play();
+    if not object then return end
+    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals)
+    tween:Play()
+    return tween
 end
+
+_G.LoaderConfig = LoaderConfig
+_G.LoaderStepTexts = LoaderStepTexts
+
 function CreateObject(className, props)
     local instance = Instance.new(className);
     local parent;
@@ -75,15 +61,18 @@ function CreateObject(className, props)
     instance.Parent = parent;
     return instance;
 end
+
 local function AddUICorner(radius, parentObj)
     local corner = Instance.new("UICorner");
     corner.CornerRadius = UDim.new(0, radius);
     corner.Parent = parentObj;
 end
+
 local LoaderGui = CreateObject("ScreenGui", {
     Name = "Core",
-    Parent = game.CoreGui
+    Parent = ParentGui
 });
+
 local MainFrame = CreateObject("Frame", {
     Name = "Main",
     Parent = LoaderGui,
@@ -95,6 +84,7 @@ local MainFrame = CreateObject("Frame", {
     Size = UDim2.new(0, 0, 0, 0)
 });
 AddUICorner(12, MainFrame);
+
 local UserImage = CreateObject("ImageLabel", {
     Name = "UserImage",
     Parent = MainFrame,
@@ -104,6 +94,7 @@ local UserImage = CreateObject("ImageLabel", {
     Size = UDim2.new(0, 50, 0, 50)
 });
 AddUICorner(25, UserImage);
+
 local UserNameLabel = CreateObject("TextLabel", {
     Name = "UserName",
     Parent = MainFrame,
@@ -116,6 +107,7 @@ local UserNameLabel = CreateObject("TextLabel", {
     TextSize = 14,
     TextXAlignment = Enum.TextXAlignment.Left
 });
+
 local TopicLabel = CreateObject("TextLabel", {
     Name = "Top",
     TextTransparency = 1,
@@ -130,6 +122,7 @@ local TopicLabel = CreateObject("TextLabel", {
     TextSize = 10,
     TextXAlignment = Enum.TextXAlignment.Left
 });
+
 local TitleLabel = CreateObject("TextLabel", {
     Name = "Title",
     Parent = MainFrame,
@@ -145,6 +138,7 @@ local TitleLabel = CreateObject("TextLabel", {
     TextSize = 14,
     TextXAlignment = Enum.TextXAlignment.Left
 });
+
 local ProgressBG = CreateObject("Frame", {
     Name = "BG",
     Parent = MainFrame,
@@ -153,9 +147,10 @@ local ProgressBG = CreateObject("Frame", {
     BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground,
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0, 70),
-    Size = UDim2.new(0.8500000238418579, 0, 0, 24)
+    Size = UDim2.new(0.85, 0, 0, 24)
 });
 AddUICorner(8, ProgressBG);
+
 local ProgressBar = CreateObject("Frame", {
     Name = "Progress",
     Parent = ProgressBG,
@@ -165,6 +160,7 @@ local ProgressBar = CreateObject("Frame", {
     Size = UDim2.new(0, 0, 0, 24)
 });
 AddUICorner(8, ProgressBar);
+
 local StepLabel = CreateObject("TextLabel", {
     Name = "StepLabel",
     Parent = MainFrame,
@@ -178,53 +174,42 @@ local StepLabel = CreateObject("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Center,
     AnchorPoint = Vector2.new(0.5, 0.5)
 });
+
 function UpdateStepText(stepIndex)
     StepLabel.Text = LoaderStepTexts[stepIndex] or "" ;
 end
+
 function UpdatePercentage(percent, stepIndex)
     TweenObject(ProgressBar, 0.5, {
         Size = UDim2.new(percent / 100, 0, 0, 24)
     });
     UpdateStepText(stepIndex);
 end
+
 TweenObject(MainFrame, 0.25, {
     Size = UDim2.new(0, 346, 0, 121)
 });
-wait();
-TweenObject(TopicLabel, 0.5, {
-    TextTransparency = 0
-});
-TweenObject(TitleLabel, 0.5, {
-    TextTransparency = 0
-});
-TweenObject(ProgressBG, 0.5, {
-    BackgroundTransparency = 0
-});
-TweenObject(ProgressBar, 0.5, {
-    BackgroundTransparency = 0
-});
-for step, keyframe in pairs(LoaderConfig.Keyframes) do
-    wait(keyframe[1]);
+task.wait(0.1);
+
+TweenObject(TopicLabel, 0.5, { TextTransparency = 0 });
+TweenObject(TitleLabel, 0.5, { TextTransparency = 0 });
+TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 0 });
+TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 0 });
+
+for step, keyframe in ipairs(LoaderConfig.Keyframes) do
+    task.wait(keyframe[1]);
     UpdatePercentage(keyframe[2], step);
 end
-UpdatePercentage(100, 4);
-TweenObject(TopicLabel, 0.5, {
-    TextTransparency = 1
-});
-TweenObject(TitleLabel, 0.5, {
-    TextTransparency = 1
-});
-TweenObject(ProgressBG, 0.5, {
-    BackgroundTransparency = 1
-});
-TweenObject(ProgressBar, 0.5, {
-    BackgroundTransparency = 1
-});
-wait(0.5);
-TweenObject(MainFrame, 0.25, {
-    Size = UDim2.new(0, 0, 0, 0)
-});
-wait(0.25);
+task.wait(0.5);
+
+TweenObject(TopicLabel, 0.5, { TextTransparency = 1 });
+TweenObject(TitleLabel, 0.5, { TextTransparency = 1 });
+TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 1 });
+TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 1 });
+task.wait(0.5);
+
+TweenObject(MainFrame, 0.25, { Size = UDim2.new(0, 0, 0, 0) });
+task.wait(0.25);
 LoaderGui:Destroy();
 
 -- spawn(function()
