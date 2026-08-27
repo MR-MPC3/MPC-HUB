@@ -106,19 +106,18 @@ local ProgressBG = Create("Frame", {
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0, 75),
     AnchorPoint = Vector2.new(0.5, 0),
-    Size = UDim2.new(0.9, 0, 0, 12),
+    Size = UDim2.new(0.8500000238418579, 0, 0, 24),
     BackgroundTransparency = 1
-}, 6)
+}, 8)
 
 local ProgressBar = Create("Frame", {
     Name = "ProgressBar",
     Parent = ProgressBG,
-    BackgroundColor3 = Color3.fromRGB(3, 252, 119),
+    BackgroundColor3 = Color3.fromRGB(3, 252, 3),
     BorderSizePixel = 0,
-    Size = UDim2.new(0, 0, 1, 0),
+    Size = UDim2.new(0, 0, 0, 24),
     BackgroundTransparency = 1
-}, 6)
-
+}, 8)
 local StepLabel = Create("TextLabel", {
     Name = "StepLabel",
     Parent = MainFrame,
@@ -142,7 +141,10 @@ Tween(StepLabel, 0.3, {TextTransparency = 0})
 
 for _, keyframe in ipairs(LoaderConfig.Keyframes) do
     StepLabel.Text = LoaderConfig.Steps[keyframe.Step] or ""
-    Tween(ProgressBar, keyframe.Time, {Size = UDim2.new(keyframe.Percent / 100, 0, 1, 0)}).Completed:Wait()
+
+    Tween(ProgressBar, keyframe.Time, {
+        Size = UDim2.new(keyframe.Percent / 100, 0, 0, 24)
+    }).Completed:Wait()
 end
 
 task.wait(0.4)
