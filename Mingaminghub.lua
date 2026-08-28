@@ -540,24 +540,23 @@ end
 ----------------------------------------------------------------
 -- LOGIC VÀ HOẠT ĐỘNG 
 ----------------------------------------------------------------
---Khai báo Service & Player
+-- Khai báo Service & Player
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Khai báo Fluent Safe (Tránh crash nếu Fluent chưa nạp)
-local Options = (Fluent and Fluent.Options) or {}
+-- Khai báo Fluent Safe
+local Options = Fluent.Options
 
---Danh sách PlaceId hợp lệ mới nhất mã 14 số
+-- Danh sách PlaceId hợp lệ (Sea 1, 2, 3)
 local MAP_SEAS = {
-    
     [85211729168715] = 1,
     [79091703265657] = 2,
     [100117331123089] = 3
 }
 
---Xác định Sea
+-- Xác định Sea
 local currentSea = MAP_SEAS[PlaceId]
 
 if not currentSea then
@@ -565,16 +564,10 @@ if not currentSea then
     return
 end
 
---Đồng bộ biến cho cả Local Script lẫn các Script khác (Giữ tính năng cũ 100%)
+-- Biến local dùng cho toàn bộ logic ở các dòng bên dưới
 local Sea1 = (currentSea == 1)
 local Sea2 = (currentSea == 2)
 local Sea3 = (currentSea == 3)
-
--- Đồng bộ lên getgenv() để các file script phụ/chức năng khác gọi được mà không bị lỗi undefined
-getgenv().Sea1 = Sea1
-getgenv().Sea2 = Sea2
-getgenv().Sea3 = Sea3
-getgenv().Options = Options
 
 ----------------------------------------------------------------
 -- DÁNH SÁCH QUÁI THƯỜNG
