@@ -1,227 +1,213 @@
---------------------------------------
--- LOADER UI
---------------------------------------
-local cloneref=cloneref or function(o)return o end
-local TweenService=cloneref(game:GetService("TweenService"))
-local UserInputService=cloneref(game:GetService("UserInputService"))
-local CoreGui=cloneref(game:GetService("CoreGui"))
-local ParentGui=(gethui and gethui()) or CoreGui
+-- discord.gg/25ms
 
-local LoaderConfig={
-    Title=shared.LoaderTitle or "Đăng Ký Kênh Min Gaming",
-    Keyframes=shared.LoaderKeyFrames or {
-        [1]={1,10},
-        [2]={2,30},
-        [3]={3,60},
-        [4]={2,100}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local ParentGui = (gethui and gethui()) or CoreGui
+
+shared.LoaderTitle = "Đăng Ký Kênh Min Gaming";
+shared.LoaderKeyFrames = {
+    [1] = {1, 10},
+    [2] = {2, 30},
+    [3] = {3, 60},
+    [4] = {2, 100}
+};
+
+local LoaderConfig = {
+    LoaderData = {
+        Name = shared.LoaderTitle or "A Loader",
+        Colors = shared.LoaderColors or {
+            Main = Color3.fromRGB(0, 0, 0),
+            Topic = Color3.fromRGB(200, 200, 200),
+            Title = Color3.fromRGB(255, 255, 255),
+            LoaderBackground = Color3.fromRGB(40, 40, 40),
+            LoaderSplash = Color3.fromRGB(3, 252, 3)
+        }
     },
-    StepTexts={
-        [1]="Đang kiểm tra dữ liệu...",
-        [2]="Đang nạp thư viện UI...",
-        [3]="Đang kết nối Server...",
-        [4]="Thành công!"
-    },
-    Colors={
-        Main=Color3.fromRGB(0,0,0),
-        Topic=Color3.fromRGB(200,200,200),
-        Title=Color3.fromRGB(255,255,255),
-        ProgressBG=Color3.fromRGB(40,40,40),
-        ProgressBar=Color3.fromRGB(3,252,3)
-    }
-}
+    Keyframes = shared.LoaderKeyFrames
+};
 
--- CLEANUP CŨ
+local LoaderStepTexts = {
+    [1] = "Đang kiểm tra dữ liệu...",
+    [2] = "Đang nạp thư viện UI...",
+    [3] = "Đang kết nối Server...",
+    [4] = "Thành công!"
+};
 
-local OldLoader=ParentGui:FindFirstChild("MPC_HUB_LOADER")
-if OldLoader then OldLoader:Destroy() end
-
--- HELPERS
-
-local ActiveTweens={}
-
-local function Tween(object,duration,goals,easingStyle,easingDirection)
-    if not object or not object.Parent then return end
-    local oldTween=ActiveTweens[object]
-    if oldTween then
-        pcall(function()oldTween:Cancel()end)
-        ActiveTweens[object]=nil
-    end
-    local tween=TweenService:Create(object,TweenInfo.new(
-        duration,
-        easingStyle or Enum.EasingStyle.Quad,
-        easingDirection or Enum.EasingDirection.Out
-    ),goals)
-    ActiveTweens[object]=tween
-    tween.Completed:Connect(function()
-        if ActiveTweens[object]==tween then
-            ActiveTweens[object]=nil
-        end
-    end)
+function TweenObject(object, duration, goals)
+    if not object then return end
+    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), goals)
     tween:Play()
     return tween
 end
 
-local function Create(className,props,cornerRadius)
-    local object=Instance.new(className)
-    for property,value in pairs(props) do
-        if property~="Parent" then
-            object[property]=value
+_G.LoaderConfig = LoaderConfig
+_G.LoaderStepTexts = LoaderStepTexts
+
+function CreateObject(className, props)
+    local instance = Instance.new(className);
+    local parent;
+    for propName, propValue in pairs(props) do
+        if (propName ~= "Parent") then
+            instance[propName] = propValue;
+        else
+            parent = propValue;
         end
     end
-    if cornerRadius then
-        local corner=Instance.new("UICorner")
-        corner.CornerRadius=UDim.new(0,cornerRadius)
-        corner.Parent=object
-    end
-    object.Parent=props.Parent
-    return object
+    instance.Parent = parent;
+    return instance;
 end
 
--- UI
-
-local LoaderGui=Create("ScreenGui",{
-    Name="MPC_HUB_LOADER",
-    Parent=ParentGui,
-    ResetOnSpawn=false,
-    IgnoreGuiInset=true,
-    ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-})
-
-local MainFrame=Create("CanvasGroup",{
-    Name="Main",
-    Parent=LoaderGui,
-    BackgroundColor3=LoaderConfig.Colors.Main,
-    BorderSizePixel=0,
-    ClipsDescendants=true,
-    AnchorPoint=Vector2.new(.5,.5),
-    Position=UDim2.fromScale(.5,.5),
-    Size=UDim2.fromOffset(0,0),
-    GroupTransparency=1
-},12)
-
-Create("ImageLabel",{
-    Name="UserImage",
-    Parent=MainFrame,
-    BackgroundTransparency=1,
-    Image="rbxassetid://13717478897",
-    Position=UDim2.fromOffset(15,10),
-    Size=UDim2.fromOffset(50,50)
-},25)
-
-Create("TextLabel",{
-    Name="UserName",
-    Parent=MainFrame,
-    BackgroundTransparency=1,
-    Text="Youtube: Min Gaming",
-    Position=UDim2.fromOffset(75,10),
-    Size=UDim2.fromOffset(200,50),
-    Font=Enum.Font.GothamBold,
-    TextColor3=LoaderConfig.Colors.Title,
-    TextSize=14,
-    TextXAlignment=Enum.TextXAlignment.Left
-})
-
-Create("TextLabel",{
-    Name="Top",
-    Parent=MainFrame,
-    BackgroundTransparency=1,
-    Position=UDim2.fromOffset(30,70),
-    Size=UDim2.fromOffset(301,20),
-    Font=Enum.Font.Gotham,
-    Text="Loader",
-    TextColor3=LoaderConfig.Colors.Topic,
-    TextSize=10,
-    TextXAlignment=Enum.TextXAlignment.Left
-})
-
-Create("TextLabel",{
-    Name="Title",
-    Parent=MainFrame,
-    BackgroundTransparency=1,
-    Position=UDim2.fromOffset(30,90),
-    Size=UDim2.fromOffset(301,46),
-    Font=Enum.Font.Gotham,
-    RichText=true,
-    Text="<b>"..LoaderConfig.Title.."</b>",
-    TextColor3=LoaderConfig.Colors.Title,
-    TextSize=14,
-    TextXAlignment=Enum.TextXAlignment.Left
-})
-
-local ProgressBG=Create("Frame",{
-    Name="BG",
-    Parent=MainFrame,
-    AnchorPoint=Vector2.new(.5,0),
-    BackgroundColor3=LoaderConfig.Colors.ProgressBG,
-    BorderSizePixel=0,
-    Position=UDim2.new(.5,0,0,70),
-    Size=UDim2.new(.85,0,0,24)
-},8)
-
-local ProgressBar=Create("Frame",{
-    Name="Progress",
-    Parent=ProgressBG,
-    BackgroundColor3=LoaderConfig.Colors.ProgressBar,
-    BorderSizePixel=0,
-    Size=UDim2.new(0,0,0,24)
-},8)
-
-local StepLabel=Create("TextLabel",{
-    Name="StepLabel",
-    Parent=MainFrame,
-    BackgroundTransparency=1,
-    Position=UDim2.new(.5,0,1,-25),
-    Size=UDim2.new(1,-20,0,20),
-    AnchorPoint=Vector2.new(.5,.5),
-    Font=Enum.Font.Gotham,
-    Text="",
-    TextColor3=LoaderConfig.Colors.Topic,
-    TextSize=14,
-    TextXAlignment=Enum.TextXAlignment.Center
-})
-
--- LOADING
-
-local function UpdatePercentage(percent,step)
-    percent=math.clamp(tonumber(percent) or 0,0,100)
-    Tween(ProgressBar,.45,{
-        Size=UDim2.new(percent/100,0,0,24)
-    },Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-    StepLabel.Text=LoaderConfig.StepTexts[step] or ""
+local function AddUICorner(radius, parentObj)
+    local corner = Instance.new("UICorner");
+    corner.CornerRadius = UDim.new(0, radius);
+    corner.Parent = parentObj;
 end
 
-local OpenTween=Tween(MainFrame,.35,{
-    Size=UDim2.fromOffset(346,121),
-    GroupTransparency=0
-},Enum.EasingStyle.Back,Enum.EasingDirection.Out)
+local LoaderGui = CreateObject("ScreenGui", {
+    Name = "Core",
+    Parent = ParentGui
+});
 
-if OpenTween then OpenTween.Completed:Wait() end
-task.wait(.15)
+local MainFrame = CreateObject("Frame", {
+    Name = "Main",
+    Parent = LoaderGui,
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.Main,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Size = UDim2.new(0, 0, 0, 0)
+});
+AddUICorner(12, MainFrame);
 
-for step,keyframe in ipairs(LoaderConfig.Keyframes) do
-    task.wait(keyframe[1])
-    UpdatePercentage(keyframe[2],step)
+local UserImage = CreateObject("ImageLabel", {
+    Name = "UserImage",
+    Parent = MainFrame,
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://13717478897",
+    Position = UDim2.new(0, 15, 0, 10),
+    Size = UDim2.new(0, 50, 0, 50)
+});
+AddUICorner(25, UserImage);
+
+local UserNameLabel = CreateObject("TextLabel", {
+    Name = "UserName",
+    Parent = MainFrame,
+    BackgroundTransparency = 1,
+    Text = "Youtube: Min Gaming",
+    Position = UDim2.new(0, 75, 0, 10),
+    Size = UDim2.new(0, 200, 0, 50),
+    Font = Enum.Font.GothamBold,
+    TextColor3 = LoaderConfig.LoaderData.Colors.Title,
+    TextSize = 14,
+    TextXAlignment = Enum.TextXAlignment.Left
+});
+
+local TopicLabel = CreateObject("TextLabel", {
+    Name = "Top",
+    TextTransparency = 1,
+    Parent = MainFrame,
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 30, 0, 70),
+    Size = UDim2.new(0, 301, 0, 20),
+    Font = Enum.Font.Gotham,
+    Text = "Loader",
+    TextColor3 = LoaderConfig.LoaderData.Colors.Topic,
+    TextSize = 10,
+    TextXAlignment = Enum.TextXAlignment.Left
+});
+
+local TitleLabel = CreateObject("TextLabel", {
+    Name = "Title",
+    Parent = MainFrame,
+    TextTransparency = 1,
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 30, 0, 90),
+    Size = UDim2.new(0, 301, 0, 46),
+    Font = Enum.Font.Gotham,
+    RichText = true,
+    Text = "<b>" .. LoaderConfig.LoaderData.Name .. "</b>",
+    TextColor3 = LoaderConfig.LoaderData.Colors.Title,
+    TextSize = 14,
+    TextXAlignment = Enum.TextXAlignment.Left
+});
+
+local ProgressBG = CreateObject("Frame", {
+    Name = "BG",
+    Parent = MainFrame,
+    AnchorPoint = Vector2.new(0.5, 0),
+    BackgroundTransparency = 1,
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground,
+    BorderSizePixel = 0,
+    Position = UDim2.new(0.5, 0, 0, 70),
+    Size = UDim2.new(0.85, 0, 0, 24)
+});
+AddUICorner(8, ProgressBG);
+
+local ProgressBar = CreateObject("Frame", {
+    Name = "Progress",
+    Parent = ProgressBG,
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderSplash,
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Size = UDim2.new(0, 0, 0, 24)
+});
+AddUICorner(8, ProgressBar);
+
+local StepLabel = CreateObject("TextLabel", {
+    Name = "StepLabel",
+    Parent = MainFrame,
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0.5, 0, 1, - 25),
+    Size = UDim2.new(1, - 20, 0, 20),
+    Font = Enum.Font.Gotham,
+    Text = "",
+    TextColor3 = LoaderConfig.LoaderData.Colors.Topic,
+    TextSize = 14,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    AnchorPoint = Vector2.new(0.5, 0.5)
+});
+
+function UpdateStepText(stepIndex)
+    StepLabel.Text = LoaderStepTexts[stepIndex] or "" ;
 end
 
-task.wait(.4)
-
--- CLOSE
-
-local CloseTween=Tween(MainFrame,.3,{
-    Size=UDim2.fromOffset(0,0),
-    GroupTransparency=1
-},Enum.EasingStyle.Quart,Enum.EasingDirection.In)
-
-if CloseTween then CloseTween.Completed:Wait() end
-
--- CLEANUP
-
-for object,tween in pairs(ActiveTweens) do
-    pcall(function()tween:Cancel()end)
-    ActiveTweens[object]=nil
+function UpdatePercentage(percent, stepIndex)
+    TweenObject(ProgressBar, 0.5, {
+        Size = UDim2.new(percent / 100, 0, 0, 24)
+    });
+    UpdateStepText(stepIndex);
 end
 
-if LoaderGui then LoaderGui:Destroy() end
+TweenObject(MainFrame, 0.25, {
+    Size = UDim2.new(0, 346, 0, 121)
+});
+task.wait(0.1);
+
+TweenObject(TopicLabel, 0.5, { TextTransparency = 0 });
+TweenObject(TitleLabel, 0.5, { TextTransparency = 0 });
+TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 0 });
+TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 0 });
+
+for step, keyframe in ipairs(LoaderConfig.Keyframes) do
+    task.wait(keyframe[1]);
+    UpdatePercentage(keyframe[2], step);
+end
+task.wait(0.5);
+
+TweenObject(TopicLabel, 0.5, { TextTransparency = 1 });
+TweenObject(TitleLabel, 0.5, { TextTransparency = 1 });
+TweenObject(ProgressBG, 0.5, { BackgroundTransparency = 1 });
+TweenObject(ProgressBar, 0.5, { BackgroundTransparency = 1 });
+task.wait(0.5);
+
+TweenObject(MainFrame, 0.25, { Size = UDim2.new(0, 0, 0, 0) });
+task.wait(0.25);
+LoaderGui:Destroy();
 
 -- spawn(function()
 --     while wait() do
@@ -311,126 +297,121 @@ if LoaderGui then LoaderGui:Destroy() end
 --         pcall(checkHookTamper);
 --     end
 -- end);
-
----------------------------------
--- TẢI FLUENT UI
----------------------------------
-local success,Fluent=pcall(function()
+local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
-assert(success and Fluent,"[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
 
-local Window=Fluent:CreateWindow({
-    Title="Min Gaming",
-    SubTitle="",
-    TabWidth=160,
-    Theme="Light",
-    Acrylic=false,
-    Size=UDim2.fromOffset(500,320),
-    MinimizeKey=Enum.KeyCode.End
+local Window = Fluent:CreateWindow({
+    Title = "Min Gaming",
+    SubTitle = "",
+    TabWidth = 160,
+    Theme = "Light",
+    Acrylic = false,
+    Size = UDim2.fromOffset(500, 320),
+    MinimizeKey = Enum.KeyCode.End
 })
 
----------------------------------
--- MINIMIZE / TOGGLE BUTTON
----------------------------------
-local OldMinGui=ParentGui:FindFirstChild("MinGamingToggle")
-if OldMinGui then OldMinGui:Destroy() end
+-- NÚT TOGGLE BẬT/TẮT MENU
+local MinGui = Instance.new("ScreenGui")
+MinGui.Name = "MinGamingToggle"
+MinGui.ResetOnSpawn = false
+MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+MinGui.Parent = ParentGui
 
-local MinGui=Instance.new("ScreenGui")
-MinGui.Name="MinGamingToggle"
-MinGui.ResetOnSpawn=false
-MinGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-MinGui.Parent=ParentGui
+local MinButton = Instance.new("ImageButton")
+MinButton.Name = "MinButton"
+MinButton.Parent = MinGui
+MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MinButton.BorderSizePixel = 0
+MinButton.Position = UDim2.fromOffset(20, 100)
+MinButton.Size = UDim2.fromOffset(50, 50)
+MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
+MinButton.AutoButtonColor = false
 
-local MinButton=Instance.new("ImageButton")
-MinButton.Name="MinButton"
-MinButton.BackgroundColor3=Color3.fromRGB(0,0,0)
-MinButton.BorderSizePixel=0
-MinButton.Position=UDim2.fromOffset(20,100)
-MinButton.Size=UDim2.fromOffset(50,50)
-MinButton.Image="rbxassetid://13717478897"
-MinButton.AutoButtonColor=false
-MinButton.Parent=MinGui
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 12)
+MinCorner.Parent = MinButton
 
-local MinCorner=Instance.new("UICorner")
-MinCorner.CornerRadius=UDim.new(0,12)
-MinCorner.Parent=MinButton
-
----------------------------------
--- DRAG
----------------------------------
-local Dragging=false
-local DragStart
-local StartPosition
-local DraggedFar=false
+local Dragging = false
+local DragStart, StartPosition
+local DraggedFar = false
 
 MinButton.InputBegan:Connect(function(Input)
-    local InputType=Input.UserInputType
-    if InputType==Enum.UserInputType.MouseButton1 or InputType==Enum.UserInputType.Touch then
-        Dragging=true
-        DraggedFar=false
-        DragStart=Input.Position
-        StartPosition=MinButton.Position
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+        Dragging = true
+        DraggedFar = false
+        DragStart = Input.Position
+        StartPosition = MinButton.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
-    if not Dragging then return end
-    local InputType=Input.UserInputType
-    if InputType~=Enum.UserInputType.MouseMovement and InputType~=Enum.UserInputType.Touch then return end
-    local Delta=Input.Position-DragStart
-    if Delta.Magnitude>5 then DraggedFar=true end
-    MinButton.Position=UDim2.new(
-        StartPosition.X.Scale,StartPosition.X.Offset+Delta.X,
-        StartPosition.Y.Scale,StartPosition.Y.Offset+Delta.Y
-    )
-end)
-
-UserInputService.InputEnded:Connect(function(Input)
-    local InputType=Input.UserInputType
-    if InputType==Enum.UserInputType.MouseButton1 or InputType==Enum.UserInputType.Touch then
-        Dragging=false
+    if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
+        local Delta = Input.Position - DragStart
+        if Delta.Magnitude > 5 then
+            DraggedFar = true
+        end
+        MinButton.Position = UDim2.new(
+            StartPosition.X.Scale,
+            StartPosition.X.Offset + Delta.X,
+            StartPosition.Y.Scale,
+            StartPosition.Y.Offset + Delta.Y
+        )
     end
 end)
 
----------------------------------
--- CLICK TOGGLE
----------------------------------
-MinButton.Activated:Connect(function()
-    if not DraggedFar then Window:Minimize() end
+UserInputService.InputEnded:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+        Dragging = false
+    end
 end)
 
----------------------------------
--- CÁC TAB CHÍNH
----------------------------------
-assert(Window, "Không tìm thấy Window! Hãy kiểm tra phần khởi tạo Fluent UI.")
+MinButton.Activated:Connect(function()
+    if not DraggedFar then
+        Window:Minimize()
+    end
+end)
 
+----------------------------------------------------------------
+-- CÁC TAB CHÍNH 
+----------------------------------------------------------------
+assert(Window, "Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
+
+-- Bảng cấu hình danh sách Tab
 local TabDefinitions = {
-    {"Home",     "Thông Tin",   "info"},
-    {"Main",     "Cày",         "sword"},
-    {"Sea",      "Sự Kiện",     "waves"},
-    {"ITM",      "Vật Phẩm",    "package"},
-    {"Setting",  "Cài Đặt",     "settings"},
-    {"Status",   "Máy Chủ",     "server"},
-    {"Stats",    "Chỉ Số",      "bar-chart-2"},
-    {"Player",   "Người Chơi",  "user"},
-    {"Teleport", "Dịch Chuyển", "map-pin"},
-    {"Fruit",    "Trái",        "apple"},
-    {"Raid",     "Tập Kích",    "swords"},
-    {"Race",     "Tộc",         "shield"},
-    {"Shop",     "Cửa Hàng",    "shopping-cart"},
-    {"Misc",     "Khác",        "layers"}
+    { Key = "Home",     Title = "Thông Tin",   Icon = "info" },
+    { Key = "Main",     Title = "Cày",         Icon = "sword" },
+    { Key = "Sea",      Title = "Sự Kiện",     Icon = "waves" },
+    { Key = "ITM",      Title = "Vật Phẩm",    Icon = "package" },
+    { Key = "Setting",  Title = "Cài Đặt",     Icon = "settings" },
+    { Key = "Status",   Title = "Máy Chủ",     Icon = "server" },
+    { Key = "Stats",    Title = "Chỉ Số",      Icon = "bar-chart-2" },
+    { Key = "Player",   Title = "Người Chơi",  Icon = "user" },
+    { Key = "Teleport", Title = "Dịch Chuyển", Icon = "map-pin" },
+    { Key = "Fruit",    Title = "Trái",        Icon = "apple" },
+    { Key = "Raid",     Title = "Tập Kích",    Icon = "swords" },
+    { Key = "Race",     Title = "Tộc",         Icon = "shield" },
+    { Key = "Shop",     Title = "Cửa Hàng",    Icon = "shopping-cart" },
+    { Key = "Misc",     Title = "Khác",        Icon = "layers" }
 }
 
 local Tabs = {}
-
-for _, info in ipairs(TabDefinitions) do
-    Tabs[info[1]] = Window:AddTab({
-        Title = info[2],
-        Icon = info[3]
-    })
+for _, tabInfo in ipairs(TabDefinitions) do
+    local success, tabObject = pcall(function()
+        return Window:AddTab({
+            Title = tabInfo.Title,
+            Icon = tabInfo.Icon
+        })
+    end)
+    
+    if success and tabObject then
+        Tabs[tabInfo.Key] = tabObject
+    else
+        -- Thử lại không dùng Icon nếu thư viện Fluent của bạn bản cũ không hỗ trợ Icon
+        Tabs[tabInfo.Key] = Window:AddTab({ Title = tabInfo.Title })
+    end
 end
-
 ----------------------------------------------------------------
 -- LOGIC VÀ HOẠT ĐỘNG 
 ----------------------------------------------------------------
@@ -589,6 +570,24 @@ function CheckLevel()
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
             
+            -- BYPASS ENTRANCE
+            if _G.AutoLevel and data.Entrance then
+                local character = plr.Character
+                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local distance = (CFrameMon.Position - rootPart.Position).Magnitude
+                    -- Tất cả Sea đều dùng ngưỡng 3000
+                    if distance > 3000 then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                                "requestEntrance",
+                                data.Entrance
+                            )
+                        end)
+                    end
+                end
+            end
+
             break
         end
     end
@@ -974,6 +973,17 @@ function MaterialMon()
     MMon = data.MMon
     MPos = data.MPos
 
+    -- Xử lý Entrance an toàn
+    if data.Entrance and data.Distance then
+        local char = game.Players.LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root then
+            local dist = (root.Position - data.Entrance).Magnitude
+            if dist >= data.Distance then
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+            end
+        end
+    end
 end
 ------------------------------------------------------------------
 -- ESP helpers (PHẢI đứng trước mọi hàm ESP — Round không được local)
@@ -1500,256 +1510,14 @@ spawn(function()
     end
 end)
 
-----------------------------------------------------------------
-----------------------------------------------------------------
--- HỆ THỐNG DI CHUYỂN (toAdvanced) — đúng sơ đồ mới
-----------------------------------------------------------------
--- toAdvanced(TargetCF)
---   Phân tích Target
---   ├─ TARGET CÓ ENTRANCE KHẢ DỤNG
---   │     → Chọn Entrance → Gọi Entrance → Dịch chuyển qua Entrance → Tween(TargetCF)
---   └─ TARGET KHÔNG CÓ / CHƯA KHẢ DỤNG
---         ├─ Distance < 2000  → Tween thẳng
---         └─ ≥ 2000
---               → Tìm tất cả Entrance
---               → Bỏ qua Entrance chưa dùng được (chưa mở / chưa Rip Indra...)
---               → Chỉ giữ Entrance ĐANG SỬ DỤNG ĐƯỢC
---               → Với mỗi Entrance: tính đường qua cổng vs bay thẳng
---               → Tiết kiệm ≥ 300m?
---                    CÓ  → Gọi Entrance → Dịch chuyển → Tween(TargetCF)
---                    KHÔNG → Tween thẳng
-----------------------------------------------------------------
-
 function BTPZ(cf)
-    local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    root.CFrame = cf
-    task.wait()
-    root.CFrame = cf
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
+    task.wait();
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
 end
-
 local TweenSpeed = 270
 local CurrentTween = nil
 _G.StopTween = false
-
--- ==================== DATABASE ENTRANCE ====================
--- Position1 = phía ngoài / điểm gọi vào
--- Position2 = phía trong sau khi qua cổng
--- RequestPos = vector truyền vào requestEntrance
--- NeedRipIndra = true → Sea 3 Castle Portal (chưa đánh Rip Indra = không khả dụng)
-
-local EntranceDB = {
-    -- SEA 1
-    {
-        Name = "UnderwaterCity",
-        Sea = 1,
-        Position1 = Vector3.new(3864.68, 6.70, -1926.21),
-        Position2 = Vector3.new(61163.85, 11.68, 1819.78),
-        RequestPos = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875),
-        Radius1 = 120,
-        Radius2 = 4000,
-    },
-    {
-        Name = "UpperSkylands1",
-        Sea = 1,
-        Position1 = Vector3.new(-4607.82, 872.54, -1667.56),
-        Position2 = Vector3.new(-7894.62, 5547.14, -380.41),
-        RequestPos = Vector3.new(-4607.82275, 872.54248, -1667.55688),
-        Radius1 = 150,
-        Radius2 = 1200,
-    },
-    {
-        Name = "UpperSkylands2",
-        Sea = 1,
-        Position1 = Vector3.new(-7927.09, 5545.53, -320.70),
-        Position2 = Vector3.new(-11455.37, 431.14, -831.62),
-        RequestPos = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047),
-        Radius1 = 120,
-        Radius2 = 1000,
-    },
-
-    -- SEA 2
-    {
-        Name = "CursedShip",
-        Sea = 2,
-        Position1 = Vector3.new(923.21, 125.06, 32852.83),
-        Position2 = Vector3.new(-1344.20, 332.22, -9805.21),
-        RequestPos = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125),
-        Radius1 = 250,
-        Radius2 = 3500,
-    },
-    {
-        Name = "SwanRoom",
-        Sea = 2,
-        Position1 = Vector3.new(2284.91, 15.15, 905.48),
-        Position2 = Vector3.new(2285.42, 15.15, 867.72),
-        RequestPos = Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625),
-        Radius1 = 40,
-        Radius2 = 80,
-    },
-
-    -- SEA 3 — Castle Portals (cần đánh Rip Indra)
-    {
-        Name = "CastlePortal_PortTown",
-        Sea = 3,
-        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
-        Position2 = Vector3.new(-290.73, 6.72, 5343.55),
-        RequestPos = Vector3.new(-5058.92, 314.52, -3155.88),
-        Radius1 = 200,
-        Radius2 = 400,
-        NeedRipIndra = true,
-    },
-    {
-        Name = "CastlePortal_Mansion",
-        Sea = 3,
-        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
-        Position2 = Vector3.new(-12463.87, 374.91, -7565.52),
-        RequestPos = Vector3.new(-12463.87, 374.91, -7565.52),
-        Radius1 = 200,
-        Radius2 = 400,
-        NeedRipIndra = true,
-    },
-    {
-        Name = "CastlePortal_GreatTree",
-        Sea = 3,
-        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
-        Position2 = Vector3.new(2381.18, 28.52, -7370.47),
-        RequestPos = Vector3.new(2381.18, 28.52, -7370.47),
-        Radius1 = 200,
-        Radius2 = 400,
-        NeedRipIndra = true,
-    },
-    {
-        Name = "CastleOnTheSea",
-        Sea = 3,
-        Position1 = Vector3.new(-5058.92, 314.52, -3155.88),
-        Position2 = Vector3.new(-5058.92, 314.52, -3155.88),
-        RequestPos = Vector3.new(-5075.50927734375, 314.5155029296875, -3150.0224609375),
-        Radius1 = 250,
-        Radius2 = 250,
-        NeedRipIndra = true,
-    },
-
-    -- SEA 3 — Temple of Time
-    {
-        Name = "TempleOfTime",
-        Sea = 3,
-        Position1 = Vector3.new(2870.33, 2362.21, -7237.90),
-        Position2 = Vector3.new(28282.57, 14896.85, 105.10),
-        RequestPos = Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875),
-        Radius1 = 150,
-        Radius2 = 2500,
-    },
-
-    -- SEA 3 — Hydra
-    {
-        Name = "HydraIsland",
-        Sea = 3,
-        Position1 = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
-        Position2 = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
-        RequestPos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906),
-        Radius1 = 200,
-        Radius2 = 200,
-    },
-}
-
-local function HasDefeatedRipIndra()
-    local ok, result = pcall(function()
-        return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ZQuestProgress", "Check")
-    end)
-    if not ok then return false end
-    if type(result) == "table" and result.KilledRipIndra then
-        return true
-    end
-    return false
-end
-
--- Entrance khả dụng? (đúng sea + điều kiện Rip Indra nếu cần)
-local function IsEntranceAvailable(entry)
-    if not entry then return false end
-    if entry.Sea and entry.Sea ~= currentSea then
-        return false
-    end
-    if entry.NeedRipIndra then
-        if not HasDefeatedRipIndra() then
-            return false
-        end
-    end
-    return true
-end
-
-local function Near(pos, point, radius)
-    return (pos - point).Magnitude <= (radius or 200)
-end
-
--- Target nằm trong vùng của Entrance nào (và entrance đó khả dụng)?
-local function FindDirectEntranceForTarget(targetPos)
-    for _, entry in ipairs(EntranceDB) do
-        if IsEntranceAvailable(entry) then
-            if Near(targetPos, entry.Position2, entry.Radius2)
-                or Near(targetPos, entry.Position1, entry.Radius1) then
-                return entry
-            end
-        end
-    end
-    return nil
-end
-
--- Danh sách Entrance ĐANG SỬ DỤNG ĐƯỢC (bỏ qua chưa mở / chưa Rip Indra)
-local function GetAvailableEntrances()
-    local list = {}
-    for _, entry in ipairs(EntranceDB) do
-        if IsEntranceAvailable(entry) then
-            table.insert(list, entry)
-        end
-    end
-    return list
-end
-
--- Tìm Entrance trung gian: tiết kiệm ≥ 300m so với bay thẳng
-local function FindOptimalEntrance(playerPos, targetPos)
-    local directDist = (targetPos - playerPos).Magnitude
-    local best = nil
-    local bestSave = 0
-
-    for _, entry in ipairs(GetAvailableEntrances()) do
-        -- Tuyến A: gần Position1 → qua cổng → tới Target (gần Position2)
-        local viaA = (entry.Position1 - playerPos).Magnitude + (targetPos - entry.Position2).Magnitude
-        local saveA = directDist - viaA
-
-        -- Tuyến B: gần Position2 → qua cổng → tới Target (gần Position1)
-        local viaB = (entry.Position2 - playerPos).Magnitude + (targetPos - entry.Position1).Magnitude
-        local saveB = directDist - viaB
-
-        if saveA > bestSave and saveA >= 300 then
-            bestSave = saveA
-            best = {
-                Entry = entry,
-                RequestPos = entry.RequestPos or entry.Position2,
-                Save = saveA,
-            }
-        end
-        if saveB > bestSave and saveB >= 300 then
-            bestSave = saveB
-            best = {
-                Entry = entry,
-                RequestPos = entry.RequestPos or entry.Position1,
-                Save = saveB,
-            }
-        end
-    end
-    return best
-end
-
-local function RequestEntrance(pos)
-    if not pos then return end
-    pcall(function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", pos)
-    end)
-    task.wait(0.35)
-end
-
--- ==================== TWEEN CƠ BẢN ====================
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
@@ -1771,9 +1539,9 @@ function Tween(targetCFrame)
     })
     CurrentTween:Play()
 end
-
 function CancelTween()
     _G.StopTween = true
+
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
@@ -1787,7 +1555,6 @@ function CancelTween()
     task.wait(0.15)
     _G.StopTween = false
 end
-
 function Tween2(targetCFrame)
     if not game.Players.LocalPlayer.Character then return end
     local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -1800,7 +1567,7 @@ function Tween2(targetCFrame)
     _G.StopTween = false
     _G.Clip2 = true
     Tween(targetCFrame)
-    while root.Parent and (root.Position - targetCFrame.Position).Magnitude > 6 do
+    while (root.Position - targetCFrame.Position).Magnitude > 6 do
         if _G.StopTween then break end
         task.wait()
     end
@@ -1808,98 +1575,9 @@ function Tween2(targetCFrame)
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
     end
+
     _G.Clip2 = false
 end
-
-function to(targetCF)
-    local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    repeat
-        task.wait(_G.Fast_Delay or 0.1)
-        pcall(function()
-            local char = game.Players.LocalPlayer.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid:ChangeState(15)
-            end
-            root = char and char:FindFirstChild("HumanoidRootPart")
-            if root then
-                root.CFrame = targetCF
-                task.wait()
-                root.CFrame = targetCF
-            end
-        end)
-        root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    until not root or (targetCF.Position - root.Position).Magnitude <= 2000
-end
-
---[[
-    toAdvanced(TargetCF) — sơ đồ:
-
-    TARGET CÓ ENTRANCE KHẢ DỤNG
-        → Chọn Entrance → Gọi Entrance → Dịch chuyển qua Entrance → Tween(TargetCF)
-
-    TARGET KHÔNG CÓ / CHƯA KHẢ DỤNG
-        Distance < 2000  → Tween thẳng
-        ≥ 2000
-            → Lọc Entrance khả dụng (bỏ chưa mở / chưa Rip Indra)
-            → Tiết kiệm ≥ 300m?
-                 CÓ  → Gọi Entrance → Tween(TargetCF)
-                 KHÔNG → Tween / to() thẳng
-]]
-function toAdvanced(targetCF)
-    pcall(function()
-        if not targetCF then return end
-        local char = game.Players.LocalPlayer.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-        if char.Humanoid.Health <= 0 then return end
-
-        -- Raid: luôn tween thẳng
-        if Auto_Raid then
-            Tween(targetCF)
-            return
-        end
-
-        local playerPos = char.HumanoidRootPart.Position
-        local targetPos = targetCF.Position
-        local directDist = (targetPos - playerPos).Magnitude
-
-        ------------------------------------------------------------------
-        -- NHÁNH 1: TARGET CÓ ENTRANCE KHẢ DỤNG
-        ------------------------------------------------------------------
-        local directEntry = FindDirectEntranceForTarget(targetPos)
-        if directEntry then
-            -- Chọn Entrance → Gọi → Dịch chuyển qua Entrance → Tween(Target)
-            RequestEntrance(directEntry.RequestPos or directEntry.Position2)
-            task.wait(0.4)
-            Tween(targetCF)
-            return
-        end
-
-        ------------------------------------------------------------------
-        -- NHÁNH 2: TARGET KHÔNG CÓ / CHƯA KHẢ DỤNG
-        ------------------------------------------------------------------
-        if directDist < 2000 then
-            Tween(targetCF)
-            return
-        end
-
-        -- ≥ 2000 → chỉ xét Entrance ĐANG SỬ DỤNG ĐƯỢC, tiết kiệm ≥ 300m
-        local optimal = FindOptimalEntrance(playerPos, targetPos)
-        if optimal then
-            RequestEntrance(optimal.RequestPos)
-            task.wait(0.4)
-            Tween(targetCF)
-        else
-            if directDist > 5000 then
-                to(targetCF)
-            else
-                Tween(targetCF)
-            end
-        end
-    end)
-end
-
--- ==================== HELPERS (EquipTool / Attack / AutoHaki / Noclip) ====================
 function EquipTool(toolName)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(toolName) then
         local foundTool = game.Players.LocalPlayer.Backpack:FindFirstChild(toolName)
@@ -2073,8 +1751,55 @@ function AutoHaki()
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
     end
 end
-
-
+function to(targetCF)
+    repeat
+        wait(_G.Fast_Delay);
+        game.Players.LocalPlayer.Character.Humanoid:ChangeState(15);
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
+        task.wait();
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
+    until (targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 2000
+end
+function toAdvanced(targetCF)
+    pcall(function()
+        if (((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >= 2000) and not Auto_Raid and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)) then
+            if (NameMon == "FishmanQuest") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
+            elseif (Mon == "God's Guard") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
+            elseif (NameMon == "SkyExp1Quest") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
+            elseif (NameMon == "ShipQuest1") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
+            elseif (NameMon == "ShipQuest2") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
+            elseif (NameMon == "FrostQuest") then
+                Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame);
+                wait();
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 6508.5581054688, 89.034996032715, - 132.83953857422));
+            else
+                repeat
+                    wait(_G.Fast_Delay);
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
+                    wait(0.05);
+                    game.Players.LocalPlayer.Character.Head:Destroy();
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF;
+                until ((targetCF.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 2500) and (game.Players.LocalPlayer.Character.Humanoid.Health > 0)
+                wait();
+            end
+        end
+    end);
+end
 local container = game:GetService("ReplicatedStorage"):FindFirstChild("Effect") 
     and game:GetService("ReplicatedStorage").Effect:FindFirstChild("Container")
 
@@ -2186,7 +1911,7 @@ spawn(function()
                 CheckLevel();
                 if (not string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false)) then
                     game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest");
-                    toAdvanced(CFrameQ);
+                    Tween(CFrameQ);
                     if ((CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5) then
                         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
                         task.wait(0.5);
@@ -2877,7 +2602,11 @@ if Sea2 then
                             end
                         end
                     else
-                        toAdvanced(CFrame.new(904.4072265625, 181.05767822266, 33341.38671875));
+                        local ectoplasmDist = (Vector3.new(904.4072265625, 181.05767822266, 33341.38671875) - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude;
+                        if (ectoplasmDist > 20000) then
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
+                        end
+                        Tween(CFrame.new(904.4072265625, 181.05767822266, 33341.38671875));
                     end
                 end
             end);
@@ -3069,7 +2798,7 @@ spawn(function()
         if _G.AutoMaterial then
             pcall(function()
                 MaterialMon(SelectMaterial);
-                toAdvanced(MPos);
+                Tween(MPos);
                 if game:GetService("Workspace").Enemies:FindFirstChild(MMon) then
                     for _, enemy in pairs(game.Workspace.Enemies:GetChildren()) do
                         if (varB:FindFirstChild("Humanoid") and varB:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
@@ -5591,7 +5320,10 @@ spawn(function()
                         end
                     end
                 else
-                    toAdvanced(CFrame.new(2285.42, 15.15, 867.72));
+                    repeat
+                        task.wait();
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(2284.912109375, 15.537666320801, 905.48291015625));
+                    until ((CFrame.new(2284.912109375, 15.537666320801, 905.48291015625).Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 4) or (_G.AutoFarmSwan == false)
                 end
             end
         end
@@ -6543,15 +6275,15 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Sky Island 1") then
             Tween2(CFrame.new(- 4869.1025390625, 733.46051025391, - 2667.0180664063));
         elseif (_G.SelectIsland == "Sky Island 2") then
-            toAdvanced(CFrame.new(-7894.62, 5547.14, -380.41));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
         elseif (_G.SelectIsland == "Sky Island 3") then
-            toAdvanced(CFrame.new(-7894.62, 5547.14, -380.41));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
         elseif (_G.SelectIsland == "Prison") then
             Tween2(CFrame.new(4875.330078125, 5.6519818305969, 734.85021972656));
         elseif (_G.SelectIsland == "Magma Village") then
             Tween2(CFrame.new(- 5247.7163085938, 12.883934020996, 8504.96875));
         elseif (_G.SelectIsland == "Under Water Island") then
-            toAdvanced(CFrame.new(61163.85, 11.68, 1819.78));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
         elseif (_G.SelectIsland == "Fountain City") then
             Tween2(CFrame.new(5127.1284179688, 59.501365661621, 4105.4458007813));
         elseif (_G.SelectIsland == "Shank Room") then
@@ -6559,15 +6291,17 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Mob Island") then
             Tween2(CFrame.new(- 2850.20068, 7.39224768, 5354.99268));
         elseif (_G.SelectIsland == "The Cafe") then
-            toAdvanced(CFrame.new(-380.47927856445, 77.220390319824, 255.82550048828));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
+            wait();
+            Tween2(CFrame.new(- 380.47927856445, 77.220390319824, 255.82550048828));
         elseif (_G.SelectIsland == "Frist Spot") then
             Tween2(CFrame.new(- 11.311455726624, 29.276733398438, 2771.5224609375));
         elseif (_G.SelectIsland == "Dark Area") then
             Tween2(CFrame.new(3780.0302734375, 22.652164459229, - 3498.5859375));
         elseif (_G.SelectIsland == "Flamingo Mansion") then
-            toAdvanced(CFrame.new(-380.47927856445, 77.220390319824, 255.82550048828));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
         elseif (_G.SelectIsland == "Flamingo Room") then
-            toAdvanced(CFrame.new(2285.42, 15.15, 867.72));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625));
         elseif (_G.SelectIsland == "Green Zone") then
             Tween2(CFrame.new(- 2448.5300292969, 73.016105651855, - 3210.6306152344));
         elseif (_G.SelectIsland == "Factory") then
@@ -6581,7 +6315,7 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Punk Hazard") then
             Tween2(CFrame.new(- 6127.654296875, 15.951762199402, - 5040.2861328125));
         elseif (_G.SelectIsland == "Cursed Ship") then
-            toAdvanced(CFrame.new(923.21, 125.06, 32852.83));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.40197753906, 125.05712890625, 32885.875));
         elseif (_G.SelectIsland == "Ice Castle") then
             Tween2(CFrame.new(6148.4116210938, 294.38687133789, - 6741.1166992188));
         elseif (_G.SelectIsland == "Forgotten Island") then
@@ -6593,17 +6327,17 @@ Tabs.Teleport:AddButton({
         elseif (_G.SelectIsland == "Great Tree") then
             Tween2(CFrame.new(2681.2736816406, 1682.8092041016, - 7190.9853515625));
         elseif (_G.SelectIsland == "Castle On The Sea") then
-            toAdvanced(CFrame.new(-5058.92, 314.52, -3155.88));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
         elseif (_G.SelectIsland == "MiniSky") then
             Tween2(CFrame.new(- 260.65557861328, 49325.8046875, - 35253.5703125));
         elseif (_G.SelectIsland == "Port Town") then
             Tween2(CFrame.new(- 290.7376708984375, 6.729952812194824, 5343.5537109375));
         elseif (_G.SelectIsland == "Hydra Island") then
-            toAdvanced(CFrame.new(5661.53, 1013.09, -334.96));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
         elseif (_G.SelectIsland == "Floating Turtle") then
             Tween2(CFrame.new(- 13274.528320313, 531.82073974609, - 7579.22265625));
         elseif (_G.SelectIsland == "Mansion") then
-            toAdvanced(CFrame.new(-12463.87, 374.91, -7565.52));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 12468.5380859375, 375.0094299316406, - 7554.62548828125));
         elseif (_G.SelectIsland == "Haunted Castle") then
             Tween2(CFrame.new(- 9515.3720703125, 164.00624084473, 5786.0610351562));
         elseif (_G.SelectIsland == "Ice Cream Island") then
@@ -7037,7 +6771,8 @@ spawn(function()
                             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(setSpawnArgs));
                             fireclickdetector(game:GetService("Workspace").Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector);
                         elseif Sea3 then
-                            toAdvanced(CFrame.new(-5017.40869, 314.844055, -2823.0127));
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
+                            Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
                             local setSpawnArgs2 = {
                                 [1] = "SetSpawnPoint"
                             };
@@ -7239,7 +6974,8 @@ elseif Sea3 then
         Title = "Bay Đến Chỗ Tập Kích",
         Description = "",
         Callback = function()
-            toAdvanced(CFrame.new(-5017.40869, 314.844055, -2823.0127));
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
+            Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
         end
     });
 end
@@ -7302,21 +7038,23 @@ Tabs.Race:AddButton({
     Title = "Đền Thời Gian",
     Description = "",
     Callback = function()
-        toAdvanced(CFrame.new(28282.57, 14896.85, 105.10));
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
     end
 });
 Tabs.Race:AddButton({
     Title = "Cần Gạt",
     Description = "",
     Callback = function()
-        toAdvanced(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734));
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        Tween2(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734));
     end
 });
 Tabs.Race:AddButton({
     Title = "Chỗ Mua Gear",
     Description = "",
     Callback = function()
-        toAdvanced(CFrame.new(28981.552734375, 14888.4267578125, -120.245849609375));
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        Tween2(CFrame.new(28981.552734375, 14888.4267578125, - 120.245849609375));
     end
 });
 local _section = Tabs.Race:AddSection("Tộc");
@@ -7324,21 +7062,19 @@ Tabs.Race:AddButton({
     Title = "Cửa Tộc",
     Description = "",
     Callback = function()
-        local race = game:GetService("Players").LocalPlayer.Data.Race.Value
-        if race == "Human" then
-            toAdvanced(CFrame.new(29221.822265625, 14890.9755859375, -205.99114990234375));
-        elseif race == "Skypiea" then
-            toAdvanced(CFrame.new(28960.158203125, 14919.6240234375, 235.03948974609375));
-        elseif race == "Fishman" then
-            toAdvanced(CFrame.new(28231.17578125, 14890.9755859375, -211.64173889160156));
-        elseif race == "Cyborg" then
-            toAdvanced(CFrame.new(28502.681640625, 14895.9755859375, -423.7279357910156));
-        elseif race == "Ghoul" then
-            toAdvanced(CFrame.new(28674.244140625, 14890.6767578125, 445.4310607910156));
-        elseif race == "Mink" then
-            toAdvanced(CFrame.new(29012.341796875, 14890.9755859375, -380.1492614746094));
-        else
-            toAdvanced(CFrame.new(28282.57, 14896.85, 105.10));
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        if (game:GetService("Players").LocalPlayer.Data.Race.Value == "Human") then
+            Tween2(CFrame.new(29221.822265625, 14890.9755859375, - 205.99114990234375));
+        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Skypiea") then
+            Tween2(CFrame.new(28960.158203125, 14919.6240234375, 235.03948974609375));
+        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Fishman") then
+            Tween2(CFrame.new(28231.17578125, 14890.9755859375, - 211.64173889160156));
+        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Cyborg") then
+            Tween2(CFrame.new(28502.681640625, 14895.9755859375, - 423.7279357910156));
+        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Ghoul") then
+            Tween2(CFrame.new(28674.244140625, 14890.6767578125, 445.4310607910156));
+        elseif (game:GetService("Players").LocalPlayer.Data.Race.Value == "Mink") then
+            Tween2(CFrame.new(29012.341796875, 14890.9755859375, - 380.1492614746094));
         end
     end
 });
@@ -7719,7 +7455,8 @@ Tabs.Shop:AddButton({
     Title = "Đổi Tộc Draco",
     Description = "Chỉ Ở Biển 3",
     Callback = function()
-        toAdvanced(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938));
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
+        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938));
         local dracoPos = Vector3.new(5814.42724609375, 1208.3267822265625, 884.5785522460938);
         local dracoPlayer = game.Players.LocalPlayer;
         local dracoChar = dracoPlayer.Character or dracoPlayer.CharacterAdded:Wait() ;
@@ -8063,7 +7800,8 @@ local ReceiveQuestToggle = Tabs.Sea:AddToggle("ToggleReceiveQuest", {
 ReceiveQuestToggle:OnChanged(function(value)
     _G.AutoReceiveQuest = value
     if _G.AutoReceiveQuest then
-        toAdvanced(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
+        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
         spawn(function()
             pcall(function()
                 while task.wait() do
@@ -8183,7 +7921,8 @@ DracoSection:AddButton({
     Title = "Bay Đến Khu Vực Dragon Dojo",
     Description = "",
     Callback = function()
-        toAdvanced(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
+        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
     end
 })
 
