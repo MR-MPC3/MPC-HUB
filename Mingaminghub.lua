@@ -1,6 +1,6 @@
 -- discord.gg/25ms
 -------------------------------------------------
--- LOADER
+-- FAKE LOADER
 -------------------------------------------------
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -388,10 +388,20 @@ end)
 -- =========================================================
 
 
+-------------------------------------------------
+-- FLUENT
+-------------------------------------------------
+
 local success, Fluent = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
+    return loadstring(game:HttpGet(
+        "https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"
+    ))()
 end)
-assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+
+assert(
+    success and Fluent,
+    "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor."
+)
 
 local Window = Fluent:CreateWindow({
     Title = "Min Gaming",
@@ -403,7 +413,10 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 })
 
--- NÚT TOGGLE BẬT/TẮT MENU
+-------------------------------------------------
+-- MOBILE MINIMIZE / RESTORE
+-------------------------------------------------
+
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
@@ -412,24 +425,31 @@ MinGui.Parent = ParentGui
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "MinButton"
-MinButton.Parent = MinGui
 MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 100)
 MinButton.Size = UDim2.fromOffset(50, 50)
-MinButton.Image = "http://www.roblox.com/asset/?id=13717478897"
+MinButton.Image = "rbxassetid://13717478897"
 MinButton.AutoButtonColor = false
+MinButton.Parent = MinGui
 
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
 
+-------------------------------------------------
+-- DRAG
+-------------------------------------------------
+
 local Dragging = false
-local DragStart, StartPosition
+local DragStart
+local StartPosition
 local DraggedFar = false
 
 MinButton.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
         Dragging = true
         DraggedFar = false
         DragStart = Input.Position
@@ -438,11 +458,19 @@ MinButton.InputBegan:Connect(function(Input)
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
-    if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
+    if not Dragging then
+        return
+    end
+
+    if Input.UserInputType == Enum.UserInputType.MouseMovement
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
         local Delta = Input.Position - DragStart
+
         if Delta.Magnitude > 5 then
             DraggedFar = true
         end
+
         MinButton.Position = UDim2.new(
             StartPosition.X.Scale,
             StartPosition.X.Offset + Delta.X,
@@ -453,56 +481,62 @@ UserInputService.InputChanged:Connect(function(Input)
 end)
 
 UserInputService.InputEnded:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
         Dragging = false
     end
 end)
 
+-------------------------------------------------
+-- MINIMIZE / RESTORE
+-------------------------------------------------
+
 MinButton.Activated:Connect(function()
-    if not DraggedFar then
-        Window:Minimize()
+    if DraggedFar then
+        DraggedFar = false
+        return
     end
+
+    Window:Minimize()
 end)
 
 ----------------------------------------------------------------
--- CÁC TAB CHÍNH 
+-- CÁC TAB CHÍNH
 ----------------------------------------------------------------
-assert(Window, "Không tìm thấy đối tượng Window! Hãy kiểm tra lại phần khởi tạo Fluent UI.")
 
--- Bảng cấu hình danh sách Tab
 local TabDefinitions = {
-    { Key = "Home",     Title = "Thông Tin",   Icon = "info" },
-    { Key = "Main",     Title = "Cày",         Icon = "sword" },
-    { Key = "Sea",      Title = "Sự Kiện",     Icon = "waves" },
-    { Key = "ITM",      Title = "Vật Phẩm",    Icon = "package" },
-    { Key = "Setting",  Title = "Cài Đặt",     Icon = "settings" },
-    { Key = "Status",   Title = "Máy Chủ",     Icon = "server" },
-    { Key = "Stats",    Title = "Chỉ Số",      Icon = "bar-chart-2" },
-    { Key = "Player",   Title = "Người Chơi",  Icon = "user" },
-    { Key = "Teleport", Title = "Dịch Chuyển", Icon = "map-pin" },
-    { Key = "Fruit",    Title = "Trái",        Icon = "apple" },
-    { Key = "Raid",     Title = "Tập Kích",    Icon = "swords" },
-    { Key = "Race",     Title = "Tộc",         Icon = "shield" },
-    { Key = "Shop",     Title = "Cửa Hàng",    Icon = "shopping-cart" },
-    { Key = "Misc",     Title = "Khác",        Icon = "layers" }
+    {"Home",     "Thông Tin",   "info"},
+    {"Main",     "Cày",         "sword"},
+    {"Sea",      "Sự Kiện",     "waves"},
+    {"ITM",      "Vật Phẩm",    "package"},
+    {"Setting",  "Cài Đặt",     "settings"},
+    {"Status",   "Máy Chủ",     "server"},
+    {"Stats",    "Chỉ Số",      "bar-chart-2"},
+    {"Player",   "Người Chơi",  "user"},
+    {"Teleport", "Dịch Chuyển", "map-pin"},
+    {"Fruit",    "Trái",        "apple"},
+    {"Raid",     "Tập Kích",    "swords"},
+    {"Race",     "Tộc",         "shield"},
+    {"Shop",     "Cửa Hàng",    "shopping-cart"},
+    {"Misc",     "Khác",        "layers"}
 }
 
 local Tabs = {}
-for _, tabInfo in ipairs(TabDefinitions) do
-    local success, tabObject = pcall(function()
-        return Window:AddTab({
-            Title = tabInfo.Title,
-            Icon = tabInfo.Icon
-        })
-    end)
-    
-    if success and tabObject then
-        Tabs[tabInfo.Key] = tabObject
-    else
-        -- Thử lại không dùng Icon nếu thư viện Fluent của bạn bản cũ không hỗ trợ Icon
-        Tabs[tabInfo.Key] = Window:AddTab({ Title = tabInfo.Title })
+
+for _, tab in ipairs(TabDefinitions) do
+    local ok, result = pcall(Window.AddTab, Window, {
+        Title = tab[2],
+        Icon = tab[3]
+    })
+
+    if not ok or not result then
+        result = Window:AddTab({Title = tab[2]})
     end
+
+    Tabs[tab[1]] = result
 end
+
 ----------------------------------------------------------------
 -- LOGIC VÀ HOẠT ĐỘNG 
 ----------------------------------------------------------------
