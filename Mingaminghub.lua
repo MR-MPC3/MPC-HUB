@@ -261,94 +261,133 @@ task.wait(0.25)
 if LoaderGui and LoaderGui.Parent then
     LoaderGui:Destroy()
 end
--- spawn(function()
---     while wait() do
---         function print()
---         end
---         function warn()
---         end
---         function error()
---         end
---         debug.traceback = function()
---             return "Traceback blocked";
---         end;
---         debug.info = function()
---             return "Info blocked";
---         end;
---         local meta = getrawmetatable(game);
---         if (meta and not meta.__metatable) then
---             setreadonly(meta, false);
---             local oldIndex = meta.__index;
---             local oldNewIndex = meta.__newindex;
---             meta.__index = function(metaObj, val4)
---                 if ((val4 == "debug") or (val4 == "getrawmetatable")) then
---                     error("Anti Skid: Tampering detected!");
---                 end
---                 return oldIndex(metaObj, val4);
---             end;
---             meta.__newindex = function(metaObj2, val5, metaVal)
---                 if ((val5 == "debug") or (val5 == "getrawmetatable")) then
---                     error("Anti Skid: Tampering detected!");
---                 end
---                 return oldNewIndex(metaObj2, val5, metaVal);
---             end;
---             setreadonly(meta, true);
---         end
---         local function checkEnvTamper()
---             local envDangerList = {
---                 "_G",
---                 "debug",
---                 "getgenv",
---                 "getrawmetatable",
---                 "setfenv",
---                 "loadstring",
---                 "hookfunction"
---             };
---             for _, item in ipairs(envDangerList) do
---                 local pcallOk, pcallResult = pcall(function()
---                     return _G[envItem];
---                 end);
---                 if (pcallOk and pcallResult) then
---                     error("Anti Skid: Environment tampering detected!");
---                 end
---             end
---         end
---         local function checkHookTamper()
---             local hookDangerList = {
---                 getrawmetatable,
---                 setreadonly,
---                 getgenv,
---                 debug.getinfo,
---                 debug.getregistry
---             };
---             for _, item in ipairs(hookDangerList) do
---                 if hookItem then
---                     error("Anti Skid: Hook tampering detected!");
---                 end
---             end
---         end
---         local temp1 = game:FindService("HttpService");
---         if temp1 then
---             temp1.RequestAsync = function()
---                 error("HTTP Requests Blocked");
---             end;
---             temp1.GetAsync = function()
---                 error("HTTP Get Blocked");
---             end;
---             temp1.PostAsync = function()
---                 error("HTTP Post Blocked");
---             end;
---         end
---         function collectgarbage()
---             error("GC Blocked");
---         end
---         os.time = function()
---             error("OS Time Blocked");
---         end;
---         pcall(checkEnvTamper);
---         pcall(checkHookTamper);
---     end
--- end);
+
+-- =========================================================
+-- ANTI-TAMPER / ANTI-SKID
+-- TẠM THỜI KHÔNG SỬ DỤNG
+-- =========================================================
+
+--[[
+spawn(function()
+    while task.wait() do
+        function print()
+        end
+
+        function warn()
+        end
+
+        function error()
+        end
+
+        debug.traceback = function()
+            return "Traceback blocked"
+        end
+
+        debug.info = function()
+            return "Info blocked"
+        end
+
+        local meta = getrawmetatable(game)
+
+        if meta and not meta.__metatable then
+            setreadonly(meta, false)
+
+            local oldIndex = meta.__index
+            local oldNewIndex = meta.__newindex
+
+            meta.__index = function(metaObj, val4)
+                if val4 == "debug" or val4 == "getrawmetatable" then
+                    error("Anti Skid: Tampering detected!")
+                end
+
+                return oldIndex(metaObj, val4)
+            end
+
+            meta.__newindex = function(metaObj2, val5, metaVal)
+                if val5 == "debug" or val5 == "getrawmetatable" then
+                    error("Anti Skid: Tampering detected!")
+                end
+
+                return oldNewIndex(metaObj2, val5, metaVal)
+            end
+
+            setreadonly(meta, true)
+        end
+
+        local function checkEnvTamper()
+            local envDangerList = {
+                "_G",
+                "debug",
+                "getgenv",
+                "getrawmetatable",
+                "setfenv",
+                "loadstring",
+                "hookfunction"
+            }
+
+            for _, item in ipairs(envDangerList) do
+                local pcallOk, pcallResult = pcall(function()
+                    return _G[item]
+                end)
+
+                if pcallOk and pcallResult then
+                    error("Anti Skid: Environment tampering detected!")
+                end
+            end
+        end
+
+        local function checkHookTamper()
+            local hookDangerList = {
+                getrawmetatable,
+                setreadonly,
+                getgenv,
+                debug.getinfo,
+                debug.getregistry
+            }
+
+            for _, item in ipairs(hookDangerList) do
+                if item then
+                    error("Anti Skid: Hook tampering detected!")
+                end
+            end
+        end
+
+        local temp1 = game:FindService("HttpService")
+
+        if temp1 then
+            temp1.RequestAsync = function()
+                error("HTTP Requests Blocked")
+            end
+
+            temp1.GetAsync = function()
+                error("HTTP Get Blocked")
+            end
+
+            temp1.PostAsync = function()
+                error("HTTP Post Blocked")
+            end
+        end
+
+        function collectgarbage()
+            error("GC Blocked")
+        end
+
+        os.time = function()
+            error("OS Time Blocked")
+        end
+
+        pcall(checkEnvTamper)
+        pcall(checkHookTamper)
+    end
+end)
+]]
+
+-- =========================================================
+-- HẾT ANTI-TAMPER
+-- Hiện tại không thực thi.
+-- =========================================================
+
+
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
