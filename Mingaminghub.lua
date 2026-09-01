@@ -1,17 +1,46 @@
--- discord.gg/25ms
+--[[
+================================================================================
+    MIN GAMING HUB - Blox Fruits Script
+    Discord: discord.gg/25ms
+================================================================================
+
+    CẤU TRÚC FILE (Thứ tự logic tối ưu):
+    1.  Services & ParentGui
+    2.  Fake Loader (UX loading)
+    3.  Anti-Tamper (đã tắt)
+    4.  Load Fluent UI Library
+    5.  Tạo Window + Mobile Minimize Button
+    6.  Tạo các Tab
+    7.  Services, Player, Sea Detection
+    8.  Data Tables (Quest / Boss / Material)
+    9.  Helper Functions (CheckLevel, Tween, Attack, ESP...)
+    10. BuildUI() - Tất cả Toggle / Button / Logic farm
+    11. Gọi BuildUI() + Notify hoàn thành
+
+    Lưu ý:
+    - Tất cả hàm hỗ trợ được định nghĩa TRƯỚC BuildUI
+    - Data tables đứng trước các hàm sử dụng chúng
+    - Biến _G. dùng để chia sẻ trạng thái giữa các loop
+================================================================================
+]]
+
 -------------------------------------------------
--- FAKE LOADER
+-- 1. SERVICES CƠ BẢN
 -------------------------------------------------
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
+-- Ưu tiên gethui() nếu executor hỗ trợ (an toàn hơn CoreGui)
 local ParentGui = (gethui and gethui()) or CoreGui
 
+-------------------------------------------------
+-- 2. FAKE LOADER (Hiển thị loading giả lập)
+-------------------------------------------------
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming"
 
 shared.LoaderKeyFrames = {
-    [1] = {1, 10},
+    [1] = {1, 10},   -- giây chờ, % progress
     [2] = {2, 30},
     [3] = {3, 60},
     [4] = {2, 100}
@@ -263,8 +292,9 @@ if LoaderGui and LoaderGui.Parent then
 end
 
 -- =========================================================
--- ANTI-TAMPER / ANTI-SKID
--- TẠM THỜI KHÔNG SỬ DỤNG
+-- 3. ANTI-TAMPER / ANTI-SKID
+--    TẠM THỜI TẮT (comment lại toàn bộ)
+--    Chỉ bật khi cần bảo vệ code khỏi skid
 -- =========================================================
 
 --[[
@@ -389,9 +419,8 @@ end)
 
 
 -------------------------------------------------
--- FLUENT
+-- 4. LOAD FLUENT UI LIBRARY
 -------------------------------------------------
-
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet(
         "https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"
@@ -414,7 +443,8 @@ local Window = Fluent:CreateWindow({
 })
 
 -------------------------------------------------
--- MOBILE MINIMIZE / RESTORE
+-- 5. MOBILE MINIMIZE / RESTORE BUTTON
+--    Nút thu nhỏ cửa sổ dành cho mobile + kéo thả
 -------------------------------------------------
 
 local MinGui = Instance.new("ScreenGui")
@@ -502,7 +532,7 @@ MinButton.Activated:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- CÁC TAB CHÍNH
+-- 6. TẠO CÁC TAB CHÍNH
 ----------------------------------------------------------------
 
 local TabDefinitions = {
@@ -538,15 +568,14 @@ for _, tab in ipairs(TabDefinitions) do
 end
 
 ----------------------------------------------------------------
--- LOGIC VÀ HOẠT ĐỘNG 
+-- 7. SERVICES, PLAYER & SEA DETECTION
 ----------------------------------------------------------------
--- Khai báo Service & Player
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local plr = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Khai báo Fluent Safe
+-- Fluent Options (dùng để SetValue toggle)
 local Options = Fluent.Options
 
 -- Danh sách PlaceId hợp lệ (Sea 1, 2, 3)
@@ -569,8 +598,20 @@ local Sea1 = (currentSea == 1)
 local Sea2 = (currentSea == 2)
 local Sea3 = (currentSea == 3)
 
+-------------------------------------------------
+-- Biến toàn cục mặc định (tránh nil khi mới load)
+-------------------------------------------------
+ChooseWeapon = "Melee"
+SelectWeapon = nil
+SelectBoss = ""
+SelectMaterial = ""
+SelectChip = "Flame"
+_G.Fast_Delay = 0.3
+_G.AutoLevel = false
+Pos = CFrame.new(0, 30, 0)
+
 ----------------------------------------------------------------
--- DÁNH SÁCH QUÁI THƯỜNG
+-- 8. DATA TABLES - QUEST (Quái thường theo level & sea)
 ----------------------------------------------------------------
 local QuestData = {
     Sea1 = {
@@ -670,7 +711,7 @@ local QuestData = {
 }
 
 ----------------------------------------------------------------
--- HÀM CHECK LEVEL BỎ SELECTMONSTER
+-- 9. HÀM CHECK LEVEL (Tự động chọn quái theo level hiện tại)
 ----------------------------------------------------------------
 function CheckLevel()
     local myLevel = plr.Data.Level.Value
@@ -712,7 +753,7 @@ function CheckLevel()
 end
 
 ----------------------------------------------------------------
--- DANH SÁCH BOSS
+-- 10. DATA TABLES - BOSS
 ----------------------------------------------------------------
 local BossData = {
     -- ========== Sea 1 ==========
@@ -950,7 +991,7 @@ function CheckBossQuest()
     end
 end
 ----------------------------------------------------------------
--- DANH SÁCH MATERIAL
+-- 11. DATA TABLES - MATERIAL
 ----------------------------------------------------------------
 local MaterialData = {
     -- ========== Flat (không phụ thuộc Sea) ==========
@@ -1104,7 +1145,8 @@ function MaterialMon()
     end
 end
 ------------------------------------------------------------------
--- ESP helpers (PHẢI đứng trước mọi hàm ESP — Round không được local)
+-- 12. ESP HELPERS
+--     Phải định nghĩa trước tất cả hàm Update*ESP
 ------------------------------------------------------------------
 function isnil(value)
     return value == nil
@@ -1493,7 +1535,7 @@ textLabel.Font = "Code";
 end
 
 ----------------------------------------------------------------
--- ESP Quái / Hải thú / NPC (từ code cũ, đã sửa TextSize)
+-- 13. ESP LOOPS (Quái / Hải thú / NPC)
 ----------------------------------------------------------------
 spawn(function()
     while wait() do
@@ -1628,14 +1670,20 @@ spawn(function()
     end
 end)
 
+-------------------------------------------------
+-- 14. TWEEN / TELEPORT HELPERS
+-------------------------------------------------
 function BTPZ(cf)
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
-    task.wait();
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf;
+    -- Teleport nhanh 2 lần (bypass một số check khoảng cách)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf
+    task.wait()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf
 end
-local TweenSpeed = 270
+
+local TweenSpeed = 270          -- Tốc độ bay (studs/giây)
 local CurrentTween = nil
 _G.StopTween = false
+
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not game.Players.LocalPlayer.Character then return end
@@ -1838,32 +1886,36 @@ function GetEquippedTool()
     end
     return nil;
 end
+-------------------------------------------------
+-- 15. COMBAT HELPERS
+-------------------------------------------------
 function AttackNoCoolDown()
-    local enemiesInRange = {};
-    local enemies = game:GetService("Workspace").Enemies:GetChildren();
-    local hitPart = FindEnemiesInRange(enemiesInRange, enemies);
-    if not hitPart then
-        return;
-    end
-    local equipped = GetEquippedTool();
-    if not equipped then
-        return;
-    end
+    -- Đánh không cooldown (dùng RegisterAttack + RegisterHit)
+    local enemiesInRange = {}
+    local enemies = game:GetService("Workspace").Enemies:GetChildren()
+    local hitPart = FindEnemiesInRange(enemiesInRange, enemies)
+    if not hitPart then return end
+
+    local equipped = GetEquippedTool()
+    if not equipped then return end
+
     pcall(function()
         local delay = _G.Fast_Delay or 0.5
-        local RS = game:GetService("ReplicatedStorage");
-        local regAttack = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack");
-        local regHit = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit");
-        if (# enemiesInRange > 0) then
-            regAttack:FireServer(delay);
-            regHit:FireServer(hitPart, enemiesInRange);
+        local RS = game:GetService("ReplicatedStorage")
+        local regAttack = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack")
+        local regHit = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit")
+        if #enemiesInRange > 0 then
+            regAttack:FireServer(delay)
+            regHit:FireServer(hitPart, enemiesInRange)
         else
-            task.wait(delay);
+            task.wait(delay)
         end
-    end);
+    end)
 end
+
 Type = 1
-Pos = CFrame.new(0, 30, 0)
+Pos = CFrame.new(0, 30, 0)   -- Offset bay trên đầu quái
+
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buso");
@@ -1950,11 +2002,16 @@ if container then
         end
     end
 end
-------------------------------------------
----THÔNG TIN
-------------------------------------------
-
+-------------------------------------------------
+-- 16. BUILD UI
+--     Tất cả Toggle / Dropdown / Button + logic farm
+--     được gom vào đây để dễ bảo trì
+-------------------------------------------------
 local function BuildUI()
+
+-------------------------------------------------
+-- TAB: HOME (Thông tin)
+-------------------------------------------------
 Tabs.Home:AddButton({
     Title = "Discord",
     Description = "Giao Lưu",
@@ -6909,51 +6966,44 @@ local toggleNextIsland = Tabs.Raid:AddToggle("ToggleNextIsland", {
     Default = false
 });
 toggleNextIsland:OnChanged(function(value)
-    AutoNextIsland = value;
-    if not nextIslandFlag then
-        _G.AutoNear = false;
+    AutoNextIsland = value
+    if not value then
+        _G.AutoNear = false
     end
-end);
+end)
 Options.ToggleNextIsland:SetValue(false);
 spawn(function()
     local flag = {};
     while task.wait() do
         if AutoNextIsland then
             pcall(function()
-                local raidPlayerChar = game.Players.LocalPlayer.Character;
-                if (raidPlayerChar and raidPlayerChar:FindFirstChild("HumanoidRootPart")) then
-                    local playerChar = game:GetService("Workspace")['_WorldOrigin'].Locations;
-                    local raidCharPos = enemy.HumanoidRootPart.Position;
-                    if (((raidCharPos - Vector3.new(- 6438.73535, 250.645355, - 4501.50684)).Magnitude < 1) or ((raidCharPos - Vector3.new(- 5017.40869, 314.844055, - 2823.0127)).Magnitude < 1)) then
-                        flag = {};
+                local raidPlayerChar = game.Players.LocalPlayer.Character
+                if raidPlayerChar and raidPlayerChar:FindFirstChild("HumanoidRootPart") then
+                    local locations = game:GetService("Workspace")["_WorldOrigin"].Locations
+                    local raidCharPos = raidPlayerChar.HumanoidRootPart.Position
+
+                    -- Reset flag khi đứng ở chỗ bắt đầu Raid
+                    if (raidCharPos - Vector3.new(-6438.73535, 250.645355, -4501.50684)).Magnitude < 10
+                        or (raidCharPos - Vector3.new(-5017.40869, 314.844055, -2823.0127)).Magnitude < 10 then
+                        flag = {}
                     end
-                    if playerChar:FindFirstChild("Island 1") then
-                        _G.AutoNear = true;
+
+                    if locations:FindFirstChild("Island 1") then
+                        _G.AutoNear = true
                     end
-                    if (playerChar:FindFirstChild("Island 2") and not flag["Island 2"]) then
-                        Tween(playerChar:FindFirstChild("Island 2").CFrame);
-                        flag["Island 2"] = true;
-                        AutoNextIsland = false;
-                        wait();
-                        AutoNextIsland = true;
-                    elseif (playerChar:FindFirstChild("Island 3") and not flag["Island 3"]) then
-                        Tween(playerChar:FindFirstChild("Island 3").CFrame);
-                        flag["Island 3"] = true;
-                        AutoNextIsland = false;
-                        wait();
-                        AutoNextIsland = true;
-                    elseif (playerChar:FindFirstChild("Island 4") and not flag["Island 4"]) then
-                        Tween(playerChar:FindFirstChild("Island 4").CFrame);
-                        flag["Island 4"] = true;
-                        AutoNextIsland = false;
-                        wait();
-                        AutoNextIsland = true;
-                    elseif (playerChar:FindFirstChild("Island 5") and not flag["Island 5"]) then
-                        Tween(playerChar:FindFirstChild("Island 5").CFrame);
-                        flag["Island 5"] = true;
-                        AutoNextIsland = false;
-                        wait();
-                        AutoNextIsland = true;
+
+                    if locations:FindFirstChild("Island 2") and not flag["Island 2"] then
+                        Tween(locations["Island 2"].CFrame)
+                        flag["Island 2"] = true
+                    elseif locations:FindFirstChild("Island 3") and not flag["Island 3"] then
+                        Tween(locations["Island 3"].CFrame)
+                        flag["Island 3"] = true
+                    elseif locations:FindFirstChild("Island 4") and not flag["Island 4"] then
+                        Tween(locations["Island 4"].CFrame)
+                        flag["Island 4"] = true
+                    elseif locations:FindFirstChild("Island 5") and not flag["Island 5"] then
+                        Tween(locations["Island 5"].CFrame)
+                        flag["Island 5"] = true
                     end
                 end
             end);
@@ -7829,8 +7879,8 @@ spawn(function()
     end
 end);
 ----------------------------------------------------------------
--- SỰ KIỆN BIỂN (Sea Event) - Bản sạch 100% (đã kiểm tra)
--- Thay thế toàn bộ phần từ Leviathan trở xuống bằng đoạn này
+-- 17. TAB SEA - SỰ KIỆN BIỂN (Leviathan / Draco / Volcano...)
+--     Phần này nằm cuối BuildUI
 ----------------------------------------------------------------
 
 -- ==================== LEVIATHAN ====================
@@ -8403,10 +8453,18 @@ spawn(function()
     end
 end)
 
-end
+end -- Kết thúc function BuildUI()
+
+-------------------------------------------------
+-- 18. KHỞI CHẠY
+-------------------------------------------------
 BuildUI()
+
 Fluent:Notify({
     Title = "Min Gaming",
-    Content = "Tải Xong",
+    Content = "Tải Xong - Sẵn sàng sử dụng!",
     Duration = 10
 })
+
+-- Kết thúc script
+-- discord.gg/25ms
