@@ -3774,6 +3774,7 @@ if Sea3 then
         Title = "Bay Đến Khu Vực Săn",
         Description = "",
         Callback = function()
+            _G.StopTween = false;
             Tween2(CFrame.new(- 16917.154296875, 7.757596015930176, 511.8203125));
         end
     });
@@ -4313,6 +4314,7 @@ if Sea3 then
         Title = "Bay Đến Chỗ Cao",
         Description = "",
         Callback = function()
+            _G.StopTween = false;
             TweenToHighestPoint();
         end
     });
@@ -6830,6 +6832,7 @@ Tabs.Teleport:AddButton({
     Title = "Bay Đến Đảo",
     Description = "",
     Callback = function()
+        _G.StopTween = false;
         if (_G.SelectIsland == "WindMill") then
             Tween2(CFrame.new(979.79895019531, 16.516613006592, 1429.0466308594));
         elseif (_G.SelectIsland == "Marine") then
@@ -7558,6 +7561,7 @@ if Sea2 then
         Title = "Bay Đến Chỗ Tập Kích",
         Description = "",
         Callback = function()
+            _G.StopTween = false;
             Tween2(CFrame.new(- 6438.73535, 250.645355, - 4501.50684));
         end
     });
@@ -7566,6 +7570,7 @@ elseif Sea3 then
         Title = "Bay Đến Chỗ Tập Kích",
         Description = "",
         Callback = function()
+            _G.StopTween = false;
             ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
             Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
         end
