@@ -53,6 +53,48 @@ local plr = Players.LocalPlayer
 local RS  = ReplicatedStorage
 
 -------------------------------------------------
+-- CONFIG SAVE / LOAD (Tự nhớ TẤT CẢ toggle)
+-------------------------------------------------
+local ConfigFile = "MinGaming_Config.json"
+
+local Config = {
+    Saved = {}  -- { [OptionId] = value }
+}
+
+local function SaveConfig()
+    pcall(function()
+        if writefile then
+            writefile(ConfigFile, HttpService:JSONEncode(Config))
+        end
+    end)
+end
+
+local function LoadConfig()
+    pcall(function()
+        if isfile and isfile(ConfigFile) and readfile then
+            local ok, data = pcall(function()
+                return HttpService:JSONDecode(readfile(ConfigFile))
+            end)
+            if ok and type(data) == "table" then
+                Config = data
+                if type(Config.Saved) ~= "table" then
+                    Config.Saved = {}
+                end
+            end
+        end
+    end)
+end
+
+local function ResetAllConfig()
+    Config.Saved = {}
+    SaveConfig()
+end
+
+-- Load sớm
+LoadConfig()
+
+
+-------------------------------------------------
 -- 2. FAKE LOADER (Hiển thị loading giả lập)
 -------------------------------------------------
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming"
@@ -613,6 +655,18 @@ end
 local Sea1 = (currentSea == 1)
 local Sea2 = (currentSea == 2)
 local Sea3 = (currentSea == 3)
+
+-------------------------------------------------
+-- Biến toàn cục mặc định (tránh nil khi mới load)
+-------------------------------------------------
+ChooseWeapon = "Melee"
+SelectWeapon = nil
+SelectBoss = ""
+SelectMaterial = ""
+SelectChip = "Flame"
+_G.Fast_Delay = 0.3
+_G.AutoLevel = false
+Pos = CFrame.new(0, 30, 0)
 
 ----------------------------------------------------------------
 -- 8. DATA TABLES - QUEST (Quái thường theo level & sea)
@@ -5658,7 +5712,42 @@ if Sea2 then
         end);
     end);
 end
+-- ========== RESET CONFIG (đầu Tab Cài Đặt) ==========
+Tabs.Setting:AddButton({
+    Title = "🔄 Reset Mọi Thứ Về Mặc Định",
+    Description = "Xóa toàn bộ config đã lưu, đưa tất cả toggle về mặc định",
+    Callback = function()
+        ResetAllConfig()
+        -- Reset các Options về Default (false cho hầu hết toggle)
+        for id, option in pairs(Options) do
+            pcall(function()
+                if option.Type == "Toggle" or (option.SetValue and type(option.Value) == "boolean") then
+                    option:SetValue(false)
+                end
+            end)
+        end
+        -- Một số mặc định đặc biệt
+        pcall(function()
+            if Options.ToggleFastAttack then Options.ToggleFastAttack:SetValue(true) end
+            if Options.ToggleBringMob then Options.ToggleBringMob:SetValue(true) end
+            if Options.ToggleZ then Options.ToggleZ:SetValue(true) end
+            if Options.ToggleX then Options.ToggleX:SetValue(true) end
+            if Options.ToggleC then Options.ToggleC:SetValue(true) end
+            if Options.ToggleV then Options.ToggleV:SetValue(true) end
+            if Options.DropdownSelectWeapon then Options.DropdownSelectWeapon:SetValue("Melee") end
+        end)
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã reset tất cả về mặc định!",
+            Duration = 5
+        })
+    end
+})
+
+Tabs.Setting:AddSection("Cài Đặt Chung")
+
 local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
+
     Title = "Bật Tộc V3",
     Description = "",
     Default = false
@@ -8457,7 +8546,51 @@ spawn(function()
     end
 end)
 
+
+-- ========== APPLY CONFIG + AUTO SAVE HOOK ==========
+-- Gắn thêm callback lưu config cho MỌI Option
+for id, option in pairs(Options) do
+    pcall(function()
+        if option and option.OnChanged then
+            option:OnChanged(function(val)
+                Config.Saved[id] = val
+                SaveConfig()
+            end)
+        end
+    end)
+end
+
+-- Áp dụng config đã lưu
+task.spawn(function()
+    task.wait(0.8) -- chờ UI ổn định
+    for id, val in pairs(Config.Saved or {}) do
+        if Options[id] then
+            pcall(function()
+                Options[id]:SetValue(val)
+            end)
+        end
+    end
+    -- Đồng bộ một số biến _G quan trọng
+    if Config.Saved.ToggleLevel ~= nil then
+        _G.AutoLevel = Config.Saved.ToggleLevel
+    end
+    if Config.Saved.DropdownSelectWeapon then
+        ChooseWeapon = Config.Saved.DropdownSelectWeapon
+    end
+    if Config.Saved.ToggleFastAttack ~= nil then
+        _G.FastAttack = Config.Saved.ToggleFastAttack
+    end
+    if Config.Saved.InputFastDelay then
+        local d = tonumber(Config.Saved.InputFastDelay) or 0.3
+        _G.Fast_Delay = math.clamp(d, 0.05, 2)
+    end
+    if Config.Saved.ToggleBringMob ~= nil then
+        _G.BringMob = Config.Saved.ToggleBringMob
+    end
+end)
+
 end -- Kết thúc function BuildUI()
+
 
 -------------------------------------------------
 -- 18. KHỞI CHẠY
