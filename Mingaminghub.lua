@@ -12,10 +12,11 @@
     5.  Tạo Window + Mobile Minimize Button
     6.  Tạo các Tab
     7.  Player & Sea Detection
-    8.  Data Tables (Quest / Boss / Material)
-    9.  Helper Functions (CheckLevel, Tween, Attack, ESP...)
-    10. BuildUI() - Tất cả Toggle / Button / Logic farm
-    11. Gọi BuildUI() + Notify hoàn thành
+    8.  Config Save/Load (tự nhớ bật/tắt/chỉnh)
+    9.  Data Tables (Quest / Boss / Material)
+    10. Helper Functions (CheckLevel, Tween, Attack, ESP...)
+    11. BuildUI() - Tất cả Toggle / Button / Logic farm
+    12. Gọi BuildUI() + LoadConfig + Notify hoàn thành
 
     Lưu ý:
     - Tất cả Roblox Services khai báo 1 lần ở mục 1
@@ -593,6 +594,400 @@ local PlaceId = game.PlaceId
 
 -- Fluent Options (dùng để SetValue toggle)
 local Options = Fluent.Options
+
+-------------------------------------------------
+-- 7b. CONFIG SAVE / LOAD
+--     Tự nhớ mọi Toggle / Dropdown / Input / Slider
+--     File: MinGamingHub/config.json
+-------------------------------------------------
+local CONFIG_FOLDER = "MinGamingHub"
+local CONFIG_FILE   = "MinGamingHub/config.json"
+
+local ConfigReady      = false
+local DefaultConfig    = nil
+local LastSavedJson    = ""
+local SaveQueued       = false
+local ConfigFileOk     = true
+local OptionsHooked    = false
+
+local function SanitizeConfigValue(val)
+    local t = type(val)
+    if t == "boolean" or t == "number" or t == "string" then
+        return val
+    elseif t == "table" then
+        local out = {}
+        for k, v in pairs(val) do
+            local tk, tv = type(k), type(v)
+            if (tk == "string" or tk == "number")
+                and (tv == "boolean" or tv == "number" or tv == "string") then
+                out[k] = v
+            end
+        end
+        return out
+    end
+    return nil
+end
+
+local CONFIG_SKIP_G = {
+    LoaderConfig = true,
+    LoaderStepTexts = true,
+    StopTween = true,
+    Clip2 = true,
+    UseSkill = true
+}
+
+local CONFIG_ALLOW_G = {
+    BringMob = true,
+    Job = true,
+    Join = true,
+    LOf = true,
+    WhiteScreen = true,
+    WalkonWater = true,
+    FastAttack = true,
+    FastAttackInput = true,
+    Fast_Delay = true,
+    EnabledPvP = true,
+    TeleportPly = true,
+    PermanentFruit = true,
+    SelectFruit = true,
+    SelectIsland = true,
+    SelectPly = true,
+    SelectBoss = true,
+    SelectMaterial = true,
+    Random_Auto = true,
+    CakePrince = true,
+    DoughKing = true,
+    Ectoplasm = true,
+    Factory = true,
+    GhostShip = true,
+    Ship = true,
+    farmpiranya = true,
+    AntiBand = true,
+    CastleRaid = true,
+    BuyLengendSword = true,
+    SaveSpawn = true,
+    Tweenfruit = true,
+    CollectFruitTP = true,
+    CollectAzure = true,
+    SpawnCakePrince = true,
+    EnableHakiFortress = true,
+    UseMelee = true,
+    UseSword = true,
+    UseGun = true,
+    TweenToFrozenDimension = true,
+    TweenToGear = true,
+    TweenToKitsune = true,
+    TweenToPrehistoric = true
+}
+
+local function IsConfigGKey(k)
+    if type(k) ~= "string" or CONFIG_SKIP_G[k] then
+        return false
+    end
+    if CONFIG_ALLOW_G[k] then
+        return true
+    end
+    return string.sub(k, 1, 4) == "Auto"
+end
+
+local function CollectExtra()
+    local extra = {
+        ChooseWeapon   = ChooseWeapon,
+        SelectBoss     = SelectBoss,
+        SelectMaterial = SelectMaterial,
+        SelectChip     = SelectChip
+    }
+    if type(_G) == "table" then
+        for k, v in pairs(_G) do
+            if IsConfigGKey(k) then
+                local sanitized = SanitizeConfigValue(v)
+                if sanitized ~= nil then
+                    extra[k] = sanitized
+                end
+            end
+        end
+    end
+    return extra
+end
+
+local function CollectConfig()
+    local opts = {}
+    if Options then
+        for name, opt in pairs(Options) do
+            local ok, val = pcall(function()
+                return opt.Value
+            end)
+            if ok then
+                local sanitized = SanitizeConfigValue(val)
+                if sanitized ~= nil then
+                    opts[name] = sanitized
+                end
+            end
+        end
+    end
+    return {
+        Options = opts,
+        Extra = CollectExtra()
+    }
+end
+
+local function EnsureConfigFolder()
+    pcall(function()
+        if makefolder then
+            local exists = false
+            if isfolder then
+                local ok, result = pcall(isfolder, CONFIG_FOLDER)
+                exists = ok and result
+            end
+            if not exists then
+                makefolder(CONFIG_FOLDER)
+            end
+        end
+    end)
+end
+
+local function EncodeConfig(data)
+    local ok, json = pcall(function()
+        return HttpService:JSONEncode(data)
+    end)
+    if ok and type(json) == "string" then
+        return json
+    end
+    return nil
+end
+
+local function DecodeConfig(json)
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(json)
+    end)
+    if ok and type(data) == "table" then
+        return data
+    end
+    return nil
+end
+
+function SaveConfig(force)
+    if not ConfigReady and not force then
+        return
+    end
+    if not writefile then
+        ConfigFileOk = false
+        return
+    end
+
+    local data = CollectConfig()
+    local json = EncodeConfig(data)
+    if not json then
+        return
+    end
+    if json == LastSavedJson then
+        return
+    end
+
+    EnsureConfigFolder()
+    local ok = pcall(function()
+        writefile(CONFIG_FILE, json)
+    end)
+    if ok then
+        LastSavedJson = json
+        ConfigFileOk = true
+    else
+        ConfigFileOk = false
+    end
+end
+
+local function QueueSave()
+    if not ConfigReady then
+        return
+    end
+    if SaveQueued then
+        return
+    end
+    SaveQueued = true
+    task.delay(0.35, function()
+        SaveQueued = false
+        SaveConfig()
+    end)
+end
+
+local function ApplyExtra(extra)
+    if type(extra) ~= "table" then
+        return
+    end
+    if extra.ChooseWeapon ~= nil then
+        ChooseWeapon = extra.ChooseWeapon
+    end
+    if extra.SelectBoss ~= nil then
+        SelectBoss = extra.SelectBoss
+    end
+    if extra.SelectMaterial ~= nil then
+        SelectMaterial = extra.SelectMaterial
+    end
+    if extra.SelectChip ~= nil then
+        SelectChip = extra.SelectChip
+    end
+    for k, v in pairs(extra) do
+        if k ~= "ChooseWeapon" and k ~= "SelectBoss"
+            and k ~= "SelectMaterial" and k ~= "SelectChip"
+            and IsConfigGKey(k) then
+            local sanitized = SanitizeConfigValue(v)
+            if sanitized ~= nil then
+                _G[k] = sanitized
+            end
+        end
+    end
+end
+
+local function ApplyConfig(data)
+    if type(data) ~= "table" then
+        return
+    end
+
+    ApplyExtra(data.Extra)
+
+    local opts = data.Options
+    if type(opts) ~= "table" then
+        -- file cũ / format phẳng
+        opts = data
+    end
+
+    local function applyFilter(pred)
+        for name, val in pairs(opts) do
+            if name ~= "Extra" and name ~= "Options" and pred(val) then
+                local opt = Options[name]
+                if opt and opt.SetValue then
+                    pcall(function()
+                        opt:SetValue(val)
+                    end)
+                end
+            end
+        end
+    end
+
+    -- Dropdown / Input / Slider trước, Toggle sau
+    -- để farm bật đúng vũ khí / boss / nguyên liệu đã chọn
+    applyFilter(function(v)
+        return type(v) ~= "boolean"
+    end)
+    applyFilter(function(v)
+        return type(v) == "boolean"
+    end)
+
+    -- Gán lại Extra sau SetValue để _G chắc chắn khớp file lưu
+    -- (một số bản Fluent không gọi OnChanged khi SetValue)
+    ApplyExtra(data.Extra)
+end
+
+function SnapshotDefaultConfig()
+    DefaultConfig = CollectConfig()
+end
+
+function LoadConfig()
+    if not readfile then
+        ConfigFileOk = false
+        return false
+    end
+
+    local ok, json = pcall(function()
+        return readfile(CONFIG_FILE)
+    end)
+    if not ok or type(json) ~= "string" or json == "" then
+        return false
+    end
+
+    local data = DecodeConfig(json)
+    if not data then
+        return false
+    end
+
+    ApplyConfig(data)
+    LastSavedJson = json
+    return true
+end
+
+function ResetAllConfig()
+    ConfigReady = false
+
+    if type(DefaultConfig) == "table" then
+        ApplyConfig(DefaultConfig)
+    else
+        -- Fallback: tắt hết toggle
+        if Options then
+            for _, opt in pairs(Options) do
+                local ok, val = pcall(function()
+                    return opt.Value
+                end)
+                if ok and type(val) == "boolean" and opt.SetValue then
+                    pcall(function()
+                        opt:SetValue(false)
+                    end)
+                end
+            end
+        end
+    end
+
+    pcall(function()
+        if CancelTween then
+            CancelTween()
+        end
+    end)
+
+    pcall(function()
+        if delfile then
+            delfile(CONFIG_FILE)
+        elseif writefile then
+            EnsureConfigFolder()
+            writefile(CONFIG_FILE, EncodeConfig(DefaultConfig or {Options = {}, Extra = {}}) or "{}")
+        end
+    end)
+
+    LastSavedJson = ""
+    ConfigReady = true
+    SaveConfig(true)
+
+    pcall(function()
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã reset tất cả chức năng về mặc định!",
+            Duration = 5
+        })
+    end)
+end
+
+local function HookOptionsForAutosave()
+    if not Options or OptionsHooked then
+        return
+    end
+    OptionsHooked = true
+
+    for _, opt in pairs(Options) do
+        if type(opt) == "table" and type(opt.SetValue) == "function" and not opt._MGConfigHooked then
+            opt._MGConfigHooked = true
+            local oldSetValue = opt.SetValue
+            opt.SetValue = function(...)
+                local result = oldSetValue(...)
+                QueueSave()
+                return result
+            end
+        end
+    end
+end
+
+local function StartConfigAutosave()
+    -- Lưu định kỳ để bắt Input đang gõ (không đi qua SetValue)
+    task.spawn(function()
+        while true do
+            task.wait(2)
+            if ConfigReady then
+                pcall(SaveConfig)
+            end
+        end
+    end)
+end
+
+----------------------------------------------------------------
+-- Hết Config Save/Load
+----------------------------------------------------------------
 
 -- Danh sách PlaceId hợp lệ (Sea 1, 2, 3)
 local MAP_SEAS = {
@@ -5670,6 +6065,25 @@ if Sea2 then
         end);
     end);
 end
+end
+-------------------------------------------------
+-- TAB: SETTING - Cấu hình lưu / reset
+-------------------------------------------------
+local ConfigSection = Tabs.Setting:AddSection("Cấu Hình")
+
+Tabs.Setting:AddParagraph({
+    Title = "Tự Động Lưu",
+    Content = "Mọi chức năng bạn bật, tắt hoặc chỉnh sẽ được lưu tự động.\nLần execute sau không cần bật lại."
+})
+
+Tabs.Setting:AddButton({
+    Title = "Reset Về Mặc Định",
+    Description = "Tắt hết chức năng đã lưu, trở về mặc định ban đầu",
+    Callback = function()
+        ResetAllConfig()
+    end
+})
+
 local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
     Title = "Bật Tộc V3",
     Description = "",
@@ -6020,7 +6434,7 @@ spawn(function()
         end
     end
 end);
-local toggleStatMelee = Tabs.Stats:AddToggle("ToggleMelee", {
+local toggleStatMelee = Tabs.Stats:AddToggle("ToggleStatMelee", {
     Title = "Nâng Đấm",
     Description = "",
     Default = false
@@ -6028,7 +6442,7 @@ local toggleStatMelee = Tabs.Stats:AddToggle("ToggleMelee", {
 toggleStatMelee:OnChanged(function(value)
     _G.Auto_Stats_Melee = value;
 end);
-Options.ToggleMelee:SetValue(false);
+Options.ToggleStatMelee:SetValue(false);
 local toggleStatDefense = Tabs.Stats:AddToggle("ToggleDe", {
     Title = "Nâng Máu",
     Description = "",
@@ -6038,7 +6452,7 @@ toggleStatDefense:OnChanged(function(value)
     _G.Auto_Stats_Defense = value;
 end);
 Options.ToggleDe:SetValue(false);
-local toggleStatSword = Tabs.Stats:AddToggle("ToggleSword", {
+local toggleStatSword = Tabs.Stats:AddToggle("ToggleStatSword", {
     Title = "Nâng Kiếm",
     Description = "",
     Default = false
@@ -6046,8 +6460,8 @@ local toggleStatSword = Tabs.Stats:AddToggle("ToggleSword", {
 toggleStatSword:OnChanged(function(value)
     _G.Auto_Stats_Sword = value;
 end);
-Options.ToggleSword:SetValue(false);
-local toggleStatGun = Tabs.Stats:AddToggle("ToggleGun", {
+Options.ToggleStatSword:SetValue(false);
+local toggleStatGun = Tabs.Stats:AddToggle("ToggleStatGun", {
     Title = "Nâng Súng",
     Description = "",
     Default = false
@@ -6055,8 +6469,8 @@ local toggleStatGun = Tabs.Stats:AddToggle("ToggleGun", {
 toggleStatGun:OnChanged(function(value)
     _G.Auto_Stats_Gun = value;
 end);
-Options.ToggleGun:SetValue(false);
-local toggleBuyFruit = Tabs.Stats:AddToggle("ToggleFruit", {
+Options.ToggleStatGun:SetValue(false);
+local toggleBuyFruit = Tabs.Stats:AddToggle("ToggleStatFruit", {
     Title = "Nâng Trái",
     Description = "",
     Default = false
@@ -6064,7 +6478,7 @@ local toggleBuyFruit = Tabs.Stats:AddToggle("ToggleFruit", {
 toggleBuyFruit:OnChanged(function(value)
     _G.Auto_Stats_Devil_Fruit = value;
 end);
-Options.ToggleFruit:SetValue(false);
+Options.ToggleStatFruit:SetValue(false);
 spawn(function()
     while wait() do
         if _G.Auto_Stats_Devil_Fruit then
@@ -6577,7 +6991,7 @@ dropdownFruit:SetValue(_G.SelectFruit);
 dropdownFruit:OnChanged(function(value)
     _G.SelectFruit = value;
 end);
-local toggleBuyFruit = Tabs.Fruit:AddToggle("ToggleFruit", {
+local toggleBuyFruit = Tabs.Fruit:AddToggle("ToggleBuyFruitSelect", {
     Title = "Mua Trái Chọn",
     Description = "",
     Default = false
@@ -6592,7 +7006,7 @@ toggleBuyFruit:OnChanged(function(value)
         _G.AutoBuyFruitSniper = false;
     end
 end);
-Options.ToggleFruit:SetValue(false);
+Options.ToggleBuyFruitSelect:SetValue(false);
 local dropdownPermanentFruit = Tabs.Fruit:AddDropdown("DropdownPermanentFruit", {
     Title = "Chọn Trái Vĩnh Viễn",
     Description = "",
@@ -8281,7 +8695,7 @@ DefendVolcanoToggle:OnChanged(function(value)
     _G.AutoDefendVolcano = value
 end)
 
-local UseMeleeToggle = Tabs.Sea:AddToggle("ToggleMelee", {
+local UseMeleeToggle = Tabs.Sea:AddToggle("ToggleUseMelee", {
     Title = "Dùng Melee",
     Description = "",
     Default = false
@@ -8290,7 +8704,7 @@ UseMeleeToggle:OnChanged(function(value)
     _G.UseMelee = value
 end)
 
-local UseSwordToggle = Tabs.Sea:AddToggle("ToggleSword", {
+local UseSwordToggle = Tabs.Sea:AddToggle("ToggleUseSword", {
     Title = "Dùng Sword",
     Description = "",
     Default = false
@@ -8299,7 +8713,7 @@ UseSwordToggle:OnChanged(function(value)
     _G.UseSword = value
 end)
 
-local UseGunToggle = Tabs.Sea:AddToggle("ToggleGun", {
+local UseGunToggle = Tabs.Sea:AddToggle("ToggleUseGun", {
     Title = "Dùng Gun",
     Description = "",
     Default = false
@@ -8476,185 +8890,28 @@ end -- Kết thúc function BuildUI()
 -------------------------------------------------
 BuildUI()
 
--------------------------------------------------
--- 18. PERSISTENCE AN TOÀN
--------------------------------------------------
-local MinGamingConfigFile = "MinGaming_" .. tostring(plr.UserId) .. "_Config.json"
-local MinGamingSaved = {}
-local MinGamingDefaults = {}
-local MinGamingRestoring = false
-local MinGamingResetting = false
-local MinGamingSaveQueued = false
+-- Chụp mặc định SAU khi UI đã SetValue default
+pcall(SnapshotDefaultConfig)
 
-local function MinGamingClone(value, seen)
-    local t = typeof(value)
-    if value == nil or t == "string" or t == "number" or t == "boolean" then
-        return value
-    end
-    if t == "EnumItem" then
-        return {__mg_type = "EnumItem", enum_type = tostring(value.EnumType), name = value.Name}
-    end
-    if t == "Color3" then
-        return {__mg_type = "Color3", r = value.R, g = value.G, b = value.B}
-    end
-    if t == "table" then
-        seen = seen or {}
-        if seen[value] then return nil end
-        seen[value] = true
-        local out = {}
-        for k, v in pairs(value) do
-            local ck, cv = MinGamingClone(k, seen), MinGamingClone(v, seen)
-            if ck ~= nil then out[ck] = cv end
-        end
-        seen[value] = nil
-        return out
-    end
-    return nil
-end
+-- Khôi phục cấu hình lần execute trước (bật lại các chức năng đã lưu)
+local ConfigLoaded = false
+pcall(function()
+    ConfigLoaded = LoadConfig() == true
+end)
 
-local function MinGamingRestore(value)
-    if type(value) ~= "table" then return value end
-    if value.__mg_type == "EnumItem" then
-        local enumType = Enum[value.enum_type]
-        if enumType and value.name then
-            local ok, item = pcall(function() return enumType[value.name] end)
-            if ok then return item end
-        end
-        return nil
-    end
-    if value.__mg_type == "Color3" then
-        return Color3.new(value.r or 0, value.g or 0, value.b or 0)
-    end
-    local out = {}
-    for k, v in pairs(value) do out[k] = MinGamingRestore(v) end
-    return out
-end
-
-local function MinGamingRead()
-    if type(isfile) ~= "function" or type(readfile) ~= "function" then return {} end
-    local okExists, exists = pcall(isfile, MinGamingConfigFile)
-    if not okExists or not exists then return {} end
-    local okRead, raw = pcall(readfile, MinGamingConfigFile)
-    if not okRead or type(raw) ~= "string" or raw == "" then return {} end
-    local okDecode, data = pcall(function() return HttpService:JSONDecode(raw) end)
-    return (okDecode and type(data) == "table") and data or {}
-end
-
-local function MinGamingWrite()
-    if type(writefile) ~= "function" then return end
-    pcall(function()
-        writefile(MinGamingConfigFile, HttpService:JSONEncode(MinGamingSaved))
-    end)
-end
-
-local function MinGamingQueueSave()
-    if MinGamingRestoring or MinGamingResetting or MinGamingSaveQueued then return end
-    MinGamingSaveQueued = true
-    task.delay(0.2, function()
-        MinGamingSaveQueued = false
-        if not MinGamingRestoring and not MinGamingResetting then MinGamingWrite() end
-    end)
-end
-
-local function MinGamingDisableFlags()
-    for key, value in pairs(_G) do
-        if type(value) == "boolean" then _G[key] = false end
-    end
-end
-
--- Lấy Default thực tế SAU BuildUI, không hook AddToggle/AddDropdown.
-for optionName, option in pairs(Options) do
-    if type(option) == "table" and type(option.SetValue) == "function" then
-        local value
-        pcall(function() value = option.Value end)
-        local cloned = MinGamingClone(value)
-        if cloned ~= nil then MinGamingDefaults[optionName] = cloned end
-    end
-end
-
-MinGamingSaved = MinGamingRead()
-
--- Chỉ lắng nghe thay đổi sau khi UI gốc đã tạo xong.
-for optionName, option in pairs(Options) do
-    if type(option) == "table" and type(option.OnChanged) == "function" then
-        pcall(function()
-            option:OnChanged(function()
-                if MinGamingRestoring or MinGamingResetting then return end
-                local value
-                pcall(function() value = option.Value end)
-                local cloned = MinGamingClone(value)
-                if cloned ~= nil then
-                    MinGamingSaved[optionName] = cloned
-                    MinGamingQueueSave()
-                end
-            end)
-        end)
-    end
-end
-
--- Khôi phục từng option, mỗi option nhường một frame để UI không treo.
-if next(MinGamingSaved) ~= nil then
-    MinGamingRestoring = true
-    task.spawn(function()
-        for optionName, savedValue in pairs(MinGamingSaved) do
-            local option = Options[optionName]
-            if option and type(option.SetValue) == "function" then
-                local value = MinGamingRestore(savedValue)
-                if value ~= nil then
-                    pcall(function() option:SetValue(value) end)
-                end
-            end
-            task.wait()
-        end
-        MinGamingRestoring = false
-    end)
-end
-
-Tabs.Setting:AddButton({
-    Title = "Reset Tất Cả Về Mặc Định",
-    Description = "Đưa toàn bộ chức năng và thiết lập về Default của script",
-    Callback = function()
-        if MinGamingResetting then return end
-        MinGamingResetting = true
-        MinGamingRestoring = true
-        MinGamingSaveQueued = false
-        table.clear(MinGamingSaved)
-        MinGamingDisableFlags()
-
-        task.spawn(function()
-            for optionName, defaultValue in pairs(MinGamingDefaults) do
-                local option = Options[optionName]
-                if option and type(option.SetValue) == "function" then
-                    local value = MinGamingRestore(defaultValue)
-                    if value ~= nil then
-                        pcall(function() option:SetValue(value) end)
-                    end
-                end
-                task.wait()
-            end
-
-            if type(delfile) == "function" then
-                pcall(function()
-                    if type(isfile) == "function" and isfile(MinGamingConfigFile) then delfile(MinGamingConfigFile) end
-                end)
-            else
-                MinGamingWrite()
-            end
-
-            MinGamingRestoring = false
-            MinGamingResetting = false
-            Fluent:Notify({
-                Title = "Min Gaming",
-                Content = "Đã reset tất cả về mặc định!",
-                Duration = 5
-            })
-        end)
-    end
-})
+-- Bắt đầu tự lưu khi người chơi bật / tắt / chỉnh
+ConfigReady = true
+pcall(HookOptionsForAutosave)
+pcall(StartConfigAutosave)
+pcall(function()
+    SaveConfig(true)
+end)
 
 Fluent:Notify({
     Title = "Min Gaming",
-    Content = "Tải Xong - Sẵn sàng sử dụng!",
+    Content = ConfigLoaded
+        and "Tải Xong - Đã khôi phục cấu hình lần trước!"
+        or "Tải Xong - Sẵn sàng sử dụng!",
     Duration = 10
 })
 
