@@ -53,48 +53,6 @@ local plr = Players.LocalPlayer
 local RS  = ReplicatedStorage
 
 -------------------------------------------------
--- CONFIG SAVE / LOAD (Tự nhớ TẤT CẢ toggle)
--------------------------------------------------
-local ConfigFile = "MinGaming_Config.json"
-
-local Config = {
-    Saved = {}  -- { [OptionId] = value }
-}
-
-local function SaveConfig()
-    pcall(function()
-        if writefile then
-            writefile(ConfigFile, HttpService:JSONEncode(Config))
-        end
-    end)
-end
-
-local function LoadConfig()
-    pcall(function()
-        if isfile and isfile(ConfigFile) and readfile then
-            local ok, data = pcall(function()
-                return HttpService:JSONDecode(readfile(ConfigFile))
-            end)
-            if ok and type(data) == "table" then
-                Config = data
-                if type(Config.Saved) ~= "table" then
-                    Config.Saved = {}
-                end
-            end
-        end
-    end)
-end
-
-local function ResetAllConfig()
-    Config.Saved = {}
-    SaveConfig()
-end
-
--- Load sớm
-LoadConfig()
-
-
--------------------------------------------------
 -- 2. FAKE LOADER (Hiển thị loading giả lập)
 -------------------------------------------------
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming"
@@ -5712,42 +5670,7 @@ if Sea2 then
         end);
     end);
 end
--- ========== RESET CONFIG (đầu Tab Cài Đặt) ==========
-Tabs.Setting:AddButton({
-    Title = "🔄 Reset Mọi Thứ Về Mặc Định",
-    Description = "Xóa toàn bộ config đã lưu, đưa tất cả toggle về mặc định",
-    Callback = function()
-        ResetAllConfig()
-        -- Reset các Options về Default (false cho hầu hết toggle)
-        for id, option in pairs(Options) do
-            pcall(function()
-                if option.Type == "Toggle" or (option.SetValue and type(option.Value) == "boolean") then
-                    option:SetValue(false)
-                end
-            end)
-        end
-        -- Một số mặc định đặc biệt
-        pcall(function()
-            if Options.ToggleFastAttack then Options.ToggleFastAttack:SetValue(true) end
-            if Options.ToggleBringMob then Options.ToggleBringMob:SetValue(true) end
-            if Options.ToggleZ then Options.ToggleZ:SetValue(true) end
-            if Options.ToggleX then Options.ToggleX:SetValue(true) end
-            if Options.ToggleC then Options.ToggleC:SetValue(true) end
-            if Options.ToggleV then Options.ToggleV:SetValue(true) end
-            if Options.DropdownSelectWeapon then Options.DropdownSelectWeapon:SetValue("Melee") end
-        end)
-        Fluent:Notify({
-            Title = "Min Gaming",
-            Content = "Đã reset tất cả về mặc định!",
-            Duration = 5
-        })
-    end
-})
-
-Tabs.Setting:AddSection("Cài Đặt Chung")
-
 local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
-
     Title = "Bật Tộc V3",
     Description = "",
     Default = false
@@ -8546,56 +8469,298 @@ spawn(function()
     end
 end)
 
-
--- ========== APPLY CONFIG + AUTO SAVE HOOK ==========
--- Gắn thêm callback lưu config cho MỌI Option
-for id, option in pairs(Options) do
-    pcall(function()
-        if option and option.OnChanged then
-            option:OnChanged(function(val)
-                Config.Saved[id] = val
-                SaveConfig()
-            end)
-        end
-    end)
-end
-
--- Áp dụng config đã lưu
-task.spawn(function()
-    task.wait(0.8) -- chờ UI ổn định
-    for id, val in pairs(Config.Saved or {}) do
-        if Options[id] then
-            pcall(function()
-                Options[id]:SetValue(val)
-            end)
-        end
-    end
-    -- Đồng bộ một số biến _G quan trọng
-    if Config.Saved.ToggleLevel ~= nil then
-        _G.AutoLevel = Config.Saved.ToggleLevel
-    end
-    if Config.Saved.DropdownSelectWeapon then
-        ChooseWeapon = Config.Saved.DropdownSelectWeapon
-    end
-    if Config.Saved.ToggleFastAttack ~= nil then
-        _G.FastAttack = Config.Saved.ToggleFastAttack
-    end
-    if Config.Saved.InputFastDelay then
-        local d = tonumber(Config.Saved.InputFastDelay) or 0.3
-        _G.Fast_Delay = math.clamp(d, 0.05, 2)
-    end
-    if Config.Saved.ToggleBringMob ~= nil then
-        _G.BringMob = Config.Saved.ToggleBringMob
-    end
-end)
-
 end -- Kết thúc function BuildUI()
-
 
 -------------------------------------------------
 -- 18. KHỞI CHẠY
 -------------------------------------------------
+
+-- ================================================================
+-- MIN GAMING - PERSISTENCE TOÀN BỘ OPTION
+-- Lưu/khôi phục mọi control có trạng thái trong Fluent:
+-- Toggle / Dropdown / MultiDropdown / Slider / Input / Keybind...
+-- Button là hành động một lần nên không có trạng thái để lưu.
+-- ================================================================
+local MinGamingConfigFile = "MinGaming_" .. tostring(plr.UserId) .. "_Config.json"
+local MinGamingPersistence = {}
+local MinGamingDefaults = {}
+local MinGamingRestoring = false
+local MinGamingSaving = false
+local MinGamingWrappedTabs = {}
+
+local function MinGamingCloneValue(value, seen)
+    local valueType = typeof(value)
+
+    if value == nil or valueType == "string" or valueType == "number" or valueType == "boolean" then
+        return value
+    end
+
+    if valueType == "EnumItem" then
+        return {
+            __mg_type = "EnumItem",
+            enum_type = tostring(value.EnumType),
+            name = value.Name
+        }
+    end
+
+    if valueType == "Color3" then
+        return {
+            __mg_type = "Color3",
+            r = value.R,
+            g = value.G,
+            b = value.B
+        }
+    end
+
+    if valueType == "table" then
+        seen = seen or {}
+        if seen[value] then
+            return nil
+        end
+        seen[value] = true
+
+        local result = {}
+        for k, v in pairs(value) do
+            local ck = MinGamingCloneValue(k, seen)
+            local cv = MinGamingCloneValue(v, seen)
+            if ck ~= nil then
+                result[ck] = cv
+            end
+        end
+        seen[value] = nil
+        return result
+    end
+
+    return nil
+end
+
+local function MinGamingRestoreValue(value)
+    if type(value) ~= "table" then
+        return value
+    end
+
+    if value.__mg_type == "EnumItem" then
+        local enumObject = Enum[value.enum_type]
+        if enumObject and value.name then
+            local ok, enumItem = pcall(function()
+                return enumObject[value.name]
+            end)
+            if ok then
+                return enumItem
+            end
+        end
+        return nil
+    end
+
+    if value.__mg_type == "Color3" then
+        return Color3.new(value.r or 0, value.g or 0, value.b or 0)
+    end
+
+    local result = {}
+    for k, v in pairs(value) do
+        result[k] = MinGamingRestoreValue(v)
+    end
+    return result
+end
+
+local function MinGamingReadConfig()
+    if type(isfile) ~= "function" or type(readfile) ~= "function" then
+        return {}
+    end
+
+    local okExists, exists = pcall(isfile, MinGamingConfigFile)
+    if not okExists or not exists then
+        return {}
+    end
+
+    local okRead, raw = pcall(readfile, MinGamingConfigFile)
+    if not okRead or type(raw) ~= "string" or raw == "" then
+        return {}
+    end
+
+    local okDecode, data = pcall(function()
+        return HttpService:JSONDecode(raw)
+    end)
+
+    if okDecode and type(data) == "table" then
+        return data
+    end
+
+    return {}
+end
+
+local MinGamingSaved = MinGamingReadConfig()
+
+local function MinGamingWriteConfig()
+    if MinGamingRestoring or MinGamingSaving then
+        return
+    end
+    if type(writefile) ~= "function" then
+        return
+    end
+
+    MinGamingSaving = true
+    task.spawn(function()
+        pcall(function()
+            local encoded = HttpService:JSONEncode(MinGamingSaved)
+            writefile(MinGamingConfigFile, encoded)
+        end)
+        MinGamingSaving = false
+    end)
+end
+
+local function MinGamingGetOptionValue(option)
+    local ok, value = pcall(function()
+        return option.Value
+    end)
+    if ok then
+        return value
+    end
+    return nil
+end
+
+local function MinGamingSaveOption(persistKey, option)
+    if MinGamingRestoring then
+        return
+    end
+
+    local value = MinGamingGetOptionValue(option)
+    local cloned = MinGamingCloneValue(value)
+    if cloned ~= nil then
+        MinGamingSaved[persistKey] = cloned
+        MinGamingWriteConfig()
+    end
+end
+
+local function MinGamingRegisterOption(optionType, optionName, config, option)
+    if not option then
+        return
+    end
+
+    local baseName = tostring(optionName)
+    local occurrence = 1
+    local persistKey = baseName
+
+    while MinGamingPersistence[persistKey] do
+        occurrence = occurrence + 1
+        persistKey = baseName .. "#" .. tostring(occurrence)
+    end
+
+    MinGamingPersistence[persistKey] = {
+        option = option,
+        type = optionType,
+        name = baseName
+    }
+
+    MinGamingDefaults[persistKey] = MinGamingCloneValue(config and config.Default)
+
+    -- Nếu config cũ dùng key không có suffix (trường hợp option ID không trùng),
+    -- vẫn dùng được trực tiếp.
+    if occurrence == 1 and MinGamingSaved[persistKey] == nil and MinGamingSaved[baseName] ~= nil then
+        MinGamingSaved[persistKey] = MinGamingSaved[baseName]
+    end
+end
+
+-- Bọc các hàm tạo Option trước khi BuildUI chạy để lấy đúng Default của
+-- từng control ngay tại nơi control được tạo. Không cần hard-code 100+ toggle.
+local MinGamingOptionMethods = {
+    AddToggle = "Toggle",
+    AddDropdown = "Dropdown",
+    AddSlider = "Slider",
+    AddInput = "Input",
+    AddKeybind = "Keybind"
+}
+
+for tabName, tab in pairs(Tabs) do
+    if type(tab) == "table" and not MinGamingWrappedTabs[tab] then
+        MinGamingWrappedTabs[tab] = true
+
+        for methodName, optionType in pairs(MinGamingOptionMethods) do
+            local originalMethod = tab[methodName]
+            if type(originalMethod) == "function" then
+                tab[methodName] = function(self, optionName, config, ...)
+                    local option = originalMethod(self, optionName, config, ...)
+                    pcall(function()
+                        MinGamingRegisterOption(optionType, optionName, config or {}, option)
+                    end)
+                    return option
+                end
+            end
+        end
+    end
+end
+
 BuildUI()
+
+-- Nút reset dùng chính registry nên reset cả Toggle/Dropdown/Slider/Input...
+Tabs.Setting:AddButton({
+    Title = "Reset Tất Cả Về Mặc Định",
+    Description = "Đưa toàn bộ chức năng và thiết lập về Default của script",
+    Callback = function()
+        MinGamingRestoring = true
+
+        -- Xóa dữ liệu cũ trước để không còn trạng thái nào được khôi phục lại.
+        table.clear(MinGamingSaved)
+
+        for persistKey, data in pairs(MinGamingPersistence) do
+            local option = data.option
+            local defaultValue = MinGamingRestoreValue(MinGamingDefaults[persistKey])
+
+            if option and defaultValue ~= nil then
+                pcall(function()
+                    option:SetValue(defaultValue)
+                end)
+            end
+        end
+
+        -- Xóa file config hoàn toàn. Nếu executor không có delfile thì ghi {}.
+        if type(delfile) == "function" then
+            pcall(function()
+                if isfile and isfile(MinGamingConfigFile) then
+                    delfile(MinGamingConfigFile)
+                end
+            end)
+        elseif type(writefile) == "function" then
+            pcall(function()
+                writefile(MinGamingConfigFile, "{}")
+            end)
+        end
+
+        MinGamingRestoring = false
+
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã reset tất cả về mặc định!",
+            Duration = 5
+        })
+    end
+})
+
+-- Gắn listener SAU BuildUI để mọi thay đổi của option đều được lưu.
+-- Làm sau khi BuildUI xong để các SetValue(Default) lúc khởi tạo không ghi đè config cũ.
+for persistKey, data in pairs(MinGamingPersistence) do
+    local option = data.option
+    if option and type(option.OnChanged) == "function" then
+        pcall(function()
+            option:OnChanged(function()
+                MinGamingSaveOption(persistKey, option)
+            end)
+        end)
+    end
+end
+
+-- Khôi phục trạng thái đã lưu.
+MinGamingRestoring = true
+for persistKey, data in pairs(MinGamingPersistence) do
+    local savedValue = MinGamingSaved[persistKey]
+    if savedValue ~= nil and data.option then
+        local value = MinGamingRestoreValue(savedValue)
+        pcall(function()
+            data.option:SetValue(value)
+        end)
+    end
+end
+MinGamingRestoring = false
 
 Fluent:Notify({
     Title = "Min Gaming",
