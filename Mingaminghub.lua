@@ -2280,10 +2280,11 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
 });
 AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
+    if value == false then
+        bringmob = false
+        CancelTween()
+    end
     if IsResettingConfig then return end
-    if (value == false) then
-            CancelTween()
-        end
 end);
 Options.ToggleLevel:SetValue(false);
 spawn(function()
@@ -2291,23 +2292,34 @@ spawn(function()
         if _G.AutoLevel then
             pcall(function()
                 CheckLevel();
+                if not _G.AutoLevel then return end
+
                 if (not string.find(plr.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (plr.PlayerGui.Main.Quest.Visible == false)) then
                     ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest");
+                    if not _G.AutoLevel then return end
+
                     Tween(CFrameQ);
                     if ((CFrameQ.Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 5) then
+                        if not _G.AutoLevel then return end
                         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
                         task.wait(0.5);
+                        if not _G.AutoLevel then return end
                     end
                 elseif (string.find(plr.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (plr.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                        if not _G.AutoLevel then break end
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name ==  NameMon) then
+                            if (enemy.Name == NameMon) then
                                 repeat
                                     wait(_G.Fast_Delay);
+                                    if not _G.AutoLevel then break end
+
                                     AttackNoCoolDown();
                                     bringmob = true;
                                     AutoHaki();
                                     EquipTool(SelectWeapon);
+                                    if not _G.AutoLevel then break end
+
                                     Tween(enemy.HumanoidRootPart.CFrame * Pos);
                                     enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
                                     enemy.HumanoidRootPart.Transparency = 1;
@@ -2321,9 +2333,13 @@ spawn(function()
                             end
                         end
                     end
+
+                    if not _G.AutoLevel then return end
                     for _, enemySpawn in pairs(Workspace['_WorldOrigin'].EnemySpawns:GetChildren()) do
+                        if not _G.AutoLevel then break end
                         if string.find(enemySpawn.Name, NameMon) then
                             if ((plr.Character.HumanoidRootPart.Position - enemySpawn.Position).Magnitude >= 10) then
+                                if not _G.AutoLevel then break end
                                 Tween(enemySpawn.CFrame * Pos);
                             end
                         end
