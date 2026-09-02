@@ -614,18 +614,6 @@ local Sea1 = (currentSea == 1)
 local Sea2 = (currentSea == 2)
 local Sea3 = (currentSea == 3)
 
--------------------------------------------------
--- Biến toàn cục mặc định (tránh nil khi mới load)
--------------------------------------------------
-ChooseWeapon = "Melee"
-SelectWeapon = nil
-SelectBoss = ""
-SelectMaterial = ""
-SelectChip = "Flame"
-_G.Fast_Delay = 0.3
-_G.AutoLevel = false
-Pos = CFrame.new(0, 30, 0)
-
 ----------------------------------------------------------------
 -- 8. DATA TABLES - QUEST (Quái thường theo level & sea)
 ----------------------------------------------------------------
