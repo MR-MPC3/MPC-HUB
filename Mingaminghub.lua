@@ -5783,6 +5783,20 @@ if Sea2 then
         end);
     end);
 end
+
+-- Nút Reset Config (Persistent Config)
+Tabs.Setting:AddButton({
+    Title = "Khôi Phục Thiết Lập Mặc Định",
+    Description = "Đưa Tất Cả Tùy Chọn Về Lại mặc định",
+    Callback = function()
+        ResetAllToDefault()
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã Khôi Phục Thiết Lập Mặc Định!",
+            Duration = 5
+        })
+    end
+})
 local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
     Title = "Bật Tộc V3",
     Description = "",
@@ -6031,20 +6045,6 @@ toggleSkillF:OnChanged(function(value)
     SkillF = value;
 end);
 Options.ToggleF:SetValue(true);
-
--- Nút Reset Config (Persistent Config)
-Tabs.Setting:AddButton({
-    Title = "Reset tất cả về mặc định",
-    Description = "Đưa toàn bộ Toggle / Dropdown / Input / Slider về giá trị mặc định gốc và lưu lại",
-    Callback = function()
-        ResetAllToDefault()
-        Fluent:Notify({
-            Title = "Min Gaming",
-            Content = "Đã reset tất cả về mặc định!",
-            Duration = 5
-        })
-    end
-})
 
 local paraServerTime = Tabs.Status:AddParagraph({
     Title = "Thông Tin",
