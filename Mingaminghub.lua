@@ -594,198 +594,6 @@ local PlaceId = game.PlaceId
 -- Fluent Options (dùng để SetValue toggle)
 local Options = Fluent.Options
 
--------------------------------------------------
--- PERSISTENT CONFIG SYSTEM (Min Gaming)
--- Lưu / khôi phục toàn bộ Options giữa các lần Execute
--- Mỗi tài khoản Roblox có 1 file riêng: DU_LIEU_TK_<TênTàiKhoản>.json
--------------------------------------------------
-local CONFIG_FOLDER = "MinGamingHub"
-local CONFIG_FILE   = CONFIG_FOLDER .. "/DU_LIEU_TK_" .. tostring(plr.Name) .. ".json"
-local IsResettingConfig = false
-local DefaultConfig = {}
-local savePending = false
-local saveGeneration = 0
-
-local function DeepCopy(value)
-    if type(value) ~= "table" then
-        return value
-    end
-    local result = {}
-    for k, v in pairs(value) do
-        result[k] = DeepCopy(v)
-    end
-    return result
-end
-
-local function EnsureConfigFolder()
-    if typeof(isfolder) == "function" and typeof(makefolder) == "function" then
-        if not isfolder(CONFIG_FOLDER) then
-            pcall(makefolder, CONFIG_FOLDER)
-        end
-    end
-end
-
-local function WriteConfig(data)
-    if typeof(writefile) ~= "function" then
-        return
-    end
-
-    pcall(function()
-        EnsureConfigFolder()
-        writefile(CONFIG_FILE, HttpService:JSONEncode(data))
-    end)
-end
-
-local function SaveConfig()
-    if IsResettingConfig then return end
-    if typeof(writefile) ~= "function" then return end
-    pcall(function()
-        EnsureConfigFolder()
-        local data = {}
-        for idx, opt in pairs(Options) do
-            if opt and opt.Value ~= nil then
-                data[idx] = DeepCopy(opt.Value)
-            end
-        end
-        WriteConfig(data)
-    end)
-end
-
-local function QueueSaveConfig()
-    if IsResettingConfig or savePending then return end
-
-    savePending = true
-    saveGeneration = saveGeneration + 1
-    local generation = saveGeneration
-
-    task.delay(0.75, function()
-        if generation ~= saveGeneration then
-            return
-        end
-
-        savePending = false
-
-        if not IsResettingConfig then
-            SaveConfig()
-        end
-    end)
-end
-
-local function LoadConfig()
-    if typeof(readfile) ~= "function" or typeof(isfile) ~= "function" then return end
-    if not isfile(CONFIG_FILE) then return end
-    local ok, content = pcall(readfile, CONFIG_FILE)
-    if not ok or type(content) ~= "string" or content == "" then return end
-    local ok2, data = pcall(function()
-        return HttpService:JSONDecode(content)
-    end)
-    if not ok2 or type(data) ~= "table" then return end
-    for idx, value in pairs(data) do
-        local opt = Options[idx]
-        if opt and type(opt.SetValue) == "function" then
-            pcall(function()
-                opt:SetValue(value)
-            end)
-        end
-    end
-end
-
-local function CaptureDefaults()
-    for idx, opt in pairs(Options) do
-        if opt and opt.Value ~= nil then
-            DefaultConfig[idx] = DeepCopy(opt.Value)
-        end
-    end
-end
-
-local function ValuesEqual(a, b)
-    if type(a) ~= type(b) then
-        return false
-    end
-
-    if type(a) ~= "table" then
-        return a == b
-    end
-
-    for k, v in pairs(a) do
-        if not ValuesEqual(v, b[k]) then
-            return false
-        end
-    end
-
-    for k in pairs(b) do
-        if a[k] == nil then
-            return false
-        end
-    end
-
-    return true
-end
-
-local function ResetAllToDefault()
-    if IsResettingConfig then
-        return
-    end
-
-    IsResettingConfig = true
-    saveGeneration = saveGeneration + 1
-    savePending = false
-
-    task.spawn(function()
-        local changed = 0
-
-        for idx, defaultValue in pairs(DefaultConfig) do
-            local opt = Options[idx]
-
-            if opt
-                and opt.Value ~= nil
-                and type(opt.SetValue) == "function"
-                and not ValuesEqual(opt.Value, defaultValue) then
-
-                pcall(function()
-                    opt:SetValue(DeepCopy(defaultValue))
-                end)
-
-                changed = changed + 1
-
-                -- Nhường frame định kỳ để tránh dồn toàn bộ callback vào một frame.
-                if changed % 6 == 0 then
-                    task.wait()
-                end
-            end
-        end
-
-        -- Ghi đúng DefaultConfig một lần duy nhất.
-        WriteConfig(DeepCopy(DefaultConfig))
-
-        IsResettingConfig = false
-
-        Fluent:Notify({
-            Title = "Min Gaming",
-            Content = "Đã khôi phục thiết lập mặc định!",
-            Duration = 3
-        })
-    end)
-end
-
-local function WrapOptionsForAutoSave()
-    for idx, opt in pairs(Options) do
-        if opt and type(opt.SetValue) == "function" and not opt.__MinGamingWrapped then
-            local originalSetValue = opt.SetValue
-            opt.SetValue = function(self, value, ...)
-                originalSetValue(self, value, ...)
-                if not IsResettingConfig then
-                    QueueSaveConfig()
-                end
-            end
-            opt.__MinGamingWrapped = true
-        end
-    end
-end
--------------------------------------------------
--- END PERSISTENT CONFIG SYSTEM
--------------------------------------------------
-
 -- Danh sách PlaceId hợp lệ (Sea 1, 2, 3)
 local MAP_SEAS = {
     [85211729168715] = 1,
@@ -936,7 +744,7 @@ function CheckLevel()
             QuestLv   = data.QLv
             CFrameQ   = data.QCF
             CFrameMon = data.MonCF
-            
+
             -- BYPASS ENTRANCE
             if _G.AutoLevel and data.Entrance then
                 local character = plr.Character
@@ -1914,15 +1722,18 @@ function Tween(targetCFrame)
     CurrentTween:Play()
 end
 function CancelTween()
+    -- Khóa Tween cho tới khi một chức năng di chuyển được bật lại.
+    -- Không chờ 0.15s và không tự mở khóa, tránh vòng lặp cũ bay lại.
     _G.StopTween = true
 
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
+
     local char = plr.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local root = char.HumanoidRootPart
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if root then
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
     end
@@ -2175,7 +1986,7 @@ function toAdvanced(targetCF)
         end
     end);
 end
-local container = ReplicatedStorage:FindFirstChild("Effect") 
+local container = ReplicatedStorage:FindFirstChild("Effect")
     and ReplicatedStorage.Effect:FindFirstChild("Container")
 
 if container then
@@ -2189,7 +2000,7 @@ if container then
                     pcall(function() child:Destroy() end)
                 end
             end
-            
+
             -- 2. Ghi đè hàm trực tiếp (Nhanh & Không tốn C-Stack)
             pcall(function()
                 local loaded = require(mod)
@@ -2237,7 +2048,6 @@ local SelectWeaponDropdown = Tabs.Main:AddDropdown("DropdownSelectWeapon", {
 });
 SelectWeaponDropdown:SetValue("Melee");
 SelectWeaponDropdown:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     ChooseWeapon = value;
 end);
 task.spawn(function()
@@ -2278,12 +2088,8 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
 });
 AutoLevelToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoLevel = value;
-    if value == false then
-        bringmob = false
-        CancelTween()
-    end
-    if IsResettingConfig then return end
 end);
 Options.ToggleLevel:SetValue(false);
 spawn(function()
@@ -2291,34 +2097,23 @@ spawn(function()
         if _G.AutoLevel then
             pcall(function()
                 CheckLevel();
-                if not _G.AutoLevel then return end
-
                 if (not string.find(plr.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (plr.PlayerGui.Main.Quest.Visible == false)) then
                     ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest");
-                    if not _G.AutoLevel then return end
-
                     Tween(CFrameQ);
                     if ((CFrameQ.Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 5) then
-                        if not _G.AutoLevel then return end
                         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv);
                         task.wait(0.5);
-                        if not _G.AutoLevel then return end
                     end
                 elseif (string.find(plr.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) or (plr.PlayerGui.Main.Quest.Visible == true)) then
                     for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                        if not _G.AutoLevel then break end
                         if (enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and (enemy.Humanoid.Health > 0)) then
-                            if (enemy.Name == NameMon) then
+                            if (enemy.Name ==  NameMon) then
                                 repeat
                                     wait(_G.Fast_Delay);
-                                    if not _G.AutoLevel then break end
-
                                     AttackNoCoolDown();
                                     bringmob = true;
                                     AutoHaki();
                                     EquipTool(SelectWeapon);
-                                    if not _G.AutoLevel then break end
-
                                     Tween(enemy.HumanoidRootPart.CFrame * Pos);
                                     enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
                                     enemy.HumanoidRootPart.Transparency = 1;
@@ -2332,13 +2127,9 @@ spawn(function()
                             end
                         end
                     end
-
-                    if not _G.AutoLevel then return end
                     for _, enemySpawn in pairs(Workspace['_WorldOrigin'].EnemySpawns:GetChildren()) do
-                        if not _G.AutoLevel then break end
                         if string.find(enemySpawn.Name, NameMon) then
                             if ((plr.Character.HumanoidRootPart.Position - enemySpawn.Position).Magnitude >= 10) then
-                                if not _G.AutoLevel then break end
                                 Tween(enemySpawn.CFrame * Pos);
                             end
                         end
@@ -2355,11 +2146,8 @@ local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
 });
 MobAuraToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoNear = value;
-    if IsResettingConfig then return end
-    if (value == false) then
-            CancelTween()
-        end
 end);
 Options.ToggleMobAura:SetValue(false);
 spawn(function()
@@ -2401,9 +2189,7 @@ local CastleRaidToggle = Tabs.Main:AddToggle("ToggleCastleRaid", {
 });
 CastleRaidToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.CastleRaid = value;
 end);
 Options.ToggleCastleRaid:SetValue(false);
@@ -2441,7 +2227,6 @@ local HakiFortressToggle = Tabs.Main:AddToggle("ToggleHakiFortress", {
     Default = false
 });
 HakiFortressToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.EnableHakiFortress = value;
 end);
 Options.ToggleHakiFortress:SetValue(false);
@@ -2493,7 +2278,6 @@ local CollectChestToggle = Tabs.Main:AddToggle("ToggleCollectChest", {
     Default = false
 });
 CollectChestToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoCollectChest = value;
 end);
 spawn(function()
@@ -2533,7 +2317,6 @@ local MasteryDropdown = Tabs.Main:AddDropdown("DropdownMastery", {
 });
 MasteryDropdown:SetValue(TypeMastery);
 MasteryDropdown:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     TypeMastery = value;
 end);
 local MasteryFruitToggle = Tabs.Main:AddToggle("ToggleMasteryFruit", {
@@ -2543,9 +2326,7 @@ local MasteryFruitToggle = Tabs.Main:AddToggle("ToggleMasteryFruit", {
 });
 MasteryFruitToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     AutoFarmMasDevilFruit = value;
 end);
 Options.ToggleMasteryFruit:SetValue(false);
@@ -2555,18 +2336,17 @@ local HealthInput = Tabs.Main:AddInput("InputHealth", {
     Default = "20",
     Placeholder = "Nhập % Máu Quái",
     Numeric = true,
-    Finished = false, 
+    Finished = false,
     Callback = function(masteryPercentInput)
         local num = tonumber(masteryPercentInput)
         if num then
             KillPercent = math.clamp(num, 0, 100)
         else
-            KillPercent = 20 
+            KillPercent = 20
         end
     end
 });
 HealthInput:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     KillPercent = value;
 end);
 HealthInput:SetValue(20);
@@ -2675,12 +2455,9 @@ if Sea3 then
         Default = false
     });
     toggleBone:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoBone = value;
-        if IsResettingConfig then return end
-        if (value == false) then
-            CancelTween()
-        end
     end);
     Options.ToggleBone:SetValue(false);
     local cframeBoneQuest = CFrame.new(- 9515.75, 174.8521728515625, 6079.40625);
@@ -2795,7 +2572,6 @@ if Sea3 then
         Default = false
     });
     toggleRandomBone:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.AutoRandomBone = value;
     end);
     Options.ToggleRandomBone:SetValue(false);
@@ -2841,7 +2617,8 @@ if Sea3 then
     });
     local cakeFirstTween = true;
     toggleCake:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.CakePrince = value;
         if value then
             if cakeFirstTween then
@@ -2851,7 +2628,9 @@ if Sea3 then
             end
         else
             cakeFirstTween = true;
-            CancelTween()
+            wait();
+            Tween(plr.Character.HumanoidRootPart.CFrame);
+            wait();
         end
     end);
     Options.ToggleCake:SetValue(false);
@@ -2913,11 +2692,9 @@ if Sea3 then
         Default = false
     });
     toggleDoughKing:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.DoughKing = value;
-        if (value == false) then
-            CancelTween()
-        end
     end);
     Options.ToggleDoughKing:SetValue(false);
     spawn(function()
@@ -2952,7 +2729,6 @@ if Sea3 then
         Default = true
     });
     toggleSpawnCake:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.SpawnCakePrince = value;
     end);
     Options.ToggleSpawnCake:SetValue(true);
@@ -2980,7 +2756,6 @@ if Sea2 then
         Default = false
     });
     toggleEctoplasm:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.Ectoplasm = value;
     end);
     Options.ToggleVatChatKiDi:SetValue(false);
@@ -3076,7 +2851,6 @@ local BossDropdown = Tabs.Main:AddDropdown("DropdownBoss", {
 });
 BossDropdown:SetValue(_G.SelectBoss);
 BossDropdown:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.SelectBoss = value;
 end);
 local BossStatus = Tabs.Main:AddParagraph({ Title = "Boss Status", Content = "Chưa chọn boss" })
@@ -3116,9 +2890,7 @@ local AutoFarmBossToggle = Tabs.Main:AddToggle("ToggleAutoFarmBoss", {
 });
 AutoFarmBossToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.AutoBoss = value;
 end);
 Options.ToggleAutoFarmBoss:SetValue(false);
@@ -3192,7 +2964,6 @@ local MaterialDropdown = Tabs.Main:AddDropdown("DropdownMaterial", {
 });
 MaterialDropdown:SetValue(SelectMaterial);
 MaterialDropdown:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SelectMaterial = value;
 end);
 local MaterialToggle = Tabs.Main:AddToggle("ToggleMaterial", {
@@ -3202,11 +2973,8 @@ local MaterialToggle = Tabs.Main:AddToggle("ToggleMaterial", {
 });
 MaterialToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoMaterial = value;
-    if IsResettingConfig then return end
-    if (value == false) then
-            CancelTween()
-        end
 end);
 Options.ToggleMaterial:SetValue(false);
 spawn(function()
@@ -3277,7 +3045,6 @@ if Sea3 then
         Default = false
     });
     toggleEspKitsune:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         KitsuneIslandEsp = value;
         while KitsuneIslandEsp do
             wait();
@@ -3322,10 +3089,8 @@ textLabel.Font = "Code";
         Default = false
     });
     toggleTPKitsune:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.TweenToKitsune = value;
     end);
     Options.ToggleTPKitsune:SetValue(false);
@@ -3354,10 +3119,8 @@ textLabel.Font = "Code";
         Default = false
     });
     toggleCollectAzure:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.CollectAzure = value;
     end);
     Options.ToggleCollectAzure:SetValue(false);
@@ -3406,7 +3169,6 @@ if Sea3 then
     });
     Options.AutoFindPrehistoric:SetValue(false);
     toggleFindPrehistoric:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.AutoFindPrehistoric = value;
     end);
     local boatList = {};
@@ -3501,7 +3263,6 @@ if Sea3 then
     });
     Options.AutoFindMirage:SetValue(false);
     toggleFindMirage:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.AutoFindMirage = value;
     end);
     local boatList = {};
@@ -3596,7 +3357,6 @@ if Sea3 then
     });
     Options.AutoFindFrozen:SetValue(false);
     toggleFindFrozen:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.AutoFindFrozen = value;
     end);
     local boatList = {};
@@ -3690,7 +3450,8 @@ if Sea3 then
         Default = false
     });
     toggleComeKitsune:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoComeTiki = value;
     end);
     service.RenderStepped:Connect(function()
@@ -3733,7 +3494,8 @@ if Sea3 then
         Default = false
     });
     toggleComeHydra:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoComeHydra = value;
     end);
     service.RenderStepped:Connect(function()
@@ -3774,7 +3536,7 @@ if Sea3 then
         Title = "Bay Đến Khu Vực Săn",
         Description = "",
         Callback = function()
-            _G.StopTween = false;
+            _G.StopTween = false
             Tween2(CFrame.new(- 16917.154296875, 7.757596015930176, 511.8203125));
         end
     });
@@ -3803,7 +3565,6 @@ if Sea3 then
     });
     dropdownBoat:SetValue(selectedBoat);
     dropdownBoat:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         selectedBoat = value;
     end);
     local function sectionSeaMobs(selectedBoatName)
@@ -3857,10 +3618,8 @@ if Sea3 then
         Default = false
     });
     toggleTerrorshark:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoTerrorshark = value;
     end);
     Options.ToggleTerrorshark:SetValue(false);
@@ -3899,10 +3658,8 @@ if Sea3 then
         Default = false
     });
     togglePiranha:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.farmpiranya = value;
     end);
     Options.TogglePiranha:SetValue(false);
@@ -3941,10 +3698,8 @@ if Sea3 then
         Default = false
     });
     toggleShark:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoShark = value;
     end);
     Options.ToggleShark:SetValue(false);
@@ -3987,10 +3742,8 @@ if Sea3 then
         Default = false
     });
     toggleFishCrew:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoFishCrew = value;
     end);
     Options.ToggleFishCrew:SetValue(false);
@@ -4033,10 +3786,8 @@ if Sea3 then
         Default = false
     });
     toggleShip:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.Ship = value;
     end);
     Options.ToggleShip:SetValue(false);
@@ -4080,10 +3831,8 @@ if Sea3 then
         Default = false
     });
     toggleGhostShip:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.GhostShip = value;
     end);
     Options.ToggleGhostShip:SetValue(false);
@@ -4222,7 +3971,6 @@ if Sea3 then
         Default = false
     });
     toggleElite:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.AutoElite = value;
     end);
     Options.ToggleElite:SetValue(false);
@@ -4314,7 +4062,6 @@ if Sea3 then
         Title = "Bay Đến Chỗ Cao",
         Description = "",
         Callback = function()
-            _G.StopTween = false;
             TweenToHighestPoint();
         end
     });
@@ -4343,7 +4090,6 @@ local TweenAdvancedToggle = Tabs.Sea:AddToggle("ToggleTpAdvanced", {
     Default = false
 });
 TweenAdvancedToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoTpAdvanced = value;
 end);
 spawn(function()
@@ -4365,7 +4111,6 @@ local TweenGearToggle = Tabs.Sea:AddToggle("ToggleTweenGear", {
     Default = false
 });
 TweenGearToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.TweenToGear = value;
 end);
 Options.ToggleTweenGear:SetValue(false);
@@ -4392,7 +4137,6 @@ local LockMoonToggle = Tabs.Sea:AddToggle("Togglelockmoon", {
     Default = false
 });
 LockMoonToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoLockMoon = value;
 end);
 Options.Togglelockmoon:SetValue(false);
@@ -4423,9 +4167,7 @@ local AutoSaberToggle = Tabs.ITM:AddToggle("ToggleAutoSaber", {
 });
 AutoSaberToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Saber = value;
 end);
 Options.ToggleAutoSaber:SetValue(false);
@@ -4537,9 +4279,7 @@ local AutoPoleV1Toggle = Tabs.ITM:AddToggle("ToggleAutoPoleV1", {
 });
 AutoPoleV1Toggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_PoleV1 = value;
 end);
 Options.ToggleAutoPoleV1:SetValue(false);
@@ -4583,9 +4323,7 @@ local AutoSawToggle = Tabs.ITM:AddToggle("ToggleAutoSaw", {
 });
 AutoSawToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Saw = value;
 end);
 Options.ToggleAutoSaw:SetValue(false);
@@ -4629,9 +4367,7 @@ local AutoWardenToggle = Tabs.ITM:AddToggle("ToggleAutoWarden", {
 });
 AutoWardenToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Warden = value;
 end);
 Options.ToggleAutoWarden:SetValue(false);
@@ -4675,10 +4411,8 @@ if Sea3 then
         Default = false
     });
     toggleHallow:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         AutoHallowSycthe = value;
     end);
     Options.ToggleHallow:SetValue(false);
@@ -4735,7 +4469,6 @@ if Sea3 then
         Default = false
     });
     toggleYama:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.AutoYama = value;
     end);
     Options.ToggleYama:SetValue(false);
@@ -4757,10 +4490,8 @@ if Sea3 then
         Default = false
     });
     toggleTushita:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         AutoTushita = value;
     end);
     Options.ToggleTushita:SetValue(false);
@@ -4800,10 +4531,8 @@ if Sea3 then
         Default = false
     });
     toggleHoly:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.Auto_Holy_Torch = value;
     end);
     Options.ToggleHoly:SetValue(false);
@@ -4848,9 +4577,7 @@ local AutoCanvanderToggle = Tabs.ITM:AddToggle("ToggleAutoCanvander", {
 });
 AutoCanvanderToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Canvander = value;
 end);
 Options.ToggleAutoCanvander:SetValue(false);
@@ -4894,9 +4621,7 @@ local AutoMusketeerHatToggle = Tabs.ITM:AddToggle("ToggleAutoMusketeerHat", {
 });
 AutoMusketeerHatToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_MusketeerHat = value;
 end);
 Options.ToggleAutoMusketeerHat:SetValue(false);
@@ -4982,9 +4707,7 @@ local AutoObservationV2Toggle = Tabs.ITM:AddToggle("ToggleAutoObservationV2", {
 });
 AutoObservationV2Toggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_ObservationV2 = value;
 end);
 Options.ToggleAutoObservationV2:SetValue(false);
@@ -5034,9 +4757,7 @@ local AutoRainbowHakiToggle = Tabs.ITM:AddToggle("ToggleAutoRainbowHaki", {
 });
 AutoRainbowHakiToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_RainbowHaki = value;
 end);
 Options.ToggleAutoRainbowHaki:SetValue(false);
@@ -5163,9 +4884,7 @@ local AutoSkullGuitarToggle = Tabs.ITM:AddToggle("ToggleAutoSkullGuitar", {
 });
 AutoSkullGuitarToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_SkullGuitar = value;
 end);
 Options.ToggleAutoSkullGuitar:SetValue(false);
@@ -5290,9 +5009,7 @@ local AutoBuddyToggle = Tabs.ITM:AddToggle("ToggleAutoBuddy", {
 });
 AutoBuddyToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Buddy = value;
 end);
 Options.ToggleAutoBuddy:SetValue(false);
@@ -5336,9 +5053,7 @@ local AutoDualKatanaToggle = Tabs.ITM:AddToggle("ToggleAutoDualKatana", {
 });
 AutoDualKatanaToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_DualKatana = value;
 end);
 Options.ToggleAutoDualKatana:SetValue(false);
@@ -5769,10 +5484,8 @@ if Sea2 then
         Default = false
     });
     toggleFactory:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.Factory = value;
     end);
     Options.ToggleFactory:SetValue(false);
@@ -5819,9 +5532,7 @@ local AutoFarmSwanToggle = Tabs.ITM:AddToggle("ToggleAutoFarmSwan", {
 });
 AutoFarmSwanToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_FarmSwan = value;
 end);
 Options.ToggleAutoFarmSwan:SetValue(false);
@@ -5862,9 +5573,7 @@ local AutoRengokuToggle = Tabs.ITM:AddToggle("ToggleAutoRengoku", {
 });
 AutoRengokuToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Regoku = value;
 end);
 Options.ToggleAutoRengoku:SetValue(false);
@@ -5908,7 +5617,6 @@ if (Sea2 or Sea3) then
         Default = false
     });
     toggleHakiColor:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.Auto_Buy_Enchancement = value;
     end);
     Options.ToggleHakiColor:SetValue(false);
@@ -5931,7 +5639,6 @@ if Sea2 then
         Default = false
     });
     toggleSwordLengend:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
         _G.BuyLengendSword = value;
     end);
     Options.ToggleSwordLengend:SetValue(false);
@@ -5958,10 +5665,8 @@ if Sea2 then
         Default = false
     });
     toggleEvoRace:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
-        if value == false then
-            CancelTween()
-        end
+        if value == true then _G.StopTween = false end
+        if value == false then CancelTween() end
         _G.AutoEvoRace = value;
     end);
     Options.ToggleEvoRace:SetValue(false);
@@ -6021,7 +5726,6 @@ local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
     Default = false
 });
 AutoTToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoT = value;
 end);
 Options.ToggleAutoT:SetValue(false);
@@ -6040,7 +5744,6 @@ local AutoYToggle = Tabs.Setting:AddToggle("ToggleAutoY", {
     Default = false
 });
 AutoYToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoY = value;
 end);
 Options.ToggleAutoY:SetValue(false);
@@ -6056,21 +5759,19 @@ spawn(function()
     end
 end);
 local AutoKenToggle = Tabs.Setting:AddToggle("ToggleAutoKen", {
-    Title = "Bật Haki Quan Sát",
+    Title = "Bật Haki Quan Sât",
     Description = "",
-    Default = true
+    Default = false
 });
 AutoKenToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoKen = value;
-    if IsResettingConfig then return end
     if value then
         ReplicatedStorage.Remotes.CommE:FireServer("Ken", true);
     else
         ReplicatedStorage.Remotes.CommE:FireServer("Ken", false);
     end
 end);
-Options.ToggleAutoKen:SetValue(true);
+Options.ToggleAutoKen:SetValue(false);
 spawn(function()
     while wait() do
         pcall(function()
@@ -6086,9 +5787,7 @@ local toggleSaveSpawn = Tabs.Setting:AddToggle("ToggleSaveSpawn", {
     Default = false
 });
 toggleSaveSpawn:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.SaveSpawn = value;
-    if IsResettingConfig then return end
     if value then
         local setSpawnArgs3 = {
             [1] = "SetSpawnPoint"
@@ -6148,7 +5847,6 @@ local toggleBringMob = Tabs.Setting:AddToggle("ToggleBringMob", {
     Default = true
 });
 toggleBringMob:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.BringMob = value;
 end);
 Options.ToggleBringMob:SetValue(true);
@@ -6198,7 +5896,6 @@ local toggleRemoveNotify = Tabs.Setting:AddToggle("ToggleRemoveNotify", {
     Default = false
 });
 toggleRemoveNotify:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     RemoveNotify = value;
 end);
 Options.ToggleRemoveNotify:SetValue(false);
@@ -6217,9 +5914,7 @@ local toggleWhiteScreen = Tabs.Setting:AddToggle("ToggleWhite", {
     Default = false
 });
 toggleWhiteScreen:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.WhiteScreen = value;
-    if IsResettingConfig then return end
     if (_G.WhiteScreen == true) then
         RunService:Set3dRenderingEnabled(false);
     elseif (_G.WhiteScreen == false) then
@@ -6234,7 +5929,6 @@ local toggleSkillZ = Tabs.Setting:AddToggle("ToggleZ", {
     Default = true
 });
 toggleSkillZ:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SkillZ = value;
 end);
 Options.ToggleZ:SetValue(true);
@@ -6244,7 +5938,6 @@ local toggleSkillX = Tabs.Setting:AddToggle("ToggleX", {
     Default = true
 });
 toggleSkillX:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SkillX = value;
 end);
 Options.ToggleX:SetValue(true);
@@ -6254,7 +5947,6 @@ local toggleSkillC = Tabs.Setting:AddToggle("ToggleC", {
     Default = true
 });
 toggleSkillC:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SkillC = value;
 end);
 Options.ToggleC:SetValue(true);
@@ -6264,7 +5956,6 @@ local toggleSkillV = Tabs.Setting:AddToggle("ToggleV", {
     Default = true
 });
 toggleSkillV:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SkillV = value;
 end);
 Options.ToggleV:SetValue(true);
@@ -6274,20 +5965,9 @@ local toggleSkillF = Tabs.Setting:AddToggle("ToggleF", {
     Default = false
 });
 toggleSkillF:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SkillF = value;
 end);
 Options.ToggleF:SetValue(true);
-
--- Nút Reset Config (Persistent Config)
-Tabs.Setting:AddButton({
-    Title = "Khôi Phục Thiết Lập Mặc Định",
-    Description = "Đưa toàn bộ cài đặt về mặc định",
-    Callback = function()
-        ResetAllToDefault()
-    end
-})
-
 local paraServerTime = Tabs.Status:AddParagraph({
     Title = "Thông Tin",
     Content = "━━━━━━━━━━━━━━━━━━━━━\n" .. "Tên : " .. plr.DisplayName .. " (@" .. plr.Name .. ")\n" .. "Cấp : " .. plr.Data.Level.Value .. "\n" .. "Tiền : " .. plr.Data.Beli.Value .. "\n" .. "Điểm F : " .. plr.Data.Fragments.Value .. "\n" .. "Tiền Truy Nã : " .. plr.leaderstats["Bounty/Honor"].Value .. "\n" .. "Máu: " .. plr.Character.Humanoid.Health .. "/" .. plr.Character.Humanoid.MaxHealth .. "\n" .. "Năng Lượng : " .. plr.Character.Energy.Value .. "/" .. plr.Character.Energy.MaxValue .. "\n" .. "Tộc : " .. plr.Data.Race.Value .. "\n" .. "Trái : " .. plr.Data.DevilFruit.Value .. "\n" .. "━━━━━━━━━━━━━━━━━━━━━"
@@ -6381,7 +6061,6 @@ local toggleJoinJob = Tabs.Status:AddToggle("MyToggle", {
     Default = false
 });
 toggleJoinJob:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Join = value;
 end);
 spawn(function()
@@ -6391,56 +6070,51 @@ spawn(function()
         end
     end
 end);
-local toggleStatMelee = Tabs.Stats:AddToggle("ToggleMelee", {
+local toggleStatMelee = Tabs.Stats:AddToggle("ToggleStatsMelee", {
     Title = "Nâng Đấm",
     Description = "",
     Default = false
 });
 toggleStatMelee:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Melee = value;
 end);
-Options.ToggleMelee:SetValue(false);
+Options.ToggleStatsMelee:SetValue(false);
 local toggleStatDefense = Tabs.Stats:AddToggle("ToggleDe", {
     Title = "Nâng Máu",
     Description = "",
     Default = false
 });
 toggleStatDefense:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Defense = value;
 end);
 Options.ToggleDe:SetValue(false);
-local toggleStatSword = Tabs.Stats:AddToggle("ToggleSword", {
+local toggleStatSword = Tabs.Stats:AddToggle("ToggleStatsSword", {
     Title = "Nâng Kiếm",
     Description = "",
     Default = false
 });
 toggleStatSword:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Sword = value;
 end);
-Options.ToggleSword:SetValue(false);
-local toggleStatGun = Tabs.Stats:AddToggle("ToggleGun", {
+Options.ToggleStatsSword:SetValue(false);
+local toggleStatGun = Tabs.Stats:AddToggle("ToggleStatsGun", {
     Title = "Nâng Súng",
     Description = "",
     Default = false
 });
 toggleStatGun:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Gun = value;
 end);
-Options.ToggleGun:SetValue(false);
-local toggleBuyFruit = Tabs.Stats:AddToggle("ToggleFruit", {
+Options.ToggleStatsGun:SetValue(false);
+local toggleBuyFruit = Tabs.Stats:AddToggle("ToggleStatsFruit", {
     Title = "Nâng Trái",
     Description = "",
     Default = false
 });
 toggleBuyFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Devil_Fruit = value;
 end);
-Options.ToggleFruit:SetValue(false);
+Options.ToggleBuyFruitSelected:SetValue(false);
 spawn(function()
     while wait() do
         if _G.Auto_Stats_Devil_Fruit then
@@ -6514,7 +6188,6 @@ local dropdownSelectPlayer = Tabs.Player:AddDropdown("SelectedPly", {
 });
 dropdownSelectPlayer:SetValue(_G.SelectPly);
 dropdownSelectPlayer:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.SelectPly = value;
 end);
 Tabs.Player:AddButton({
@@ -6534,10 +6207,8 @@ local toggleTeleportPlayer = Tabs.Player:AddToggle("ToggleTeleport", {
 });
 toggleTeleportPlayer:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.TeleportPly = value;
-    if (value == false) then
-        CancelTween()
-    end
 end);
 Options.ToggleTeleport:SetValue(false);
 spawn(function()
@@ -6558,7 +6229,6 @@ local toggleNoClip = Tabs.Player:AddToggle("ToggleNoClip", {
     Default = true
 });
 toggleNoClip:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.LOf = value;
 end);
 Options.ToggleNoClip:SetValue(true);
@@ -6581,7 +6251,6 @@ local toggleWalkonWater = Tabs.Player:AddToggle("ToggleWalkonWater", {
     Default = true
 });
 toggleWalkonWater:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.WalkonWater = value;
 end);
 Options.ToggleWalkonWater:SetValue(true);
@@ -6602,7 +6271,6 @@ local toggleEnablePvp = Tabs.Player:AddToggle("ToggleEnablePvp", {
     Default = false
 });
 toggleEnablePvp:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.EnabledPvP = value;
 end);
 Options.ToggleEnablePvp:SetValue(false);
@@ -6625,9 +6293,7 @@ local toggleAutoSea2 = Tabs.Teleport:AddToggle("ToggleAutoSea2", {
 });
 toggleAutoSea2:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Sea2 = value;
 end);
 Options.ToggleAutoSea2:SetValue(false);
@@ -6686,9 +6352,7 @@ local toggleAutoSea3 = Tabs.Teleport:AddToggle("ToggleAutoSea3", {
 });
 toggleAutoSea3:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.Auto_Sea3 = value;
 end);
 Options.ToggleAutoSea3:SetValue(false);
@@ -6699,6 +6363,7 @@ spawn(function()
                 local level = plr.Data.Level.Value
                 if level >= 1500 and Sea2 then
                     _G.AutoLevel = false
+                    CancelTween()
                     if ReplicatedStorage.Remotes.CommF_:InvokeServer("ZQuestProgress", "General") == 0 then
                         local startCF = CFrame.new(-1926.3221435547, 12.819851875305, 1738.3092041016)
                         Tween(startCF)
@@ -6825,14 +6490,13 @@ local dropdownIsland = Tabs.Teleport:AddDropdown("DropdownIsland", {
 });
 dropdownIsland:SetValue(_G.SelectIsland);
 dropdownIsland:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.SelectIsland = value;
 end);
 Tabs.Teleport:AddButton({
     Title = "Bay Đến Đảo",
     Description = "",
     Callback = function()
-        _G.StopTween = false;
+        _G.StopTween = false
         if (_G.SelectIsland == "WindMill") then
             Tween2(CFrame.new(979.79895019531, 16.516613006592, 1429.0466308594));
         elseif (_G.SelectIsland == "Marine") then
@@ -6963,16 +6627,14 @@ local dropdownFruit = Tabs.Fruit:AddDropdown("DropdownFruit", {
 });
 dropdownFruit:SetValue(_G.SelectFruit);
 dropdownFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.SelectFruit = value;
 end);
-local toggleBuyFruit = Tabs.Fruit:AddToggle("ToggleFruit", {
+local toggleBuySelectedFruit = Tabs.Fruit:AddToggle("ToggleBuyFruitSelected", {
     Title = "Mua Trái Chọn",
     Description = "",
     Default = false
 });
-toggleBuyFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
+toggleBuySelectedFruit:OnChanged(function(value)
     if value then
         _G.AutoBuyFruitSniper = true;
         pcall(function()
@@ -6982,7 +6644,7 @@ toggleBuyFruit:OnChanged(function(value)
         _G.AutoBuyFruitSniper = false;
     end
 end);
-Options.ToggleFruit:SetValue(false);
+Options.ToggleBuyFruitSelected:SetValue(false);
 local dropdownPermanentFruit = Tabs.Fruit:AddDropdown("DropdownPermanentFruit", {
     Title = "Chọn Trái Vĩnh Viễn",
     Description = "",
@@ -6992,7 +6654,6 @@ local dropdownPermanentFruit = Tabs.Fruit:AddDropdown("DropdownPermanentFruit", 
 });
 dropdownPermanentFruit:SetValue(_G.PermanentFruit);
 dropdownPermanentFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.PermanentFruit = value;
 end);
 local togglePermanentFruit = Tabs.Fruit:AddToggle("TogglePermanentFruit", {
@@ -7001,7 +6662,6 @@ local togglePermanentFruit = Tabs.Fruit:AddToggle("TogglePermanentFruit", {
     Default = false
 });
 togglePermanentFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     if value then
         _G.AutoSwitchPermanentFruit = true;
         pcall(function()
@@ -7021,7 +6681,6 @@ local toggleStoreFruit = Tabs.Fruit:AddToggle("ToggleStore", {
     Default = false
 });
 toggleStoreFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoStoreFruit = value;
 end);
 Options.ToggleStore:SetValue(false);
@@ -7144,7 +6803,6 @@ local toggleRandomFruit = Tabs.Fruit:AddToggle("ToggleRandomFruit", {
     Default = false
 });
 toggleRandomFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Random_Auto = value;
 end);
 Options.ToggleRandomFruit:SetValue(false);
@@ -7163,7 +6821,6 @@ local toggleCollectFruitTP = Tabs.Fruit:AddToggle("ToggleCollectTP", {
     Default = false
 });
 toggleCollectFruitTP:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.CollectFruitTP = value;
 end);
 Options.ToggleCollectTP:SetValue(false);
@@ -7187,6 +6844,7 @@ local toggleTweenFruit = Tabs.Fruit:AddToggle("ToggleCollect", {
 });
 toggleTweenFruit:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.Tweenfruit = value;
 end);
 Options.ToggleCollect:SetValue(false);
@@ -7210,7 +6868,6 @@ local toggleEspPlayer = Tabs.Fruit:AddToggle("ToggleEspPlayer", {
     Default = false
 });
 toggleEspPlayer:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     ESPPlayer = value;
     UpdatePlayerChams();
 end);
@@ -7221,7 +6878,6 @@ local toggleEspFruit = Tabs.Fruit:AddToggle("ToggleEspFruit", {
     Default = false
 });
 toggleEspFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     DevilFruitESP = value
 end);
 Options.ToggleEspFruit:SetValue(false);
@@ -7231,7 +6887,6 @@ local toggleEspIsland = Tabs.Fruit:AddToggle("ToggleEspIsland", {
     Default = false
 });
 toggleEspIsland:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     IslandESP = value
 end);
 Options.ToggleEspIsland:SetValue(false);
@@ -7241,7 +6896,6 @@ local toggleEspFlower = Tabs.Fruit:AddToggle("ToggleEspFlower", {
     Default = false
 });
 toggleEspFlower:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     FlowerESP = value;
     UpdateFlowerChams();
 end);
@@ -7277,7 +6931,6 @@ local toggleEspRealFruit = Tabs.Fruit:AddToggle("ToggleEspRealFruit", {
     Default = false
 });
 toggleEspRealFruit:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     RealFruitESP = value
 end);
 Options.ToggleEspRealFruit:SetValue(false);
@@ -7288,7 +6941,6 @@ local toggleEspMirageIsland = Tabs.Fruit:AddToggle("ToggleIslandMirageEsp", {
     Default = false
 });
 toggleEspMirageIsland:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     MirageIslandESP = value
 end);
 Options.ToggleIslandMirageEsp:SetValue(false);
@@ -7316,7 +6968,6 @@ local dropdownRaid = Tabs.Raid:AddDropdown("DropdownRaid", {
 });
 dropdownRaid:SetValue(SelectChip);
 dropdownRaid:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     SelectChip = value;
 end);
 local toggleBuyChip = Tabs.Raid:AddToggle("ToggleBuy", {
@@ -7325,7 +6976,6 @@ local toggleBuyChip = Tabs.Raid:AddToggle("ToggleBuy", {
     Default = false
 });
 toggleBuyChip:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_Buy_Chips_Dungeon = value;
 end);
 Options.ToggleBuy:SetValue(false);
@@ -7349,7 +6999,6 @@ local toggleStartRaid = Tabs.Raid:AddToggle("ToggleStart", {
     Default = false
 });
 toggleStartRaid:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.Auto_StartRaid = value;
 end);
 Options.ToggleStart:SetValue(false);
@@ -7388,9 +7037,7 @@ local toggleNextIsland = Tabs.Raid:AddToggle("ToggleNextIsland", {
 });
 toggleNextIsland:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     AutoNextIsland = value
     if not value then
         _G.AutoNear = false
@@ -7441,7 +7088,6 @@ local toggleAwake = Tabs.Raid:AddToggle("ToggleAwake", {
     Default = false
 });
 toggleAwake:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     AutoAwakenAbilities = value;
 end);
 Options.ToggleAwake:SetValue(false);
@@ -7461,6 +7107,7 @@ local toggleGetFruit = Tabs.Raid:AddToggle("ToggleGetFruit", {
 });
 toggleGetFruit:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.Autofruit = value;
 end);
 spawn(function()
@@ -7561,7 +7208,7 @@ if Sea2 then
         Title = "Bay Đến Chỗ Tập Kích",
         Description = "",
         Callback = function()
-            _G.StopTween = false;
+            _G.StopTween = false
             Tween2(CFrame.new(- 6438.73535, 250.645355, - 4501.50684));
         end
     });
@@ -7570,7 +7217,7 @@ elseif Sea3 then
         Title = "Bay Đến Chỗ Tập Kích",
         Description = "",
         Callback = function()
-            _G.StopTween = false;
+            _G.StopTween = false
             ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
             Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
         end
@@ -7584,9 +7231,7 @@ local toggleLaw = Tabs.Raid:AddToggle("ToggleLaw", {
 });
 toggleLaw:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     Auto_Law = value;
 end);
 Options.ToggleLaw:SetValue(false);
@@ -7646,6 +7291,7 @@ Tabs.Race:AddButton({
     Title = "Cần Gạt",
     Description = "",
     Callback = function()
+        _G.StopTween = false
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
         Tween2(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734));
     end
@@ -7654,6 +7300,7 @@ Tabs.Race:AddButton({
     Title = "Chỗ Mua Gear",
     Description = "",
     Callback = function()
+        _G.StopTween = false
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
         Tween2(CFrame.new(28981.552734375, 14888.4267578125, - 120.245849609375));
     end
@@ -7663,6 +7310,7 @@ Tabs.Race:AddButton({
     Title = "Cửa Tộc",
     Description = "",
     Callback = function()
+        _G.StopTween = false
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
         if (plr.Data.Race.Value == "Human") then
             Tween2(CFrame.new(29221.822265625, 14890.9755859375, - 205.99114990234375));
@@ -7685,7 +7333,6 @@ local toggleHumanGhoul = Tabs.Race:AddToggle("ToggleHumanandghoul", {
     Default = false
 });
 toggleHumanGhoul:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     KillAura = value;
 end);
 Options.ToggleHumanandghoul:SetValue(false);
@@ -7696,6 +7343,7 @@ local toggleAutoTrial = Tabs.Race:AddToggle("ToggleAutotrial", {
 });
 toggleAutoTrial:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoQuestRace = value;
 end);
 Options.ToggleAutotrial:SetValue(false);
@@ -7763,9 +7411,7 @@ local toggleKillTrial = Tabs.Race:AddToggle("ToggleKillTrial", {
 });
 toggleKillTrial:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     _G.AutoKillTrial = value;
 end);
 Options.ToggleKillTrial:SetValue(false);
@@ -7803,9 +7449,7 @@ local toggleFarmRace = Tabs.Race:AddToggle("ToggleFarmRace", {
 local farmRaceEnabled = false;
 toggleFarmRace:OnChanged(function(value)
     if value == true then _G.StopTween = false end
-    if value == false then
-        CancelTween()
-    end
+    if value == false then CancelTween() end
     farmRaceEnabled = value;
 end);
 Options.ToggleFarmRace:SetValue(false);
@@ -7836,9 +7480,7 @@ local toggleUpgradeRace = Tabs.Race:AddToggle("ToggleUpgrade", {
     Default = false
 });
 toggleUpgradeRace:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoUpgrade = value;
-    if IsResettingConfig then return end
     if _G.AutoUpgrade then
         ReplicatedStorage.Remotes.CommF_:InvokeServer("UpgradeRace", "Buy");
     end
@@ -8068,6 +7710,7 @@ Tabs.Shop:AddButton({
     Title = "Đổi Tộc Draco",
     Description = "Chỉ Ở Biển 3",
     Callback = function()
+        _G.StopTween = false
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
         Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938));
         local dracoPos = Vector3.new(5814.42724609375, 1208.3267822265625, 884.5785522460938);
@@ -8258,7 +7901,6 @@ local toggleAutoRejoin = Tabs.Misc:AddToggle("ToggleRejoin", {
     Default = true
 });
 toggleAutoRejoin:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoRejoin = value;
 end);
 Options.ToggleRejoin:SetValue(true);
@@ -8306,7 +7948,6 @@ local AntiBandToggle = Tabs.Misc:AddToggle("ToggleAntiBand", {
     Default = true
 });
 AntiBandToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AntiBand = value;
 end);
 local BannedUserIds = {
@@ -8348,6 +7989,7 @@ local TweenFrozenToggle = Tabs.Sea:AddToggle("ToggleTPFrozenDimension", {
 })
 TweenFrozenToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.TweenToFrozenDimension = value
 end)
 TweenFrozenToggle:SetValue(false)
@@ -8395,7 +8037,6 @@ local BlazeEmberToggle = Tabs.Sea:AddToggle("ToggleBlazeEmber", {
     Default = false
 })
 BlazeEmberToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoBlazeEmber = value
 end)
 
@@ -8416,8 +8057,8 @@ local ReceiveQuestToggle = Tabs.Sea:AddToggle("ToggleReceiveQuest", {
 })
 ReceiveQuestToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoReceiveQuest = value
-    if IsResettingConfig then return end
     if _G.AutoReceiveQuest then
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
         Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
@@ -8479,7 +8120,6 @@ local HydraTreeToggle = Tabs.Sea:AddToggle("ToggleHydraTree", {
     Default = false
 })
 HydraTreeToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoHydraTree = value
 end)
 
@@ -8541,6 +8181,7 @@ DracoSection:AddButton({
     Title = "Bay Đến Khu Vực Dragon Dojo",
     Description = "",
     Callback = function()
+        _G.StopTween = false
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
         Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
     end
@@ -8566,7 +8207,6 @@ local CollectFireFlowersToggle = Tabs.Sea:AddToggle("ToggleCollectFireFlowers", 
     Default = false
 })
 CollectFireFlowersToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoCollectFireFlowers = value
 end)
 
@@ -8604,10 +8244,8 @@ local WhiteBeltToggle = Tabs.Sea:AddToggle("ToggleWhiteBelt", {
 })
 
 WhiteBeltToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     -- Dùng biến riêng biệt để không xung đột với AutoLevel
     _G.AutoWhiteBelt = value
-    if IsResettingConfig then return end
 
     if value then
         -- Gửi yêu cầu nhận Quest lần đầu khi bật
@@ -8627,7 +8265,7 @@ WhiteBeltToggle:OnChanged(function(value)
                         Command = "ClaimQuest"
                     })
                 end)
-                
+
                 -- Đợi 0.5 giây thay vì chạy mỗi frame để tránh bị Anti-Cheat ngắt kết nối
                 task.wait(0.5)
             end
@@ -8646,6 +8284,7 @@ local TrialTeleportToggle = Tabs.Sea:AddToggle("ToggleTrialTeleport", {
 })
 TrialTeleportToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoTrialTeleport = value
 end)
 
@@ -8687,6 +8326,7 @@ local TPVolcanoToggle = Tabs.Sea:AddToggle("ToggleTPVolcano", {
 })
 TPVolcanoToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.TweenToPrehistoric = value
 end)
 Options.ToggleTPVolcano:SetValue(false)
@@ -8719,7 +8359,6 @@ local DefendVolcanoToggle = Tabs.Sea:AddToggle("ToggleDefendVolcano", {
     Default = false
 })
 DefendVolcanoToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.AutoDefendVolcano = value
 end)
 
@@ -8729,7 +8368,6 @@ local UseMeleeToggle = Tabs.Sea:AddToggle("ToggleMelee", {
     Default = false
 })
 UseMeleeToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.UseMelee = value
 end)
 
@@ -8739,7 +8377,6 @@ local UseSwordToggle = Tabs.Sea:AddToggle("ToggleSword", {
     Default = false
 })
 UseSwordToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.UseSword = value
 end)
 
@@ -8749,7 +8386,6 @@ local UseGunToggle = Tabs.Sea:AddToggle("ToggleGun", {
     Default = false
 })
 UseGunToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     _G.UseGun = value
 end)
 
@@ -8833,7 +8469,6 @@ local KillAuraToggle = Tabs.Sea:AddToggle("ToggleKillAura", {
     Default = false
 })
 KillAuraToggle:OnChanged(function(value)
-    if value == true then _G.StopTween = false end
     KillAura = value
 end)
 Options.ToggleKillAura:SetValue(false)
@@ -8865,6 +8500,7 @@ local CollectBoneToggle = Tabs.Sea:AddToggle("ToggleCollectBone", {
 })
 CollectBoneToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoCollectBone = value
 end)
 
@@ -8888,6 +8524,7 @@ local CollectEggToggle = Tabs.Sea:AddToggle("ToggleCollectEgg", {
 })
 CollectEggToggle:OnChanged(function(value)
     if value == true then _G.StopTween = false end
+    if value == false then CancelTween() end
     _G.AutoCollectEgg = value
 end)
 
@@ -8922,16 +8559,293 @@ end -- Kết thúc function BuildUI()
 -------------------------------------------------
 -- 18. KHỞI CHẠY
 -------------------------------------------------
+
+-- ================================================================
+-- MIN GAMING - PERSISTENCE TOÀN BỘ OPTION
+-- Lưu/khôi phục mọi control có trạng thái trong Fluent:
+-- Toggle / Dropdown / MultiDropdown / Slider / Input / Keybind...
+-- Button là hành động một lần nên không có trạng thái để lưu.
+-- ================================================================
+local MinGamingConfigFile = "MinGaming_" .. tostring(plr.UserId) .. "_Config.json"
+local MinGamingPersistence = {}
+local MinGamingDefaults = {}
+local MinGamingRestoring = false
+local MinGamingSaving = false
+local MinGamingWrappedTabs = {}
+
+local function MinGamingCloneValue(value, seen)
+    local valueType = typeof(value)
+
+    if value == nil or valueType == "string" or valueType == "number" or valueType == "boolean" then
+        return value
+    end
+
+    if valueType == "EnumItem" then
+        return {
+            __mg_type = "EnumItem",
+            enum_type = tostring(value.EnumType),
+            name = value.Name
+        }
+    end
+
+    if valueType == "Color3" then
+        return {
+            __mg_type = "Color3",
+            r = value.R,
+            g = value.G,
+            b = value.B
+        }
+    end
+
+    if valueType == "table" then
+        seen = seen or {}
+        if seen[value] then
+            return nil
+        end
+        seen[value] = true
+
+        local result = {}
+        for k, v in pairs(value) do
+            local ck = MinGamingCloneValue(k, seen)
+            local cv = MinGamingCloneValue(v, seen)
+            if ck ~= nil then
+                result[ck] = cv
+            end
+        end
+        seen[value] = nil
+        return result
+    end
+
+    return nil
+end
+
+local function MinGamingRestoreValue(value)
+    if type(value) ~= "table" then
+        return value
+    end
+
+    if value.__mg_type == "EnumItem" then
+        local enumObject = Enum[value.enum_type]
+        if enumObject and value.name then
+            local ok, enumItem = pcall(function()
+                return enumObject[value.name]
+            end)
+            if ok then
+                return enumItem
+            end
+        end
+        return nil
+    end
+
+    if value.__mg_type == "Color3" then
+        return Color3.new(value.r or 0, value.g or 0, value.b or 0)
+    end
+
+    local result = {}
+    for k, v in pairs(value) do
+        result[k] = MinGamingRestoreValue(v)
+    end
+    return result
+end
+
+local function MinGamingReadConfig()
+    if type(isfile) ~= "function" or type(readfile) ~= "function" then
+        return {}
+    end
+
+    local okExists, exists = pcall(isfile, MinGamingConfigFile)
+    if not okExists or not exists then
+        return {}
+    end
+
+    local okRead, raw = pcall(readfile, MinGamingConfigFile)
+    if not okRead or type(raw) ~= "string" or raw == "" then
+        return {}
+    end
+
+    local okDecode, data = pcall(function()
+        return HttpService:JSONDecode(raw)
+    end)
+
+    if okDecode and type(data) == "table" then
+        return data
+    end
+
+    return {}
+end
+
+local MinGamingSaved = MinGamingReadConfig()
+
+local function MinGamingWriteConfig()
+    if MinGamingRestoring or MinGamingSaving then
+        return
+    end
+    if type(writefile) ~= "function" then
+        return
+    end
+
+    MinGamingSaving = true
+    task.spawn(function()
+        pcall(function()
+            local encoded = HttpService:JSONEncode(MinGamingSaved)
+            writefile(MinGamingConfigFile, encoded)
+        end)
+        MinGamingSaving = false
+    end)
+end
+
+local function MinGamingGetOptionValue(option)
+    local ok, value = pcall(function()
+        return option.Value
+    end)
+    if ok then
+        return value
+    end
+    return nil
+end
+
+local function MinGamingSaveOption(persistKey, option)
+    if MinGamingRestoring then
+        return
+    end
+
+    local value = MinGamingGetOptionValue(option)
+    local cloned = MinGamingCloneValue(value)
+    if cloned ~= nil then
+        MinGamingSaved[persistKey] = cloned
+        MinGamingWriteConfig()
+    end
+end
+
+local function MinGamingRegisterOption(optionType, optionName, config, option)
+    if not option then
+        return
+    end
+
+    local baseName = tostring(optionName)
+    local occurrence = 1
+    local persistKey = baseName
+
+    while MinGamingPersistence[persistKey] do
+        occurrence = occurrence + 1
+        persistKey = baseName .. "#" .. tostring(occurrence)
+    end
+
+    MinGamingPersistence[persistKey] = {
+        option = option,
+        type = optionType,
+        name = baseName
+    }
+
+    MinGamingDefaults[persistKey] = MinGamingCloneValue(config and config.Default)
+
+    -- Nếu config cũ dùng key không có suffix (trường hợp option ID không trùng),
+    -- vẫn dùng được trực tiếp.
+    if occurrence == 1 and MinGamingSaved[persistKey] == nil and MinGamingSaved[baseName] ~= nil then
+        MinGamingSaved[persistKey] = MinGamingSaved[baseName]
+    end
+end
+
+-- Bọc các hàm tạo Option trước khi BuildUI chạy để lấy đúng Default của
+-- từng control ngay tại nơi control được tạo. Không cần hard-code 100+ toggle.
+local MinGamingOptionMethods = {
+    AddToggle = "Toggle",
+    AddDropdown = "Dropdown",
+    AddSlider = "Slider",
+    AddInput = "Input",
+    AddKeybind = "Keybind"
+}
+
+for tabName, tab in pairs(Tabs) do
+    if type(tab) == "table" and not MinGamingWrappedTabs[tab] then
+        MinGamingWrappedTabs[tab] = true
+
+        for methodName, optionType in pairs(MinGamingOptionMethods) do
+            local originalMethod = tab[methodName]
+            if type(originalMethod) == "function" then
+                tab[methodName] = function(self, optionName, config, ...)
+                    local option = originalMethod(self, optionName, config, ...)
+                    pcall(function()
+                        MinGamingRegisterOption(optionType, optionName, config or {}, option)
+                    end)
+                    return option
+                end
+            end
+        end
+    end
+end
+
 BuildUI()
 
--- Capture Default sau khi toàn bộ Options đã được tạo
-CaptureDefaults()
+-- Nút reset dùng chính registry nên reset cả Toggle/Dropdown/Slider/Input...
+Tabs.Setting:AddButton({
+    Title = "Reset Tất Cả Về Mặc Định",
+    Description = "Đưa toàn bộ chức năng và thiết lập về Default của script",
+    Callback = function()
+        MinGamingRestoring = true
 
--- Bọc SetValue để tự động lưu khi người dùng thay đổi
-WrapOptionsForAutoSave()
+        -- Xóa dữ liệu cũ trước để không còn trạng thái nào được khôi phục lại.
+        table.clear(MinGamingSaved)
 
--- Load Persistent Config (sau khi Options tồn tại)
-LoadConfig()
+        for persistKey, data in pairs(MinGamingPersistence) do
+            local option = data.option
+            local defaultValue = MinGamingRestoreValue(MinGamingDefaults[persistKey])
+
+            if option and defaultValue ~= nil then
+                pcall(function()
+                    option:SetValue(defaultValue)
+                end)
+            end
+        end
+
+        -- Xóa file config hoàn toàn. Nếu executor không có delfile thì ghi {}.
+        if type(delfile) == "function" then
+            pcall(function()
+                if isfile and isfile(MinGamingConfigFile) then
+                    delfile(MinGamingConfigFile)
+                end
+            end)
+        elseif type(writefile) == "function" then
+            pcall(function()
+                writefile(MinGamingConfigFile, "{}")
+            end)
+        end
+
+        MinGamingRestoring = false
+
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã reset tất cả về mặc định!",
+            Duration = 5
+        })
+    end
+})
+
+-- Gắn listener SAU BuildUI để mọi thay đổi của option đều được lưu.
+-- Làm sau khi BuildUI xong để các SetValue(Default) lúc khởi tạo không ghi đè config cũ.
+for persistKey, data in pairs(MinGamingPersistence) do
+    local option = data.option
+    if option and type(option.OnChanged) == "function" then
+        pcall(function()
+            option:OnChanged(function()
+                MinGamingSaveOption(persistKey, option)
+            end)
+        end)
+    end
+end
+
+-- Khôi phục trạng thái đã lưu.
+MinGamingRestoring = true
+for persistKey, data in pairs(MinGamingPersistence) do
+    local savedValue = MinGamingSaved[persistKey]
+    if savedValue ~= nil and data.option then
+        local value = MinGamingRestoreValue(savedValue)
+        pcall(function()
+            data.option:SetValue(value)
+        end)
+    end
+end
+MinGamingRestoring = false
 
 Fluent:Notify({
     Title = "Min Gaming",
