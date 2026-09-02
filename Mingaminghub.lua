@@ -1890,6 +1890,7 @@ end
 
 local TweenSpeed = 270          -- Tốc độ bay (studs/giây)
 local CurrentTween = nil
+local TweenToken = 0
 _G.StopTween = false
 
 function Tween(targetCFrame)
@@ -1897,36 +1898,63 @@ function Tween(targetCFrame)
     if not plr.Character then return end
     local root = plr.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
+
     local distance = (targetCFrame.Position - root.Position).Magnitude
     if distance < 2 then
-        root.CFrame = targetCFrame
+        if CurrentTween then
+            pcall(function() CurrentTween:Cancel() end)
+            CurrentTween = nil
+        end
         return
     end
-    if CurrentTween then
-        pcall(function() CurrentTween:Cancel() end)
-        CurrentTween = nil
-    end
-    local time = distance / TweenSpeed
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-    CurrentTween = TweenService:Create(root, tweenInfo, {
-        CFrame = targetCFrame
-    })
-    CurrentTween:Play()
-end
-function CancelTween()
-    _G.StopTween = true
+
+    -- Mỗi Tween mới có một token riêng. Tween cũ bị hủy ngay lập tức.
+    TweenToken = TweenToken + 1
+    local myToken = TweenToken
 
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
-    local char = plr.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local root = char.HumanoidRootPart
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
+
+    local time = distance / TweenSpeed
+    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    local newTween = TweenService:Create(root, tweenInfo, {
+        CFrame = targetCFrame
+    })
+    CurrentTween = newTween
+    newTween:Play()
+
+    -- Không để Tween cũ tự tiếp tục sau khi đã bị thay thế/hủy.
+    task.spawn(function()
+        newTween.Completed:Wait()
+        if TweenToken == myToken and CurrentTween == newTween then
+            CurrentTween = nil
+        end
+    end)
+end
+
+function CancelTween()
+    -- Hủy ngay, không chờ 0.15 giây và không tạo thêm Tween về CFrame hiện tại.
+    TweenToken = TweenToken + 1
+    _G.StopTween = true
+
+    local tween = CurrentTween
+    CurrentTween = nil
+    if tween then
+        pcall(function() tween:Cancel() end)
     end
-    task.wait(0.15)
+
+    local char = plr.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+
+    -- Cho phép Tween được dùng lại ngay sau khi callback tắt chức năng kết thúc.
     _G.StopTween = false
 end
 function Tween2(targetCFrame)
@@ -2282,9 +2310,7 @@ AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
     if IsResettingConfig then return end
     if (value== false) then
-        wait();
-        Tween(plr.Character.HumanoidRootPart.CFrame);
-        wait();
+        CancelTween()
     end
 end);
 Options.ToggleLevel:SetValue(false);
@@ -2344,9 +2370,7 @@ MobAuraToggle:OnChanged(function(value)
     _G.AutoNear = value;
     if IsResettingConfig then return end
     if (value== false) then
-        wait();
-        Tween(plr.Character.HumanoidRootPart.CFrame);
-        wait();
+        CancelTween()
     end
 end);
 Options.ToggleMobAura:SetValue(false);
@@ -2654,9 +2678,7 @@ if Sea3 then
         _G.AutoBone = value;
         if IsResettingConfig then return end
         if (value== false) then
-            wait();
-            Tween(plr.Character.HumanoidRootPart.CFrame);
-            wait();
+            CancelTween()
         end
     end);
     Options.ToggleBone:SetValue(false);
@@ -2826,9 +2848,7 @@ if Sea3 then
             end
         else
             cakeFirstTween = true;
-            wait();
-            Tween(plr.Character.HumanoidRootPart.CFrame);
-            wait();
+        CancelTween()
         end
     end);
     Options.ToggleCake:SetValue(false);
@@ -2892,9 +2912,7 @@ if Sea3 then
     toggleDoughKing:OnChanged(function(value)
         _G.DoughKing = value;
         if (value== false) then
-            wait();
-            Tween(plr.Character.HumanoidRootPart.CFrame);
-            wait();
+            CancelTween()
         end
     end);
     Options.ToggleDoughKing:SetValue(false);
@@ -3174,9 +3192,7 @@ MaterialToggle:OnChanged(function(value)
     _G.AutoMaterial = value;
     if IsResettingConfig then return end
     if (value== false) then
-        wait();
-        Tween(plr.Character.HumanoidRootPart.CFrame);
-        wait();
+        CancelTween()
     end
 end);
 Options.ToggleMaterial:SetValue(false);
@@ -6366,11 +6382,8 @@ local toggleTeleportPlayer = Tabs.Player:AddToggle("ToggleTeleport", {
 });
 toggleTeleportPlayer:OnChanged(function(value)
     _G.TeleportPly = value;
-    if (value== false) then
-        wait();
-        AutoHaki();
-        Tween2(plr.Character.HumanoidRootPart.CFrame);
-        wait();
+    if value == false then
+        CancelTween();
     end
 end);
 Options.ToggleTeleport:SetValue(false);
