@@ -5836,9 +5836,9 @@ spawn(function()
     end
 end);
 local AutoKenToggle = Tabs.Setting:AddToggle("ToggleAutoKen", {
-    Title = "Bật Haki Quan Sât",
+    Title = "Bật Haki Quan Sát",
     Description = "",
-    Default = false
+    Default = true
 });
 AutoKenToggle:OnChanged(function(value)
     _G.AutoKen = value;
@@ -5848,7 +5848,7 @@ AutoKenToggle:OnChanged(function(value)
         ReplicatedStorage.Remotes.CommE:FireServer("Ken", false);
     end
 end);
-Options.ToggleAutoKen:SetValue(false);
+Options.ToggleAutoKen:SetValue(true);
 spawn(function()
     while wait() do
         pcall(function()
