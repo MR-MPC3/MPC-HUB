@@ -1879,47 +1879,55 @@ spawn(function()
 end)
 
 -------------------------------------------------
--- 14. TWEEN / TELEPORT HELPERS
+-- 14. MOVEMENT / TELEPORT SYSTEM
 -------------------------------------------------
-function BTPZ(cf)
-    -- Teleport nhanh 2 lần (bypass một số check khoảng cách)
-    plr.Character.HumanoidRootPart.CFrame = cf
-    task.wait()
-    plr.Character.HumanoidRootPart.CFrame = cf
-end
 
-local TweenSpeed = 270          -- Tốc độ bay (studs/giây)
+-- 14.1 Movement Configuration
+local TweenSpeed = 270
 local CurrentTween = nil
 _G.StopTween = false
 
+-- 14.2 Tween
 function Tween(targetCFrame)
     if _G.StopTween then return end
     if not plr.Character then return end
+
     local root = plr.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
+
     local distance = (targetCFrame.Position - root.Position).Magnitude
     if distance < 2 then
         root.CFrame = targetCFrame
         return
     end
+
     if CurrentTween then
-        pcall(function() CurrentTween:Cancel() end)
+        pcall(function()
+            CurrentTween:Cancel()
+        end)
         CurrentTween = nil
     end
+
     local time = distance / TweenSpeed
     local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
+
     CurrentTween = TweenService:Create(root, tweenInfo, {
         CFrame = targetCFrame
     })
+
     CurrentTween:Play()
 end
+
 function CancelTween()
     _G.StopTween = true
 
     if CurrentTween then
-        pcall(function() CurrentTween:Cancel() end)
+        pcall(function()
+            CurrentTween:Cancel()
+        end)
         CurrentTween = nil
     end
+
     local char = plr.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         local root = char.HumanoidRootPart
@@ -1927,21 +1935,27 @@ function CancelTween()
         root.AssemblyAngularVelocity = Vector3.zero
     end
 end
+
 function Tween2(targetCFrame)
     if not plr.Character then return end
+
     local root = plr.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
+
     local distance = (targetCFrame.Position - root.Position).Magnitude
     if distance < 3 then
         root.CFrame = targetCFrame
         return
     end
+
     _G.Clip2 = true
     Tween(targetCFrame)
+
     while (root.Position - targetCFrame.Position).Magnitude > 6 do
         if _G.StopTween then break end
         task.wait()
     end
+
     if not _G.StopTween and root.Parent then
         root.CFrame = targetCFrame
         root.AssemblyLinearVelocity = Vector3.zero
@@ -1949,166 +1963,421 @@ function Tween2(targetCFrame)
 
     _G.Clip2 = false
 end
-function EquipTool(toolName)
-    if plr.Backpack:FindFirstChild(toolName) then
-        local foundTool = plr.Backpack:FindFirstChild(toolName)
-        task.wait()
-        plr.Character.Humanoid:EquipTool(foundTool)
-    end
+
+-- 14.3 Teleport
+function BTPZ(cf)
+    -- Teleport nhanh 2 lần (bypass một số check khoảng cách)
+    plr.Character.HumanoidRootPart.CFrame = cf
+    task.wait()
+    plr.Character.HumanoidRootPart.CFrame = cf
 end
-spawn(function()
-    local ref1 = getrawmetatable(game);
-    local oldNamecall = ref1.__namecall;
-    setreadonly(ref1, false);
-    ref1.__namecall = newcclosure(function(...)
-        local method = getnamecallmethod();
-        local part = {
-            ...
-        };
-        if (tostring(method) == "FireServer") then
-            if (tostring(part[1]) == "RemoteEvent") then
-                if ((tostring(part[2]) ~= "true") and (tostring(part[2]) ~= "false")) then
-                    if _G.UseSkill then
-                        if (type(part[2]) == "vector") then
-                            part[2] = PositionSkillMasteryDevilFruit;
-                        else
-                            part[2] = CFrame.new(PositionSkillMasteryDevilFruit);
-                        end
-                        return oldNamecall(unpack(part));
-                    end
-                end
+
+function to(targetCF)
+    repeat
+        wait(_G.Fast_Delay)
+        plr.Character.Humanoid:ChangeState(15)
+        plr.Character.HumanoidRootPart.CFrame = targetCF
+        task.wait()
+        plr.Character.HumanoidRootPart.CFrame = targetCF
+    until (targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 2000
+end
+
+function toAdvanced(targetCF)
+    pcall(function()
+        if (((targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude >= 2000)
+            and not Auto_Raid
+            and (plr.Character.Humanoid.Health > 0)) then
+
+            if (NameMon == "FishmanQuest") then
+                Tween(plr.Character.HumanoidRootPart.CFrame)
+                wait()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)
+                )
+
+            elseif (Mon == "God's Guard") then
+                Tween(plr.Character.HumanoidRootPart.CFrame)
+                wait()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(-4607.82275, 872.54248, -1667.55688)
+                )
+
+            elseif (NameMon == "SkyExp1Quest") then
+                Tween(plr.Character.HumanoidRootPart.CFrame)
+                wait()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)
+                )
+
+            elseif (NameMon == "ShipQuest1") then
+                Tween(plr.Character.HumanoidRootPart.CFrame)
+                wait()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
+                )
+
+            elseif (NameMon == "ShipQuest2") then
+                Tween(plr.Character.HumanoidRootPart.CFrame)
+                wait()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
+                )
+
+            elseif (NameMon == "FrostQuest") then
+                Tween(plr.Character.HumanoidRootPart.CFrame)
+                wait()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(-6508.5581054688, 89.034996032715, -132.83953857422)
+                )
+
+            else
+                repeat
+                    wait(_G.Fast_Delay)
+                    plr.Character.HumanoidRootPart.CFrame = targetCF
+                    wait(0.05)
+                    plr.Character.Head:Destroy()
+                    plr.Character.HumanoidRootPart.CFrame = targetCF
+                until ((targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude < 2500)
+                    and (plr.Character.Humanoid.Health > 0)
+
+                wait()
             end
         end
-        return oldNamecall(...);
-    end);
-end);
-spawn(function()
+    end)
+end
+
+-- 14.4 Movement Physics (BodyClip)
+task.spawn(function()
     while task.wait() do
         pcall(function()
-            if (_G.AutoEvoRace or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.Tweenfruit or _G.AutoFishCrew or _G.Auto_Saber or _G.AutoShark or _G.Auto_Warden or _G.Auto_RainbowHaki or AutoFarmRace or _G.AutoQuestRace or Auto_Law or AutoTushita or _G.AutoHolyTorch or _G.AutoTerrorshark or _G.farmpiranya or _G.Auto_MusketeerHat or _G.Auto_ObservationV2 or _G.AutoNear or _G.Auto_PoleV1 or _G.Auto_Buddy or _G.Ectoplasm or AutoEvoRace or AutoBartilo or _G.Auto_Canvander or _G.AutoLevel or _G.Auto_DualKatana or Auto_Quest_Yama_3 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or _G.Clip2 or _G.Auto_Regoku or _G.AutoBone or _G.AutoBoneNoQuest or _G.AutoBoss or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.Auto_SkullGuitar or _G.AutoFarmSwan or _G.DoughKing or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or AutoFarmRaceQuest or _G.Factory or _G.Auto_Saw or _G.AutoFrozenDimension or _G.AutoKillTrial or _G.AutoUpgrade or _G.TweenToFrozenDimension) then
-                if not plr.Character.HumanoidRootPart:FindFirstChild("BodyClip") then
-                    local ref2 = Instance.new("BodyVelocity");
-                    ref2.Name = "BodyClip";
-                    ref2.Parent = plr.Character.HumanoidRootPart;
-                    ref2.MaxForce = Vector3.new(0, 100000, 0);
-                    ref2.Velocity = Vector3.new(0, 0, 0);
+            local character = plr.Character
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            local movementEnabled =
+                _G.AutoEvoRace
+                or _G.CastleRaid
+                or _G.CollectAzure
+                or _G.TweenToKitsune
+                or _G.GhostShip
+                or _G.Ship
+                or _G.Auto_Holy_Torch
+                or _G.TeleportPly
+                or _G.Auto_Sea3
+                or _G.Auto_Sea2
+                or _G.Tweenfruit
+                or _G.AutoFishCrew
+                or _G.Auto_Saber
+                or _G.AutoShark
+                or _G.Auto_Warden
+                or _G.Auto_RainbowHaki
+                or AutoFarmRace
+                or _G.AutoQuestRace
+                or Auto_Law
+                or AutoTushita
+                or _G.AutoHolyTorch
+                or _G.AutoTerrorshark
+                or _G.farmpiranya
+                or _G.Auto_MusketeerHat
+                or _G.Auto_ObservationV2
+                or _G.AutoNear
+                or _G.Auto_PoleV1
+                or _G.Auto_Buddy
+                or _G.Ectoplasm
+                or AutoEvoRace
+                or AutoBartilo
+                or _G.Auto_Canvander
+                or _G.AutoLevel
+                or _G.Auto_DualKatana
+                or Auto_Quest_Yama_3
+                or Auto_Quest_Yama_2
+                or Auto_Quest_Yama_1
+                or Auto_Quest_Tushita_1
+                or Auto_Quest_Tushita_2
+                or Auto_Quest_Tushita_3
+                or _G.Clip2
+                or _G.Auto_Regoku
+                or _G.AutoBone
+                or _G.AutoBoneNoQuest
+                or _G.AutoBoss
+                or AutoFarmMasDevilFruit
+                or AutoHallowSycthe
+                or _G.CakePrince
+                or _G.Auto_SkullGuitar
+                or _G.AutoFarmSwan
+                or _G.DoughKing
+                or _G.AutoEliteor
+                or AutoNextIsland
+                or Musketeer
+                or _G.AutoMaterial
+                or AutoFarmRaceQuest
+                or _G.Factory
+                or _G.Auto_Saw
+                or _G.AutoFrozenDimension
+                or _G.AutoKillTrial
+                or _G.AutoUpgrade
+                or _G.TweenToFrozenDimension
+
+            if movementEnabled then
+                if not root:FindFirstChild("BodyClip") then
+                    local bodyClip = Instance.new("BodyVelocity")
+                    bodyClip.Name = "BodyClip"
+                    bodyClip.MaxForce = Vector3.new(0, 100000, 0)
+                    bodyClip.Velocity = Vector3.zero
+                    bodyClip.Parent = root
                 end
             else
-                plr.Character.HumanoidRootPart:FindFirstChild("BodyClip"):Destroy();
+                local bodyClip = root:FindFirstChild("BodyClip")
+                if bodyClip then
+                    bodyClip:Destroy()
+                end
             end
-        end);
+        end)
     end
-end);
-spawn(function()
+end)
+
+-- 14.5 Noclip (RunService.Stepped)
+task.spawn(function()
     pcall(function()
         RunService.Stepped:Connect(function()
-            if (_G.AutoEvoRace or _G.Auto_RainbowHaki or _G.Auto_SkullGuitar or _G.CastleRaid or _G.CollectAzure or _G.TweenToKitsune or _G.Auto_Sea3 or _G.Auto_Sea2 or _G.GhostShip or _G.Ship or _G.Auto_Holy_Torch or _G.TeleportPly or _G.Tweenfruit or _G.Auto_Saber or _G.Auto_PoleV1 or _G.Auto_MusketeerHat or _G.AutoFishCrew or _G.AutoShark or AutoFarmRace or _G.AutoQuestRace or _G.Auto_Warden or Auto_Law or _G.Auto_DualKatana or Auto_Quest_Tushita_1 or Auto_Quest_Tushita_2 or Auto_Quest_Tushita_3 or AutoTushita or _G.AutoHolyTorch or _G.Auto_Buddy or _G.AutoTerrorshark or _G.farmpiranya or Auto_Quest_Yama_3 or _G.Auto_ObservationV2 or Auto_Quest_Yama_2 or Auto_Quest_Yama_1 or _G.AutoNear or _G.Ectoplasm or AutoEvoRace or _G.AutoKillTrial or AutoBartilo or _G.Auto_Regoku or _G.AutoLevel or _G.Clip2 or _G.AutoBone or _G.Auto_Canvander or _G.AutoBoneNoQuest or _G.AutoBoss or _G.Auto_Saw or AutoFarmMasDevilFruit or AutoHallowSycthe or AutoTushita or _G.CakePrince or _G.DoughKing or _G.AutoFarmSwan or _G.AutoEliteor or AutoNextIsland or Musketeer or _G.AutoMaterial or _G.Factory or _G.AutoFrozenDimension or AutoFarmRaceQuest or _G.AutoUpgrade or _G.TweenToFrozenDimension) then
-                for _, part in pairs(plr.Character:GetDescendants()) do
+            local character = plr.Character
+            if not character then return end
+
+            local noclipEnabled =
+                _G.AutoEvoRace
+                or _G.Auto_RainbowHaki
+                or _G.Auto_SkullGuitar
+                or _G.CastleRaid
+                or _G.CollectAzure
+                or _G.TweenToKitsune
+                or _G.Auto_Sea3
+                or _G.Auto_Sea2
+                or _G.GhostShip
+                or _G.Ship
+                or _G.Auto_Holy_Torch
+                or _G.TeleportPly
+                or _G.Tweenfruit
+                or _G.Auto_Saber
+                or _G.Auto_PoleV1
+                or _G.Auto_MusketeerHat
+                or _G.AutoFishCrew
+                or _G.AutoShark
+                or AutoFarmRace
+                or _G.AutoQuestRace
+                or _G.Auto_Warden
+                or Auto_Law
+                or _G.Auto_DualKatana
+                or Auto_Quest_Tushita_1
+                or Auto_Quest_Tushita_2
+                or Auto_Quest_Tushita_3
+                or AutoTushita
+                or _G.AutoHolyTorch
+                or _G.Auto_Buddy
+                or _G.AutoTerrorshark
+                or _G.farmpiranya
+                or Auto_Quest_Yama_3
+                or _G.Auto_ObservationV2
+                or Auto_Quest_Yama_2
+                or Auto_Quest_Yama_1
+                or _G.AutoNear
+                or _G.Ectoplasm
+                or AutoEvoRace
+                or _G.AutoKillTrial
+                or AutoBartilo
+                or _G.Auto_Regoku
+                or _G.AutoLevel
+                or _G.Clip2
+                or _G.AutoBone
+                or _G.Auto_Canvander
+                or _G.AutoBoneNoQuest
+                or _G.AutoBoss
+                or _G.Auto_Saw
+                or AutoFarmMasDevilFruit
+                or AutoHallowSycthe
+                or _G.CakePrince
+                or _G.DoughKing
+                or _G.AutoFarmSwan
+                or _G.AutoEliteor
+                or AutoNextIsland
+                or Musketeer
+                or _G.AutoMaterial
+                or _G.Factory
+                or _G.AutoFrozenDimension
+                or AutoFarmRaceQuest
+                or _G.AutoUpgrade
+                or _G.TweenToFrozenDimension
+
+            if noclipEnabled then
+                for _, part in pairs(character:GetDescendants()) do
                     if part:IsA("BasePart") then
-                        part.CanCollide = false;
+                        part.CanCollide = false
                     end
                 end
             end
-        end);
-    end);
-end);
+        end)
+    end)
+end)
+
+-- 14.6 Character Movement Protection (Stun)
 task.spawn(function()
-    if plr.Character:FindFirstChild("Stun") then
-        plr.Character.Stun.Changed:connect(function()
-            pcall(function()
-                if plr.Character:FindFirstChild("Stun") then
-                    plr.Character.Stun.Value = 0;
-                end
-            end);
-        end);
-    end
-end);
-function CheckMaterial(matName)
-    for _, invItem in pairs(ReplicatedStorage.Remotes.CommF_:InvokeServer("getInventory")) do
-        if (type(invItem) == "table") then
-            if (invItem.Type == "Material") then
-                if (invItem.Name == matName) then
-                    return invItem.Count;
-                end
+    local character = plr.Character
+    local stun = character and character:FindFirstChild("Stun")
+    if not stun then return end
+
+    stun.Changed:Connect(function()
+        pcall(function()
+            if stun.Parent then
+                stun.Value = 0
             end
+        end)
+    end)
+end)
+
+-------------------------------------------------
+-- 15. CHARACTER / TOOL HELPERS
+-------------------------------------------------
+function EquipTool(toolName)
+    local tool = plr.Backpack:FindFirstChild(toolName)
+    if tool and plr.Character then
+        local humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            task.wait()
+            humanoid:EquipTool(tool)
         end
     end
-    return 0;
 end
-function GetWeaponInventory(weaponName)
-    for _, invItem in pairs(ReplicatedStorage.Remotes.CommF_:InvokeServer("getInventory")) do
-        if (type(invItem) == "table") then
-            if (invItem.Type == "Sword") then
-                if (invItem.Name == weaponName) then
-                    return true;
-                end
-            end
+
+function GetEquippedTool()
+    local char = plr.Character
+    if not char then
+        return nil
+    end
+
+    for _, item in ipairs(char:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
         end
     end
-    return false;
+
+    return nil
 end
-local LocalPlayer = plr;
+
+-------------------------------------------------
+-- 16. PLAYER / ENEMY HELPERS
+-------------------------------------------------
+local LocalPlayer = plr
+
 function FindEnemiesInRange(resultTable, enemyList)
-    local myPos = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):GetPivot().Position;
-    local ref4 = nil;
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local myPos = character:GetPivot().Position
+    local hitPart = nil
+
     for _, child in ipairs(enemyList) do
-        if (not child:GetAttribute("IsBoat") and child:FindFirstChildOfClass("Humanoid") and (child.Humanoid.Health > 0)) then
-            local headPart = child:FindFirstChild("Head");
-            if (headPart and ((myPos - headPart.Position).Magnitude <= 60)) then
-                if (child ~= LocalPlayer.Character) then
+        local humanoid = child:FindFirstChildOfClass("Humanoid")
+
+        if not child:GetAttribute("IsBoat")
+            and humanoid
+            and humanoid.Health > 0 then
+
+            local headPart = child:FindFirstChild("Head")
+
+            if headPart and (myPos - headPart.Position).Magnitude <= 60 then
+                if child ~= LocalPlayer.Character then
                     table.insert(resultTable, {
                         child,
                         headPart
-                    });
-                    ref4 = headPart;
+                    })
+                    hitPart = headPart
                 end
             end
         end
     end
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if (plr.Character and (plr ~= LocalPlayer)) then
-            local head = plr.Character:FindFirstChild("Head");
-            if (head and ((myPos - head.Position).Magnitude <= 60)) then
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character and player ~= LocalPlayer then
+            local head = player.Character:FindFirstChild("Head")
+
+            if head and (myPos - head.Position).Magnitude <= 60 then
                 table.insert(resultTable, {
-                    plr.Character,
+                    player.Character,
                     head
-                });
-                ref4 = head;
+                })
+                hitPart = head
             end
         end
     end
-    return ref4;
+
+    return hitPart
 end
-function GetEquippedTool()
-    local char = LocalPlayer.Character;
-    if not char then
-        return nil;
-    end
-    for _, item in ipairs(char:GetChildren()) do
-        if item:IsA("Tool") then
-            return item;
+
+-------------------------------------------------
+-- 17. INVENTORY HELPERS
+-------------------------------------------------
+function CheckMaterial(matName)
+    for _, invItem in pairs(
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("getInventory")
+    ) do
+        if type(invItem) == "table"
+            and invItem.Type == "Material"
+            and invItem.Name == matName then
+
+            return invItem.Count
         end
     end
-    return nil;
+
+    return 0
 end
+
+function GetWeaponInventory(weaponName)
+    for _, invItem in pairs(
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("getInventory")
+    ) do
+        if type(invItem) == "table"
+            and invItem.Type == "Sword"
+            and invItem.Name == weaponName then
+
+            return true
+        end
+    end
+
+    return false
+end
+
 -------------------------------------------------
--- 15. COMBAT HELPERS
+-- 18. COMBAT SYSTEM
 -------------------------------------------------
 function AttackNoCoolDown()
-    -- Đánh không cooldown (dùng RegisterAttack + RegisterHit)
     local enemiesInRange = {}
     local enemies = Workspace.Enemies:GetChildren()
     local hitPart = FindEnemiesInRange(enemiesInRange, enemies)
-    if not hitPart then return end
+
+    if not hitPart then
+        return
+    end
 
     local equipped = GetEquippedTool()
-    if not equipped then return end
+    if not equipped then
+        return
+    end
 
     pcall(function()
         local delay = _G.Fast_Delay or 0.5
         local RS = ReplicatedStorage
-        local regAttack = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack")
-        local regHit = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit")
+
+        local regAttack = RS:WaitForChild("Modules")
+            :WaitForChild("Net")
+            :WaitForChild("RE/RegisterAttack")
+
+        local regHit = RS:WaitForChild("Modules")
+            :WaitForChild("Net")
+            :WaitForChild("RE/RegisterHit")
+
         if #enemiesInRange > 0 then
             regAttack:FireServer(delay)
             regHit:FireServer(hitPart, enemiesInRange)
@@ -2118,84 +2387,82 @@ function AttackNoCoolDown()
     end)
 end
 
+-------------------------------------------------
+-- 19. HAKI / FARM CONFIG
+-------------------------------------------------
 Type = 1
-Pos = CFrame.new(0, 30, 0)   -- Offset bay trên đầu quái
+Pos = CFrame.new(0, 30, 0)
 
 function AutoHaki()
     if not plr.Character:FindFirstChild("HasBuso") then
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso");
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
     end
 end
-function to(targetCF)
-    repeat
-        wait(_G.Fast_Delay);
-        plr.Character.Humanoid:ChangeState(15);
-        plr.Character.HumanoidRootPart.CFrame = targetCF;
-        task.wait();
-        plr.Character.HumanoidRootPart.CFrame = targetCF;
-    until (targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 2000
-end
-function toAdvanced(targetCF)
-    pcall(function()
-        if (((targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude >= 2000) and not Auto_Raid and (plr.Character.Humanoid.Health > 0)) then
-            if (NameMon == "FishmanQuest") then
-                Tween(plr.Character.HumanoidRootPart.CFrame);
-                wait();
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
-            elseif (Mon == "God's Guard") then
-                Tween(plr.Character.HumanoidRootPart.CFrame);
-                wait();
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
-            elseif (NameMon == "SkyExp1Quest") then
-                Tween(plr.Character.HumanoidRootPart.CFrame);
-                wait();
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
-            elseif (NameMon == "ShipQuest1") then
-                Tween(plr.Character.HumanoidRootPart.CFrame);
-                wait();
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
-            elseif (NameMon == "ShipQuest2") then
-                Tween(plr.Character.HumanoidRootPart.CFrame);
-                wait();
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
-            elseif (NameMon == "FrostQuest") then
-                Tween(plr.Character.HumanoidRootPart.CFrame);
-                wait();
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 6508.5581054688, 89.034996032715, - 132.83953857422));
-            else
-                repeat
-                    wait(_G.Fast_Delay);
-                    plr.Character.HumanoidRootPart.CFrame = targetCF;
-                    wait(0.05);
-                    plr.Character.Head:Destroy();
-                    plr.Character.HumanoidRootPart.CFrame = targetCF;
-                until ((targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude < 2500) and (plr.Character.Humanoid.Health > 0)
-                wait();
+
+-------------------------------------------------
+-- 20. REMOTE / SKILL HOOK
+-------------------------------------------------
+task.spawn(function()
+    local ref1 = getrawmetatable(game)
+    local oldNamecall = ref1.__namecall
+
+    setreadonly(ref1, false)
+
+    ref1.__namecall = newcclosure(function(...)
+        local method = getnamecallmethod()
+        local part = {
+            ...
+        }
+
+        if tostring(method) == "FireServer" then
+            if tostring(part[1]) == "RemoteEvent" then
+                if tostring(part[2]) ~= "true"
+                    and tostring(part[2]) ~= "false" then
+
+                    if _G.UseSkill then
+                        if type(part[2]) == "vector" then
+                            part[2] = PositionSkillMasteryDevilFruit
+                        else
+                            part[2] = CFrame.new(PositionSkillMasteryDevilFruit)
+                        end
+
+                        return oldNamecall(unpack(part))
+                    end
+                end
             end
         end
-    end);
-end
-local container = ReplicatedStorage:FindFirstChild("Effect") 
+
+        return oldNamecall(...)
+    end)
+end)
+
+-------------------------------------------------
+-- 21. EFFECT OPTIMIZATION
+-------------------------------------------------
+local container = ReplicatedStorage:FindFirstChild("Effect")
     and ReplicatedStorage.Effect:FindFirstChild("Container")
 
 if container then
     for _, name in ipairs({"Death", "Respawn"}) do
         local mod = container:FindFirstChild(name)
+
         if mod and mod:IsA("ModuleScript") then
-            -- 1. Xóa hạt hiệu ứng bên trong vỏ 'eff' để mượt GPU
             local eff = mod:FindFirstChild("eff")
+
             if eff then
                 for _, child in ipairs(eff:GetChildren()) do
-                    pcall(function() child:Destroy() end)
+                    pcall(function()
+                        child:Destroy()
+                    end)
                 end
             end
-            
-            -- 2. Ghi đè hàm trực tiếp (Nhanh & Không tốn C-Stack)
+
             pcall(function()
                 local loaded = require(mod)
+
                 if type(loaded) == "function" then
-                    -- Nếu trả về 1 function thì mới cần hook
                     hookfunction(loaded, function() end)
+
                 elseif type(loaded) == "table" then
                     for k, v in pairs(loaded) do
                         if type(v) == "function" then
@@ -2207,6 +2474,7 @@ if container then
         end
     end
 end
+
 -------------------------------------------------
 -- 16. BUILD UI
 --     Tất cả Toggle / Dropdown / Button + logic farm
