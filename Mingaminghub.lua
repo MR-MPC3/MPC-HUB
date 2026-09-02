@@ -1926,8 +1926,6 @@ function CancelTween()
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
     end
-    task.wait(0.15)
-    _G.StopTween = false
 end
 function Tween2(targetCFrame)
     if not plr.Character then return end
@@ -1938,7 +1936,6 @@ function Tween2(targetCFrame)
         root.CFrame = targetCFrame
         return
     end
-    _G.StopTween = false
     _G.Clip2 = true
     Tween(targetCFrame)
     while (root.Position - targetCFrame.Position).Magnitude > 6 do
@@ -2240,6 +2237,7 @@ local SelectWeaponDropdown = Tabs.Main:AddDropdown("DropdownSelectWeapon", {
 });
 SelectWeaponDropdown:SetValue("Melee");
 SelectWeaponDropdown:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     ChooseWeapon = value;
 end);
 task.spawn(function()
@@ -2279,6 +2277,7 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
     Default = false
 });
 AutoLevelToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoLevel = value;
     if value == false then
         bringmob = false
@@ -2355,6 +2354,7 @@ local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
     Default = false
 });
 MobAuraToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoNear = value;
     if IsResettingConfig then return end
     if (value == false) then
@@ -2400,6 +2400,7 @@ local CastleRaidToggle = Tabs.Main:AddToggle("ToggleCastleRaid", {
     Default = false
 });
 CastleRaidToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -2440,6 +2441,7 @@ local HakiFortressToggle = Tabs.Main:AddToggle("ToggleHakiFortress", {
     Default = false
 });
 HakiFortressToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.EnableHakiFortress = value;
 end);
 Options.ToggleHakiFortress:SetValue(false);
@@ -2491,6 +2493,7 @@ local CollectChestToggle = Tabs.Main:AddToggle("ToggleCollectChest", {
     Default = false
 });
 CollectChestToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoCollectChest = value;
 end);
 spawn(function()
@@ -2530,6 +2533,7 @@ local MasteryDropdown = Tabs.Main:AddDropdown("DropdownMastery", {
 });
 MasteryDropdown:SetValue(TypeMastery);
 MasteryDropdown:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     TypeMastery = value;
 end);
 local MasteryFruitToggle = Tabs.Main:AddToggle("ToggleMasteryFruit", {
@@ -2538,6 +2542,7 @@ local MasteryFruitToggle = Tabs.Main:AddToggle("ToggleMasteryFruit", {
     Default = false
 });
 MasteryFruitToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -2561,6 +2566,7 @@ local HealthInput = Tabs.Main:AddInput("InputHealth", {
     end
 });
 HealthInput:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     KillPercent = value;
 end);
 HealthInput:SetValue(20);
@@ -2669,6 +2675,7 @@ if Sea3 then
         Default = false
     });
     toggleBone:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoBone = value;
         if IsResettingConfig then return end
         if (value == false) then
@@ -2788,6 +2795,7 @@ if Sea3 then
         Default = false
     });
     toggleRandomBone:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoRandomBone = value;
     end);
     Options.ToggleRandomBone:SetValue(false);
@@ -2833,6 +2841,7 @@ if Sea3 then
     });
     local cakeFirstTween = true;
     toggleCake:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.CakePrince = value;
         if value then
             if cakeFirstTween then
@@ -2904,6 +2913,7 @@ if Sea3 then
         Default = false
     });
     toggleDoughKing:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.DoughKing = value;
         if (value == false) then
             CancelTween()
@@ -2942,6 +2952,7 @@ if Sea3 then
         Default = true
     });
     toggleSpawnCake:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.SpawnCakePrince = value;
     end);
     Options.ToggleSpawnCake:SetValue(true);
@@ -2969,6 +2980,7 @@ if Sea2 then
         Default = false
     });
     toggleEctoplasm:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.Ectoplasm = value;
     end);
     Options.ToggleVatChatKiDi:SetValue(false);
@@ -3064,6 +3076,7 @@ local BossDropdown = Tabs.Main:AddDropdown("DropdownBoss", {
 });
 BossDropdown:SetValue(_G.SelectBoss);
 BossDropdown:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.SelectBoss = value;
 end);
 local BossStatus = Tabs.Main:AddParagraph({ Title = "Boss Status", Content = "Chưa chọn boss" })
@@ -3102,6 +3115,7 @@ local AutoFarmBossToggle = Tabs.Main:AddToggle("ToggleAutoFarmBoss", {
     Default = false
 });
 AutoFarmBossToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -3178,6 +3192,7 @@ local MaterialDropdown = Tabs.Main:AddDropdown("DropdownMaterial", {
 });
 MaterialDropdown:SetValue(SelectMaterial);
 MaterialDropdown:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SelectMaterial = value;
 end);
 local MaterialToggle = Tabs.Main:AddToggle("ToggleMaterial", {
@@ -3186,6 +3201,7 @@ local MaterialToggle = Tabs.Main:AddToggle("ToggleMaterial", {
     Default = false
 });
 MaterialToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoMaterial = value;
     if IsResettingConfig then return end
     if (value == false) then
@@ -3261,6 +3277,7 @@ if Sea3 then
         Default = false
     });
     toggleEspKitsune:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         KitsuneIslandEsp = value;
         while KitsuneIslandEsp do
             wait();
@@ -3305,6 +3322,7 @@ textLabel.Font = "Code";
         Default = false
     });
     toggleTPKitsune:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -3336,6 +3354,7 @@ textLabel.Font = "Code";
         Default = false
     });
     toggleCollectAzure:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -3387,6 +3406,7 @@ if Sea3 then
     });
     Options.AutoFindPrehistoric:SetValue(false);
     toggleFindPrehistoric:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoFindPrehistoric = value;
     end);
     local boatList = {};
@@ -3481,6 +3501,7 @@ if Sea3 then
     });
     Options.AutoFindMirage:SetValue(false);
     toggleFindMirage:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoFindMirage = value;
     end);
     local boatList = {};
@@ -3575,6 +3596,7 @@ if Sea3 then
     });
     Options.AutoFindFrozen:SetValue(false);
     toggleFindFrozen:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoFindFrozen = value;
     end);
     local boatList = {};
@@ -3668,6 +3690,7 @@ if Sea3 then
         Default = false
     });
     toggleComeKitsune:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoComeTiki = value;
     end);
     service.RenderStepped:Connect(function()
@@ -3710,6 +3733,7 @@ if Sea3 then
         Default = false
     });
     toggleComeHydra:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoComeHydra = value;
     end);
     service.RenderStepped:Connect(function()
@@ -3778,6 +3802,7 @@ if Sea3 then
     });
     dropdownBoat:SetValue(selectedBoat);
     dropdownBoat:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         selectedBoat = value;
     end);
     local function sectionSeaMobs(selectedBoatName)
@@ -3831,6 +3856,7 @@ if Sea3 then
         Default = false
     });
     toggleTerrorshark:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -3872,6 +3898,7 @@ if Sea3 then
         Default = false
     });
     togglePiranha:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -3913,6 +3940,7 @@ if Sea3 then
         Default = false
     });
     toggleShark:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -3958,6 +3986,7 @@ if Sea3 then
         Default = false
     });
     toggleFishCrew:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -4003,6 +4032,7 @@ if Sea3 then
         Default = false
     });
     toggleShip:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -4049,6 +4079,7 @@ if Sea3 then
         Default = false
     });
     toggleGhostShip:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -4190,6 +4221,7 @@ if Sea3 then
         Default = false
     });
     toggleElite:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoElite = value;
     end);
     Options.ToggleElite:SetValue(false);
@@ -4309,6 +4341,7 @@ local TweenAdvancedToggle = Tabs.Sea:AddToggle("ToggleTpAdvanced", {
     Default = false
 });
 TweenAdvancedToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoTpAdvanced = value;
 end);
 spawn(function()
@@ -4330,6 +4363,7 @@ local TweenGearToggle = Tabs.Sea:AddToggle("ToggleTweenGear", {
     Default = false
 });
 TweenGearToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.TweenToGear = value;
 end);
 Options.ToggleTweenGear:SetValue(false);
@@ -4356,6 +4390,7 @@ local LockMoonToggle = Tabs.Sea:AddToggle("Togglelockmoon", {
     Default = false
 });
 LockMoonToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoLockMoon = value;
 end);
 Options.Togglelockmoon:SetValue(false);
@@ -4385,6 +4420,7 @@ local AutoSaberToggle = Tabs.ITM:AddToggle("ToggleAutoSaber", {
     Default = false
 });
 AutoSaberToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4498,6 +4534,7 @@ local AutoPoleV1Toggle = Tabs.ITM:AddToggle("ToggleAutoPoleV1", {
     Default = false
 });
 AutoPoleV1Toggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4543,6 +4580,7 @@ local AutoSawToggle = Tabs.ITM:AddToggle("ToggleAutoSaw", {
     Default = false
 });
 AutoSawToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4588,6 +4626,7 @@ local AutoWardenToggle = Tabs.ITM:AddToggle("ToggleAutoWarden", {
     Default = false
 });
 AutoWardenToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4634,6 +4673,7 @@ if Sea3 then
         Default = false
     });
     toggleHallow:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -4693,6 +4733,7 @@ if Sea3 then
         Default = false
     });
     toggleYama:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.AutoYama = value;
     end);
     Options.ToggleYama:SetValue(false);
@@ -4714,6 +4755,7 @@ if Sea3 then
         Default = false
     });
     toggleTushita:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -4756,6 +4798,7 @@ if Sea3 then
         Default = false
     });
     toggleHoly:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -4802,6 +4845,7 @@ local AutoCanvanderToggle = Tabs.ITM:AddToggle("ToggleAutoCanvander", {
     Default = false
 });
 AutoCanvanderToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4847,6 +4891,7 @@ local AutoMusketeerHatToggle = Tabs.ITM:AddToggle("ToggleAutoMusketeerHat", {
     Default = false
 });
 AutoMusketeerHatToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4934,6 +4979,7 @@ local AutoObservationV2Toggle = Tabs.ITM:AddToggle("ToggleAutoObservationV2", {
     Default = false
 });
 AutoObservationV2Toggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -4985,6 +5031,7 @@ local AutoRainbowHakiToggle = Tabs.ITM:AddToggle("ToggleAutoRainbowHaki", {
     Default = false
 });
 AutoRainbowHakiToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -5113,6 +5160,7 @@ local AutoSkullGuitarToggle = Tabs.ITM:AddToggle("ToggleAutoSkullGuitar", {
     Default = false
 });
 AutoSkullGuitarToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -5239,6 +5287,7 @@ local AutoBuddyToggle = Tabs.ITM:AddToggle("ToggleAutoBuddy", {
     Default = false
 });
 AutoBuddyToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -5284,6 +5333,7 @@ local AutoDualKatanaToggle = Tabs.ITM:AddToggle("ToggleAutoDualKatana", {
     Default = false
 });
 AutoDualKatanaToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -5717,6 +5767,7 @@ if Sea2 then
         Default = false
     });
     toggleFactory:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -5765,6 +5816,7 @@ local AutoFarmSwanToggle = Tabs.ITM:AddToggle("ToggleAutoFarmSwan", {
     Default = false
 });
 AutoFarmSwanToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -5807,6 +5859,7 @@ local AutoRengokuToggle = Tabs.ITM:AddToggle("ToggleAutoRengoku", {
     Default = false
 });
 AutoRengokuToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -5853,6 +5906,7 @@ if (Sea2 or Sea3) then
         Default = false
     });
     toggleHakiColor:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.Auto_Buy_Enchancement = value;
     end);
     Options.ToggleHakiColor:SetValue(false);
@@ -5875,6 +5929,7 @@ if Sea2 then
         Default = false
     });
     toggleSwordLengend:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         _G.BuyLengendSword = value;
     end);
     Options.ToggleSwordLengend:SetValue(false);
@@ -5901,6 +5956,7 @@ if Sea2 then
         Default = false
     });
     toggleEvoRace:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
         if value == false then
             CancelTween()
         end
@@ -5963,6 +6019,7 @@ local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
     Default = false
 });
 AutoTToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoT = value;
 end);
 Options.ToggleAutoT:SetValue(false);
@@ -5981,6 +6038,7 @@ local AutoYToggle = Tabs.Setting:AddToggle("ToggleAutoY", {
     Default = false
 });
 AutoYToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoY = value;
 end);
 Options.ToggleAutoY:SetValue(false);
@@ -6001,6 +6059,7 @@ local AutoKenToggle = Tabs.Setting:AddToggle("ToggleAutoKen", {
     Default = true
 });
 AutoKenToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoKen = value;
     if IsResettingConfig then return end
     if value then
@@ -6025,6 +6084,7 @@ local toggleSaveSpawn = Tabs.Setting:AddToggle("ToggleSaveSpawn", {
     Default = false
 });
 toggleSaveSpawn:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.SaveSpawn = value;
     if IsResettingConfig then return end
     if value then
@@ -6086,6 +6146,7 @@ local toggleBringMob = Tabs.Setting:AddToggle("ToggleBringMob", {
     Default = true
 });
 toggleBringMob:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.BringMob = value;
 end);
 Options.ToggleBringMob:SetValue(true);
@@ -6135,6 +6196,7 @@ local toggleRemoveNotify = Tabs.Setting:AddToggle("ToggleRemoveNotify", {
     Default = false
 });
 toggleRemoveNotify:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     RemoveNotify = value;
 end);
 Options.ToggleRemoveNotify:SetValue(false);
@@ -6153,6 +6215,7 @@ local toggleWhiteScreen = Tabs.Setting:AddToggle("ToggleWhite", {
     Default = false
 });
 toggleWhiteScreen:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.WhiteScreen = value;
     if IsResettingConfig then return end
     if (_G.WhiteScreen == true) then
@@ -6169,6 +6232,7 @@ local toggleSkillZ = Tabs.Setting:AddToggle("ToggleZ", {
     Default = true
 });
 toggleSkillZ:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SkillZ = value;
 end);
 Options.ToggleZ:SetValue(true);
@@ -6178,6 +6242,7 @@ local toggleSkillX = Tabs.Setting:AddToggle("ToggleX", {
     Default = true
 });
 toggleSkillX:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SkillX = value;
 end);
 Options.ToggleX:SetValue(true);
@@ -6187,6 +6252,7 @@ local toggleSkillC = Tabs.Setting:AddToggle("ToggleC", {
     Default = true
 });
 toggleSkillC:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SkillC = value;
 end);
 Options.ToggleC:SetValue(true);
@@ -6196,6 +6262,7 @@ local toggleSkillV = Tabs.Setting:AddToggle("ToggleV", {
     Default = true
 });
 toggleSkillV:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SkillV = value;
 end);
 Options.ToggleV:SetValue(true);
@@ -6205,6 +6272,7 @@ local toggleSkillF = Tabs.Setting:AddToggle("ToggleF", {
     Default = false
 });
 toggleSkillF:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SkillF = value;
 end);
 Options.ToggleF:SetValue(true);
@@ -6311,6 +6379,7 @@ local toggleJoinJob = Tabs.Status:AddToggle("MyToggle", {
     Default = false
 });
 toggleJoinJob:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Join = value;
 end);
 spawn(function()
@@ -6326,6 +6395,7 @@ local toggleStatMelee = Tabs.Stats:AddToggle("ToggleMelee", {
     Default = false
 });
 toggleStatMelee:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Melee = value;
 end);
 Options.ToggleMelee:SetValue(false);
@@ -6335,6 +6405,7 @@ local toggleStatDefense = Tabs.Stats:AddToggle("ToggleDe", {
     Default = false
 });
 toggleStatDefense:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Defense = value;
 end);
 Options.ToggleDe:SetValue(false);
@@ -6344,6 +6415,7 @@ local toggleStatSword = Tabs.Stats:AddToggle("ToggleSword", {
     Default = false
 });
 toggleStatSword:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Sword = value;
 end);
 Options.ToggleSword:SetValue(false);
@@ -6353,6 +6425,7 @@ local toggleStatGun = Tabs.Stats:AddToggle("ToggleGun", {
     Default = false
 });
 toggleStatGun:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Gun = value;
 end);
 Options.ToggleGun:SetValue(false);
@@ -6362,6 +6435,7 @@ local toggleBuyFruit = Tabs.Stats:AddToggle("ToggleFruit", {
     Default = false
 });
 toggleBuyFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_Stats_Devil_Fruit = value;
 end);
 Options.ToggleFruit:SetValue(false);
@@ -6438,6 +6512,7 @@ local dropdownSelectPlayer = Tabs.Player:AddDropdown("SelectedPly", {
 });
 dropdownSelectPlayer:SetValue(_G.SelectPly);
 dropdownSelectPlayer:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.SelectPly = value;
 end);
 Tabs.Player:AddButton({
@@ -6456,6 +6531,7 @@ local toggleTeleportPlayer = Tabs.Player:AddToggle("ToggleTeleport", {
     Default = false
 });
 toggleTeleportPlayer:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.TeleportPly = value;
     if (value == false) then
         CancelTween()
@@ -6480,6 +6556,7 @@ local toggleNoClip = Tabs.Player:AddToggle("ToggleNoClip", {
     Default = true
 });
 toggleNoClip:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.LOf = value;
 end);
 Options.ToggleNoClip:SetValue(true);
@@ -6502,6 +6579,7 @@ local toggleWalkonWater = Tabs.Player:AddToggle("ToggleWalkonWater", {
     Default = true
 });
 toggleWalkonWater:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.WalkonWater = value;
 end);
 Options.ToggleWalkonWater:SetValue(true);
@@ -6522,6 +6600,7 @@ local toggleEnablePvp = Tabs.Player:AddToggle("ToggleEnablePvp", {
     Default = false
 });
 toggleEnablePvp:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.EnabledPvP = value;
 end);
 Options.ToggleEnablePvp:SetValue(false);
@@ -6543,6 +6622,7 @@ local toggleAutoSea2 = Tabs.Teleport:AddToggle("ToggleAutoSea2", {
     Default = false
 });
 toggleAutoSea2:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -6603,6 +6683,7 @@ local toggleAutoSea3 = Tabs.Teleport:AddToggle("ToggleAutoSea3", {
     Default = false
 });
 toggleAutoSea3:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -6742,6 +6823,7 @@ local dropdownIsland = Tabs.Teleport:AddDropdown("DropdownIsland", {
 });
 dropdownIsland:SetValue(_G.SelectIsland);
 dropdownIsland:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.SelectIsland = value;
 end);
 Tabs.Teleport:AddButton({
@@ -6878,6 +6960,7 @@ local dropdownFruit = Tabs.Fruit:AddDropdown("DropdownFruit", {
 });
 dropdownFruit:SetValue(_G.SelectFruit);
 dropdownFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.SelectFruit = value;
 end);
 local toggleBuyFruit = Tabs.Fruit:AddToggle("ToggleFruit", {
@@ -6886,6 +6969,7 @@ local toggleBuyFruit = Tabs.Fruit:AddToggle("ToggleFruit", {
     Default = false
 });
 toggleBuyFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value then
         _G.AutoBuyFruitSniper = true;
         pcall(function()
@@ -6905,6 +6989,7 @@ local dropdownPermanentFruit = Tabs.Fruit:AddDropdown("DropdownPermanentFruit", 
 });
 dropdownPermanentFruit:SetValue(_G.PermanentFruit);
 dropdownPermanentFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.PermanentFruit = value;
 end);
 local togglePermanentFruit = Tabs.Fruit:AddToggle("TogglePermanentFruit", {
@@ -6913,6 +6998,7 @@ local togglePermanentFruit = Tabs.Fruit:AddToggle("TogglePermanentFruit", {
     Default = false
 });
 togglePermanentFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value then
         _G.AutoSwitchPermanentFruit = true;
         pcall(function()
@@ -6932,6 +7018,7 @@ local toggleStoreFruit = Tabs.Fruit:AddToggle("ToggleStore", {
     Default = false
 });
 toggleStoreFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoStoreFruit = value;
 end);
 Options.ToggleStore:SetValue(false);
@@ -7054,6 +7141,7 @@ local toggleRandomFruit = Tabs.Fruit:AddToggle("ToggleRandomFruit", {
     Default = false
 });
 toggleRandomFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Random_Auto = value;
 end);
 Options.ToggleRandomFruit:SetValue(false);
@@ -7072,6 +7160,7 @@ local toggleCollectFruitTP = Tabs.Fruit:AddToggle("ToggleCollectTP", {
     Default = false
 });
 toggleCollectFruitTP:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.CollectFruitTP = value;
 end);
 Options.ToggleCollectTP:SetValue(false);
@@ -7094,6 +7183,7 @@ local toggleTweenFruit = Tabs.Fruit:AddToggle("ToggleCollect", {
     Default = false
 });
 toggleTweenFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Tweenfruit = value;
 end);
 Options.ToggleCollect:SetValue(false);
@@ -7117,6 +7207,7 @@ local toggleEspPlayer = Tabs.Fruit:AddToggle("ToggleEspPlayer", {
     Default = false
 });
 toggleEspPlayer:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     ESPPlayer = value;
     UpdatePlayerChams();
 end);
@@ -7127,6 +7218,7 @@ local toggleEspFruit = Tabs.Fruit:AddToggle("ToggleEspFruit", {
     Default = false
 });
 toggleEspFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     DevilFruitESP = value
 end);
 Options.ToggleEspFruit:SetValue(false);
@@ -7136,6 +7228,7 @@ local toggleEspIsland = Tabs.Fruit:AddToggle("ToggleEspIsland", {
     Default = false
 });
 toggleEspIsland:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     IslandESP = value
 end);
 Options.ToggleEspIsland:SetValue(false);
@@ -7145,6 +7238,7 @@ local toggleEspFlower = Tabs.Fruit:AddToggle("ToggleEspFlower", {
     Default = false
 });
 toggleEspFlower:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     FlowerESP = value;
     UpdateFlowerChams();
 end);
@@ -7180,6 +7274,7 @@ local toggleEspRealFruit = Tabs.Fruit:AddToggle("ToggleEspRealFruit", {
     Default = false
 });
 toggleEspRealFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     RealFruitESP = value
 end);
 Options.ToggleEspRealFruit:SetValue(false);
@@ -7190,6 +7285,7 @@ local toggleEspMirageIsland = Tabs.Fruit:AddToggle("ToggleIslandMirageEsp", {
     Default = false
 });
 toggleEspMirageIsland:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     MirageIslandESP = value
 end);
 Options.ToggleIslandMirageEsp:SetValue(false);
@@ -7217,6 +7313,7 @@ local dropdownRaid = Tabs.Raid:AddDropdown("DropdownRaid", {
 });
 dropdownRaid:SetValue(SelectChip);
 dropdownRaid:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     SelectChip = value;
 end);
 local toggleBuyChip = Tabs.Raid:AddToggle("ToggleBuy", {
@@ -7225,6 +7322,7 @@ local toggleBuyChip = Tabs.Raid:AddToggle("ToggleBuy", {
     Default = false
 });
 toggleBuyChip:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_Buy_Chips_Dungeon = value;
 end);
 Options.ToggleBuy:SetValue(false);
@@ -7248,6 +7346,7 @@ local toggleStartRaid = Tabs.Raid:AddToggle("ToggleStart", {
     Default = false
 });
 toggleStartRaid:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Auto_StartRaid = value;
 end);
 Options.ToggleStart:SetValue(false);
@@ -7285,6 +7384,7 @@ local toggleNextIsland = Tabs.Raid:AddToggle("ToggleNextIsland", {
     Default = false
 });
 toggleNextIsland:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -7338,6 +7438,7 @@ local toggleAwake = Tabs.Raid:AddToggle("ToggleAwake", {
     Default = false
 });
 toggleAwake:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     AutoAwakenAbilities = value;
 end);
 Options.ToggleAwake:SetValue(false);
@@ -7356,6 +7457,7 @@ local toggleGetFruit = Tabs.Raid:AddToggle("ToggleGetFruit", {
     Default = false
 });
 toggleGetFruit:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.Autofruit = value;
 end);
 spawn(function()
@@ -7476,6 +7578,7 @@ local toggleLaw = Tabs.Raid:AddToggle("ToggleLaw", {
     Default = false
 });
 toggleLaw:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -7577,6 +7680,7 @@ local toggleHumanGhoul = Tabs.Race:AddToggle("ToggleHumanandghoul", {
     Default = false
 });
 toggleHumanGhoul:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     KillAura = value;
 end);
 Options.ToggleHumanandghoul:SetValue(false);
@@ -7586,6 +7690,7 @@ local toggleAutoTrial = Tabs.Race:AddToggle("ToggleAutotrial", {
     Default = false
 });
 toggleAutoTrial:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoQuestRace = value;
 end);
 Options.ToggleAutotrial:SetValue(false);
@@ -7652,6 +7757,7 @@ local toggleKillTrial = Tabs.Race:AddToggle("ToggleKillTrial", {
     Default = false
 });
 toggleKillTrial:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -7691,6 +7797,7 @@ local toggleFarmRace = Tabs.Race:AddToggle("ToggleFarmRace", {
 });
 local farmRaceEnabled = false;
 toggleFarmRace:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     if value == false then
         CancelTween()
     end
@@ -7724,6 +7831,7 @@ local toggleUpgradeRace = Tabs.Race:AddToggle("ToggleUpgrade", {
     Default = false
 });
 toggleUpgradeRace:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoUpgrade = value;
     if IsResettingConfig then return end
     if _G.AutoUpgrade then
@@ -8145,6 +8253,7 @@ local toggleAutoRejoin = Tabs.Misc:AddToggle("ToggleRejoin", {
     Default = true
 });
 toggleAutoRejoin:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoRejoin = value;
 end);
 Options.ToggleRejoin:SetValue(true);
@@ -8192,6 +8301,7 @@ local AntiBandToggle = Tabs.Misc:AddToggle("ToggleAntiBand", {
     Default = true
 });
 AntiBandToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AntiBand = value;
 end);
 local BannedUserIds = {
@@ -8232,6 +8342,7 @@ local TweenFrozenToggle = Tabs.Sea:AddToggle("ToggleTPFrozenDimension", {
     Default = false
 })
 TweenFrozenToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.TweenToFrozenDimension = value
 end)
 TweenFrozenToggle:SetValue(false)
@@ -8279,6 +8390,7 @@ local BlazeEmberToggle = Tabs.Sea:AddToggle("ToggleBlazeEmber", {
     Default = false
 })
 BlazeEmberToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoBlazeEmber = value
 end)
 
@@ -8298,6 +8410,7 @@ local ReceiveQuestToggle = Tabs.Sea:AddToggle("ToggleReceiveQuest", {
     Default = false
 })
 ReceiveQuestToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoReceiveQuest = value
     if IsResettingConfig then return end
     if _G.AutoReceiveQuest then
@@ -8361,6 +8474,7 @@ local HydraTreeToggle = Tabs.Sea:AddToggle("ToggleHydraTree", {
     Default = false
 })
 HydraTreeToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoHydraTree = value
 end)
 
@@ -8447,6 +8561,7 @@ local CollectFireFlowersToggle = Tabs.Sea:AddToggle("ToggleCollectFireFlowers", 
     Default = false
 })
 CollectFireFlowersToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoCollectFireFlowers = value
 end)
 
@@ -8484,6 +8599,7 @@ local WhiteBeltToggle = Tabs.Sea:AddToggle("ToggleWhiteBelt", {
 })
 
 WhiteBeltToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     -- Dùng biến riêng biệt để không xung đột với AutoLevel
     _G.AutoWhiteBelt = value
     if IsResettingConfig then return end
@@ -8524,6 +8640,7 @@ local TrialTeleportToggle = Tabs.Sea:AddToggle("ToggleTrialTeleport", {
     Default = false
 })
 TrialTeleportToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoTrialTeleport = value
 end)
 
@@ -8564,6 +8681,7 @@ local TPVolcanoToggle = Tabs.Sea:AddToggle("ToggleTPVolcano", {
     Default = false
 })
 TPVolcanoToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.TweenToPrehistoric = value
 end)
 Options.ToggleTPVolcano:SetValue(false)
@@ -8596,6 +8714,7 @@ local DefendVolcanoToggle = Tabs.Sea:AddToggle("ToggleDefendVolcano", {
     Default = false
 })
 DefendVolcanoToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoDefendVolcano = value
 end)
 
@@ -8605,6 +8724,7 @@ local UseMeleeToggle = Tabs.Sea:AddToggle("ToggleMelee", {
     Default = false
 })
 UseMeleeToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.UseMelee = value
 end)
 
@@ -8614,6 +8734,7 @@ local UseSwordToggle = Tabs.Sea:AddToggle("ToggleSword", {
     Default = false
 })
 UseSwordToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.UseSword = value
 end)
 
@@ -8623,6 +8744,7 @@ local UseGunToggle = Tabs.Sea:AddToggle("ToggleGun", {
     Default = false
 })
 UseGunToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.UseGun = value
 end)
 
@@ -8706,6 +8828,7 @@ local KillAuraToggle = Tabs.Sea:AddToggle("ToggleKillAura", {
     Default = false
 })
 KillAuraToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     KillAura = value
 end)
 Options.ToggleKillAura:SetValue(false)
@@ -8736,6 +8859,7 @@ local CollectBoneToggle = Tabs.Sea:AddToggle("ToggleCollectBone", {
     Default = false
 })
 CollectBoneToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoCollectBone = value
 end)
 
@@ -8758,6 +8882,7 @@ local CollectEggToggle = Tabs.Sea:AddToggle("ToggleCollectEgg", {
     Default = false
 })
 CollectEggToggle:OnChanged(function(value)
+    if value == true then _G.StopTween = false end
     _G.AutoCollectEgg = value
 end)
 
