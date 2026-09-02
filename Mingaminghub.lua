@@ -604,6 +604,7 @@ local CONFIG_FILE   = CONFIG_FOLDER .. "/DU_LIEU_TK_" .. tostring(plr.Name) .. "
 local IsResettingConfig = false
 local DefaultConfig = {}
 local savePending = false
+local saveGeneration = 0
 
 local function DeepCopy(value)
     if type(value) ~= "table" then
@@ -624,6 +625,17 @@ local function EnsureConfigFolder()
     end
 end
 
+local function WriteConfig(data)
+    if typeof(writefile) ~= "function" then
+        return
+    end
+
+    pcall(function()
+        EnsureConfigFolder()
+        writefile(CONFIG_FILE, HttpService:JSONEncode(data))
+    end)
+end
+
 local function SaveConfig()
     if IsResettingConfig then return end
     if typeof(writefile) ~= "function" then return end
@@ -635,16 +647,27 @@ local function SaveConfig()
                 data[idx] = DeepCopy(opt.Value)
             end
         end
-        writefile(CONFIG_FILE, HttpService:JSONEncode(data))
+        WriteConfig(data)
     end)
 end
 
 local function QueueSaveConfig()
     if IsResettingConfig or savePending then return end
+
     savePending = true
+    saveGeneration = saveGeneration + 1
+    local generation = saveGeneration
+
     task.delay(0.75, function()
+        if generation ~= saveGeneration then
+            return
+        end
+
         savePending = false
-        SaveConfig()
+
+        if not IsResettingConfig then
+            SaveConfig()
+        end
     end)
 end
 
@@ -675,19 +698,74 @@ local function CaptureDefaults()
     end
 end
 
-local function ResetAllToDefault()
-    IsResettingConfig = true
-    for idx, defaultVal in pairs(DefaultConfig) do
-        local opt = Options[idx]
-        if opt and type(opt.SetValue) == "function" then
-            pcall(function()
-                opt:SetValue(DeepCopy(defaultVal))
-            end)
+local function ValuesEqual(a, b)
+    if type(a) ~= type(b) then
+        return false
+    end
+
+    if type(a) ~= "table" then
+        return a == b
+    end
+
+    for k, v in pairs(a) do
+        if not ValuesEqual(v, b[k]) then
+            return false
         end
     end
-    IsResettingConfig = false
-    -- Lưu lại Default để lần Execute sau cũng ra Default
-    SaveConfig()
+
+    for k in pairs(b) do
+        if a[k] == nil then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function ResetAllToDefault()
+    if IsResettingConfig then
+        return
+    end
+
+    IsResettingConfig = true
+    saveGeneration = saveGeneration + 1
+    savePending = false
+
+    task.spawn(function()
+        local changed = 0
+
+        for idx, defaultValue in pairs(DefaultConfig) do
+            local opt = Options[idx]
+
+            if opt
+                and opt.Value ~= nil
+                and type(opt.SetValue) == "function"
+                and not ValuesEqual(opt.Value, defaultValue) then
+
+                pcall(function()
+                    opt:SetValue(DeepCopy(defaultValue))
+                end)
+
+                changed = changed + 1
+
+                -- Nhường frame định kỳ để tránh dồn toàn bộ callback vào một frame.
+                if changed % 6 == 0 then
+                    task.wait()
+                end
+            end
+        end
+
+        -- Ghi đúng DefaultConfig một lần duy nhất.
+        WriteConfig(DeepCopy(DefaultConfig))
+
+        IsResettingConfig = false
+
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã khôi phục thiết lập mặc định!",
+            Duration = 3
+        })
+    end)
 end
 
 local function WrapOptionsForAutoSave()
@@ -2202,6 +2280,7 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
 });
 AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
+    if IsResettingConfig then return end
     if (value== false) then
         wait();
         Tween(plr.Character.HumanoidRootPart.CFrame);
@@ -2263,6 +2342,7 @@ local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
 });
 MobAuraToggle:OnChanged(function(value)
     _G.AutoNear = value;
+    if IsResettingConfig then return end
     if (value== false) then
         wait();
         Tween(plr.Character.HumanoidRootPart.CFrame);
@@ -2572,6 +2652,7 @@ if Sea3 then
     });
     toggleBone:OnChanged(function(value)
         _G.AutoBone = value;
+        if IsResettingConfig then return end
         if (value== false) then
             wait();
             Tween(plr.Character.HumanoidRootPart.CFrame);
@@ -3091,6 +3172,7 @@ local MaterialToggle = Tabs.Main:AddToggle("ToggleMaterial", {
 });
 MaterialToggle:OnChanged(function(value)
     _G.AutoMaterial = value;
+    if IsResettingConfig then return end
     if (value== false) then
         wait();
         Tween(plr.Character.HumanoidRootPart.CFrame);
@@ -5829,6 +5911,7 @@ local AutoKenToggle = Tabs.Setting:AddToggle("ToggleAutoKen", {
 });
 AutoKenToggle:OnChanged(function(value)
     _G.AutoKen = value;
+    if IsResettingConfig then return end
     if value then
         ReplicatedStorage.Remotes.CommE:FireServer("Ken", true);
     else
@@ -5852,6 +5935,7 @@ local toggleSaveSpawn = Tabs.Setting:AddToggle("ToggleSaveSpawn", {
 });
 toggleSaveSpawn:OnChanged(function(value)
     _G.SaveSpawn = value;
+    if IsResettingConfig then return end
     if value then
         local setSpawnArgs3 = {
             [1] = "SetSpawnPoint"
@@ -5979,6 +6063,7 @@ local toggleWhiteScreen = Tabs.Setting:AddToggle("ToggleWhite", {
 });
 toggleWhiteScreen:OnChanged(function(value)
     _G.WhiteScreen = value;
+    if IsResettingConfig then return end
     if (_G.WhiteScreen == true) then
         RunService:Set3dRenderingEnabled(false);
     elseif (_G.WhiteScreen == false) then
@@ -6035,15 +6120,10 @@ Options.ToggleF:SetValue(true);
 
 -- Nút Reset Config (Persistent Config)
 Tabs.Setting:AddButton({
-    Title = "Reset tất cả về mặc định",
-    Description = "Đưa toàn bộ Toggle / Dropdown / Input / Slider về giá trị mặc định gốc và lưu lại",
+    Title = "Khôi Phục Thiết Lập Mặc Định",
+    Description = "Đưa toàn bộ cài đặt về mặc định",
     Callback = function()
         ResetAllToDefault()
-        Fluent:Notify({
-            Title = "Min Gaming",
-            Content = "Đã reset tất cả về mặc định!",
-            Duration = 5
-        })
     end
 })
 
@@ -7539,6 +7619,7 @@ local toggleUpgradeRace = Tabs.Race:AddToggle("ToggleUpgrade", {
 });
 toggleUpgradeRace:OnChanged(function(value)
     _G.AutoUpgrade = value;
+    if IsResettingConfig then return end
     if _G.AutoUpgrade then
         ReplicatedStorage.Remotes.CommF_:InvokeServer("UpgradeRace", "Buy");
     end
@@ -8112,6 +8193,7 @@ local ReceiveQuestToggle = Tabs.Sea:AddToggle("ToggleReceiveQuest", {
 })
 ReceiveQuestToggle:OnChanged(function(value)
     _G.AutoReceiveQuest = value
+    if IsResettingConfig then return end
     if _G.AutoReceiveQuest then
         ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
         Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
@@ -8298,6 +8380,7 @@ local WhiteBeltToggle = Tabs.Sea:AddToggle("ToggleWhiteBelt", {
 WhiteBeltToggle:OnChanged(function(value)
     -- Dùng biến riêng biệt để không xung đột với AutoLevel
     _G.AutoWhiteBelt = value
+    if IsResettingConfig then return end
 
     if value then
         -- Gửi yêu cầu nhận Quest lần đầu khi bật
