@@ -597,9 +597,10 @@ local Options = Fluent.Options
 -------------------------------------------------
 -- PERSISTENT CONFIG SYSTEM (Min Gaming)
 -- Lưu / khôi phục toàn bộ Options giữa các lần Execute
+-- Mỗi tài khoản Roblox có 1 file riêng: DU_LIEU_TK_<TênTàiKhoản>.json
 -------------------------------------------------
 local CONFIG_FOLDER = "MinGamingHub"
-local CONFIG_FILE   = CONFIG_FOLDER .. "/config.json"
+local CONFIG_FILE   = CONFIG_FOLDER .. "/DU_LIEU_TK_" .. tostring(plr.Name) .. ".json"
 local IsResettingConfig = false
 local DefaultConfig = {}
 local savePending = false
@@ -5783,20 +5784,6 @@ if Sea2 then
         end);
     end);
 end
-
--- Nút Reset Config (Persistent Config)
-Tabs.Setting:AddButton({
-    Title = "Khôi Phục Thiết Lập Mặc Định",
-    Description = "Đưa Tất Cả Tùy Chọn Về Lại mặc định",
-    Callback = function()
-        ResetAllToDefault()
-        Fluent:Notify({
-            Title = "Min Gaming",
-            Content = "Đã Khôi Phục Thiết Lập Mặc Định!",
-            Duration = 5
-        })
-    end
-})
 local AutoTToggle = Tabs.Setting:AddToggle("ToggleAutoT", {
     Title = "Bật Tộc V3",
     Description = "",
@@ -5836,9 +5823,9 @@ spawn(function()
     end
 end);
 local AutoKenToggle = Tabs.Setting:AddToggle("ToggleAutoKen", {
-    Title = "Bật Haki Quan Sát",
+    Title = "Bật Haki Quan Sât",
     Description = "",
-    Default = true
+    Default = false
 });
 AutoKenToggle:OnChanged(function(value)
     _G.AutoKen = value;
@@ -5848,7 +5835,7 @@ AutoKenToggle:OnChanged(function(value)
         ReplicatedStorage.Remotes.CommE:FireServer("Ken", false);
     end
 end);
-Options.ToggleAutoKen:SetValue(true);
+Options.ToggleAutoKen:SetValue(false);
 spawn(function()
     while wait() do
         pcall(function()
@@ -6045,6 +6032,20 @@ toggleSkillF:OnChanged(function(value)
     SkillF = value;
 end);
 Options.ToggleF:SetValue(true);
+
+-- Nút Reset Config (Persistent Config)
+Tabs.Setting:AddButton({
+    Title = "Reset tất cả về mặc định",
+    Description = "Đưa toàn bộ Toggle / Dropdown / Input / Slider về giá trị mặc định gốc và lưu lại",
+    Callback = function()
+        ResetAllToDefault()
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã reset tất cả về mặc định!",
+            Duration = 5
+        })
+    end
+})
 
 local paraServerTime = Tabs.Status:AddParagraph({
     Title = "Thông Tin",
