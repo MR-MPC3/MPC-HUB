@@ -1,3 +1,32 @@
+--[[
+================================================================================
+    MIN GAMING HUB - Blox Fruits Script
+    Discord: discord.gg/25ms
+================================================================================
+
+    CẤU TRÚC FILE (Thứ tự logic tối ưu):
+    1.  Services (khai báo 1 lần) & ParentGui
+    2.  Fake Loader (UX loading)
+    3.  Anti-Tamper (đã tắt)
+    4.  Load Fluent UI Library
+    5.  Tạo Window + Mobile Minimize Button
+    6.  Tạo các Tab
+    7.  Player & Sea Detection
+    8.  Data Tables (Quest / Boss / Material)
+    9.  Helper Functions (CheckLevel, Tween, Attack, ESP...)
+    10. BuildUI() - Tất cả Toggle / Button / Logic farm
+    11. Gọi BuildUI() + Notify hoàn thành
+
+    Lưu ý:
+    - Tất cả Roblox Services khai báo 1 lần ở mục 1
+    - LocalPlayer alias: plr = Players.LocalPlayer (dùng plr xuyên suốt)
+    - Phía dưới chỉ dùng biến (Players, ReplicatedStorage, Workspace, plr...)
+    - Tất cả hàm hỗ trợ được định nghĩa TRƯỚC BuildUI
+    - Data tables đứng trước các hàm sử dụng chúng
+    - Biến _G. dùng để chia sẻ trạng thái giữa các loop
+================================================================================
+]]
+
 -------------------------------------------------
 -- 1. SERVICES CƠ BẢN (khai báo 1 lần, dùng xuyên suốt file)
 -------------------------------------------------
@@ -564,6 +593,119 @@ local PlaceId = game.PlaceId
 
 -- Fluent Options (dùng để SetValue toggle)
 local Options = Fluent.Options
+
+-------------------------------------------------
+-- PERSISTENT CONFIG SYSTEM (Min Gaming)
+-- Lưu / khôi phục toàn bộ Options giữa các lần Execute
+-------------------------------------------------
+local CONFIG_FOLDER = "MinGamingHub"
+local CONFIG_FILE   = CONFIG_FOLDER .. "/config.json"
+local IsResettingConfig = false
+local DefaultConfig = {}
+local savePending = false
+
+local function DeepCopy(value)
+    if type(value) ~= "table" then
+        return value
+    end
+    local result = {}
+    for k, v in pairs(value) do
+        result[k] = DeepCopy(v)
+    end
+    return result
+end
+
+local function EnsureConfigFolder()
+    if typeof(isfolder) == "function" and typeof(makefolder) == "function" then
+        if not isfolder(CONFIG_FOLDER) then
+            pcall(makefolder, CONFIG_FOLDER)
+        end
+    end
+end
+
+local function SaveConfig()
+    if IsResettingConfig then return end
+    if typeof(writefile) ~= "function" then return end
+    pcall(function()
+        EnsureConfigFolder()
+        local data = {}
+        for idx, opt in pairs(Options) do
+            if opt and opt.Value ~= nil then
+                data[idx] = DeepCopy(opt.Value)
+            end
+        end
+        writefile(CONFIG_FILE, HttpService:JSONEncode(data))
+    end)
+end
+
+local function QueueSaveConfig()
+    if IsResettingConfig or savePending then return end
+    savePending = true
+    task.delay(0.75, function()
+        savePending = false
+        SaveConfig()
+    end)
+end
+
+local function LoadConfig()
+    if typeof(readfile) ~= "function" or typeof(isfile) ~= "function" then return end
+    if not isfile(CONFIG_FILE) then return end
+    local ok, content = pcall(readfile, CONFIG_FILE)
+    if not ok or type(content) ~= "string" or content == "" then return end
+    local ok2, data = pcall(function()
+        return HttpService:JSONDecode(content)
+    end)
+    if not ok2 or type(data) ~= "table" then return end
+    for idx, value in pairs(data) do
+        local opt = Options[idx]
+        if opt and type(opt.SetValue) == "function" then
+            pcall(function()
+                opt:SetValue(value)
+            end)
+        end
+    end
+end
+
+local function CaptureDefaults()
+    for idx, opt in pairs(Options) do
+        if opt and opt.Value ~= nil then
+            DefaultConfig[idx] = DeepCopy(opt.Value)
+        end
+    end
+end
+
+local function ResetAllToDefault()
+    IsResettingConfig = true
+    for idx, defaultVal in pairs(DefaultConfig) do
+        local opt = Options[idx]
+        if opt and type(opt.SetValue) == "function" then
+            pcall(function()
+                opt:SetValue(DeepCopy(defaultVal))
+            end)
+        end
+    end
+    IsResettingConfig = false
+    -- Lưu lại Default để lần Execute sau cũng ra Default
+    SaveConfig()
+end
+
+local function WrapOptionsForAutoSave()
+    for idx, opt in pairs(Options) do
+        if opt and type(opt.SetValue) == "function" and not opt.__MinGamingWrapped then
+            local originalSetValue = opt.SetValue
+            opt.SetValue = function(self, value, ...)
+                originalSetValue(self, value, ...)
+                if not IsResettingConfig then
+                    QueueSaveConfig()
+                end
+            end
+            opt.__MinGamingWrapped = true
+        end
+    end
+end
+-------------------------------------------------
+-- END PERSISTENT CONFIG SYSTEM
+-------------------------------------------------
 
 -- Danh sách PlaceId hợp lệ (Sea 1, 2, 3)
 local MAP_SEAS = {
@@ -5889,6 +6031,21 @@ toggleSkillF:OnChanged(function(value)
     SkillF = value;
 end);
 Options.ToggleF:SetValue(true);
+
+-- Nút Reset Config (Persistent Config)
+Tabs.Setting:AddButton({
+    Title = "Reset tất cả về mặc định",
+    Description = "Đưa toàn bộ Toggle / Dropdown / Input / Slider về giá trị mặc định gốc và lưu lại",
+    Callback = function()
+        ResetAllToDefault()
+        Fluent:Notify({
+            Title = "Min Gaming",
+            Content = "Đã reset tất cả về mặc định!",
+            Duration = 5
+        })
+    end
+})
+
 local paraServerTime = Tabs.Status:AddParagraph({
     Title = "Thông Tin",
     Content = "━━━━━━━━━━━━━━━━━━━━━\n" .. "Tên : " .. plr.DisplayName .. " (@" .. plr.Name .. ")\n" .. "Cấp : " .. plr.Data.Level.Value .. "\n" .. "Tiền : " .. plr.Data.Beli.Value .. "\n" .. "Điểm F : " .. plr.Data.Fragments.Value .. "\n" .. "Tiền Truy Nã : " .. plr.leaderstats["Bounty/Honor"].Value .. "\n" .. "Máu: " .. plr.Character.Humanoid.Health .. "/" .. plr.Character.Humanoid.MaxHealth .. "\n" .. "Năng Lượng : " .. plr.Character.Energy.Value .. "/" .. plr.Character.Energy.MaxValue .. "\n" .. "Tộc : " .. plr.Data.Race.Value .. "\n" .. "Trái : " .. plr.Data.DevilFruit.Value .. "\n" .. "━━━━━━━━━━━━━━━━━━━━━"
@@ -8446,6 +8603,15 @@ end -- Kết thúc function BuildUI()
 -- 18. KHỞI CHẠY
 -------------------------------------------------
 BuildUI()
+
+-- Capture Default sau khi toàn bộ Options đã được tạo
+CaptureDefaults()
+
+-- Bọc SetValue để tự động lưu khi người dùng thay đổi
+WrapOptionsForAutoSave()
+
+-- Load Persistent Config (sau khi Options tồn tại)
+LoadConfig()
 
 Fluent:Notify({
     Title = "Min Gaming",
