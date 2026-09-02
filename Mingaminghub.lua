@@ -1890,7 +1890,6 @@ end
 
 local TweenSpeed = 270          -- Tốc độ bay (studs/giây)
 local CurrentTween = nil
-local TweenToken = 0
 _G.StopTween = false
 
 function Tween(targetCFrame)
@@ -1898,63 +1897,36 @@ function Tween(targetCFrame)
     if not plr.Character then return end
     local root = plr.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
-
     local distance = (targetCFrame.Position - root.Position).Magnitude
     if distance < 2 then
-        if CurrentTween then
-            pcall(function() CurrentTween:Cancel() end)
-            CurrentTween = nil
-        end
+        root.CFrame = targetCFrame
         return
     end
-
-    -- Mỗi Tween mới có một token riêng. Tween cũ bị hủy ngay lập tức.
-    TweenToken = TweenToken + 1
-    local myToken = TweenToken
+    if CurrentTween then
+        pcall(function() CurrentTween:Cancel() end)
+        CurrentTween = nil
+    end
+    local time = distance / TweenSpeed
+    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    CurrentTween = TweenService:Create(root, tweenInfo, {
+        CFrame = targetCFrame
+    })
+    CurrentTween:Play()
+end
+function CancelTween()
+    _G.StopTween = true
 
     if CurrentTween then
         pcall(function() CurrentTween:Cancel() end)
         CurrentTween = nil
     end
-
-    local time = distance / TweenSpeed
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-    local newTween = TweenService:Create(root, tweenInfo, {
-        CFrame = targetCFrame
-    })
-    CurrentTween = newTween
-    newTween:Play()
-
-    -- Không để Tween cũ tự tiếp tục sau khi đã bị thay thế/hủy.
-    task.spawn(function()
-        newTween.Completed:Wait()
-        if TweenToken == myToken and CurrentTween == newTween then
-            CurrentTween = nil
-        end
-    end)
-end
-
-function CancelTween()
-    -- Hủy ngay, không chờ 0.15 giây và không tạo thêm Tween về CFrame hiện tại.
-    TweenToken = TweenToken + 1
-    _G.StopTween = true
-
-    local tween = CurrentTween
-    CurrentTween = nil
-    if tween then
-        pcall(function() tween:Cancel() end)
-    end
-
     local char = plr.Character
-    if char then
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.AssemblyLinearVelocity = Vector3.zero
-            root.AssemblyAngularVelocity = Vector3.zero
-        end
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local root = char.HumanoidRootPart
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
     end
-
-    -- Cho phép Tween được dùng lại ngay sau khi callback tắt chức năng kết thúc.
+    task.wait(0.15)
     _G.StopTween = false
 end
 function Tween2(targetCFrame)
@@ -2309,9 +2281,9 @@ local AutoLevelToggle = Tabs.Main:AddToggle("ToggleLevel", {
 AutoLevelToggle:OnChanged(function(value)
     _G.AutoLevel = value;
     if IsResettingConfig then return end
-    if (value== false) then
-        CancelTween()
-    end
+    if (value == false) then
+            CancelTween()
+        end
 end);
 Options.ToggleLevel:SetValue(false);
 spawn(function()
@@ -2369,9 +2341,9 @@ local MobAuraToggle = Tabs.Main:AddToggle("ToggleMobAura", {
 MobAuraToggle:OnChanged(function(value)
     _G.AutoNear = value;
     if IsResettingConfig then return end
-    if (value== false) then
-        CancelTween()
-    end
+    if (value == false) then
+            CancelTween()
+        end
 end);
 Options.ToggleMobAura:SetValue(false);
 spawn(function()
@@ -2412,6 +2384,9 @@ local CastleRaidToggle = Tabs.Main:AddToggle("ToggleCastleRaid", {
     Default = false
 });
 CastleRaidToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.CastleRaid = value;
 end);
 Options.ToggleCastleRaid:SetValue(false);
@@ -2547,6 +2522,9 @@ local MasteryFruitToggle = Tabs.Main:AddToggle("ToggleMasteryFruit", {
     Default = false
 });
 MasteryFruitToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     AutoFarmMasDevilFruit = value;
 end);
 Options.ToggleMasteryFruit:SetValue(false);
@@ -2677,7 +2655,7 @@ if Sea3 then
     toggleBone:OnChanged(function(value)
         _G.AutoBone = value;
         if IsResettingConfig then return end
-        if (value== false) then
+        if (value == false) then
             CancelTween()
         end
     end);
@@ -2848,7 +2826,7 @@ if Sea3 then
             end
         else
             cakeFirstTween = true;
-        CancelTween()
+            CancelTween()
         end
     end);
     Options.ToggleCake:SetValue(false);
@@ -2911,7 +2889,7 @@ if Sea3 then
     });
     toggleDoughKing:OnChanged(function(value)
         _G.DoughKing = value;
-        if (value== false) then
+        if (value == false) then
             CancelTween()
         end
     end);
@@ -3108,6 +3086,9 @@ local AutoFarmBossToggle = Tabs.Main:AddToggle("ToggleAutoFarmBoss", {
     Default = false
 });
 AutoFarmBossToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.AutoBoss = value;
 end);
 Options.ToggleAutoFarmBoss:SetValue(false);
@@ -3191,9 +3172,9 @@ local MaterialToggle = Tabs.Main:AddToggle("ToggleMaterial", {
 MaterialToggle:OnChanged(function(value)
     _G.AutoMaterial = value;
     if IsResettingConfig then return end
-    if (value== false) then
-        CancelTween()
-    end
+    if (value == false) then
+            CancelTween()
+        end
 end);
 Options.ToggleMaterial:SetValue(false);
 spawn(function()
@@ -3308,6 +3289,9 @@ textLabel.Font = "Code";
         Default = false
     });
     toggleTPKitsune:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.TweenToKitsune = value;
     end);
     Options.ToggleTPKitsune:SetValue(false);
@@ -3336,6 +3320,9 @@ textLabel.Font = "Code";
         Default = false
     });
     toggleCollectAzure:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.CollectAzure = value;
     end);
     Options.ToggleCollectAzure:SetValue(false);
@@ -3828,6 +3815,9 @@ if Sea3 then
         Default = false
     });
     toggleTerrorshark:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.AutoTerrorshark = value;
     end);
     Options.ToggleTerrorshark:SetValue(false);
@@ -3866,6 +3856,9 @@ if Sea3 then
         Default = false
     });
     togglePiranha:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.farmpiranya = value;
     end);
     Options.TogglePiranha:SetValue(false);
@@ -3904,6 +3897,9 @@ if Sea3 then
         Default = false
     });
     toggleShark:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.AutoShark = value;
     end);
     Options.ToggleShark:SetValue(false);
@@ -3946,6 +3942,9 @@ if Sea3 then
         Default = false
     });
     toggleFishCrew:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.AutoFishCrew = value;
     end);
     Options.ToggleFishCrew:SetValue(false);
@@ -3988,6 +3987,9 @@ if Sea3 then
         Default = false
     });
     toggleShip:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.Ship = value;
     end);
     Options.ToggleShip:SetValue(false);
@@ -4031,6 +4033,9 @@ if Sea3 then
         Default = false
     });
     toggleGhostShip:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.GhostShip = value;
     end);
     Options.ToggleGhostShip:SetValue(false);
@@ -4364,6 +4369,9 @@ local AutoSaberToggle = Tabs.ITM:AddToggle("ToggleAutoSaber", {
     Default = false
 });
 AutoSaberToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Saber = value;
 end);
 Options.ToggleAutoSaber:SetValue(false);
@@ -4474,6 +4482,9 @@ local AutoPoleV1Toggle = Tabs.ITM:AddToggle("ToggleAutoPoleV1", {
     Default = false
 });
 AutoPoleV1Toggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_PoleV1 = value;
 end);
 Options.ToggleAutoPoleV1:SetValue(false);
@@ -4516,6 +4527,9 @@ local AutoSawToggle = Tabs.ITM:AddToggle("ToggleAutoSaw", {
     Default = false
 });
 AutoSawToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Saw = value;
 end);
 Options.ToggleAutoSaw:SetValue(false);
@@ -4558,6 +4572,9 @@ local AutoWardenToggle = Tabs.ITM:AddToggle("ToggleAutoWarden", {
     Default = false
 });
 AutoWardenToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Warden = value;
 end);
 Options.ToggleAutoWarden:SetValue(false);
@@ -4601,6 +4618,9 @@ if Sea3 then
         Default = false
     });
     toggleHallow:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         AutoHallowSycthe = value;
     end);
     Options.ToggleHallow:SetValue(false);
@@ -4678,6 +4698,9 @@ if Sea3 then
         Default = false
     });
     toggleTushita:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         AutoTushita = value;
     end);
     Options.ToggleTushita:SetValue(false);
@@ -4717,6 +4740,9 @@ if Sea3 then
         Default = false
     });
     toggleHoly:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.Auto_Holy_Torch = value;
     end);
     Options.ToggleHoly:SetValue(false);
@@ -4760,6 +4786,9 @@ local AutoCanvanderToggle = Tabs.ITM:AddToggle("ToggleAutoCanvander", {
     Default = false
 });
 AutoCanvanderToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Canvander = value;
 end);
 Options.ToggleAutoCanvander:SetValue(false);
@@ -4802,6 +4831,9 @@ local AutoMusketeerHatToggle = Tabs.ITM:AddToggle("ToggleAutoMusketeerHat", {
     Default = false
 });
 AutoMusketeerHatToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_MusketeerHat = value;
 end);
 Options.ToggleAutoMusketeerHat:SetValue(false);
@@ -4886,6 +4918,9 @@ local AutoObservationV2Toggle = Tabs.ITM:AddToggle("ToggleAutoObservationV2", {
     Default = false
 });
 AutoObservationV2Toggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_ObservationV2 = value;
 end);
 Options.ToggleAutoObservationV2:SetValue(false);
@@ -4934,6 +4969,9 @@ local AutoRainbowHakiToggle = Tabs.ITM:AddToggle("ToggleAutoRainbowHaki", {
     Default = false
 });
 AutoRainbowHakiToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_RainbowHaki = value;
 end);
 Options.ToggleAutoRainbowHaki:SetValue(false);
@@ -5059,6 +5097,9 @@ local AutoSkullGuitarToggle = Tabs.ITM:AddToggle("ToggleAutoSkullGuitar", {
     Default = false
 });
 AutoSkullGuitarToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_SkullGuitar = value;
 end);
 Options.ToggleAutoSkullGuitar:SetValue(false);
@@ -5182,6 +5223,9 @@ local AutoBuddyToggle = Tabs.ITM:AddToggle("ToggleAutoBuddy", {
     Default = false
 });
 AutoBuddyToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Buddy = value;
 end);
 Options.ToggleAutoBuddy:SetValue(false);
@@ -5224,6 +5268,9 @@ local AutoDualKatanaToggle = Tabs.ITM:AddToggle("ToggleAutoDualKatana", {
     Default = false
 });
 AutoDualKatanaToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_DualKatana = value;
 end);
 Options.ToggleAutoDualKatana:SetValue(false);
@@ -5654,6 +5701,9 @@ if Sea2 then
         Default = false
     });
     toggleFactory:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.Factory = value;
     end);
     Options.ToggleFactory:SetValue(false);
@@ -5699,6 +5749,9 @@ local AutoFarmSwanToggle = Tabs.ITM:AddToggle("ToggleAutoFarmSwan", {
     Default = false
 });
 AutoFarmSwanToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_FarmSwan = value;
 end);
 Options.ToggleAutoFarmSwan:SetValue(false);
@@ -5738,6 +5791,9 @@ local AutoRengokuToggle = Tabs.ITM:AddToggle("ToggleAutoRengoku", {
     Default = false
 });
 AutoRengokuToggle:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Regoku = value;
 end);
 Options.ToggleAutoRengoku:SetValue(false);
@@ -5829,6 +5885,9 @@ if Sea2 then
         Default = false
     });
     toggleEvoRace:OnChanged(function(value)
+        if value == false then
+            CancelTween()
+        end
         _G.AutoEvoRace = value;
     end);
     Options.ToggleEvoRace:SetValue(false);
@@ -6382,8 +6441,8 @@ local toggleTeleportPlayer = Tabs.Player:AddToggle("ToggleTeleport", {
 });
 toggleTeleportPlayer:OnChanged(function(value)
     _G.TeleportPly = value;
-    if value == false then
-        CancelTween();
+    if (value == false) then
+        CancelTween()
     end
 end);
 Options.ToggleTeleport:SetValue(false);
@@ -6468,6 +6527,9 @@ local toggleAutoSea2 = Tabs.Teleport:AddToggle("ToggleAutoSea2", {
     Default = false
 });
 toggleAutoSea2:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Sea2 = value;
 end);
 Options.ToggleAutoSea2:SetValue(false);
@@ -6525,6 +6587,9 @@ local toggleAutoSea3 = Tabs.Teleport:AddToggle("ToggleAutoSea3", {
     Default = false
 });
 toggleAutoSea3:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.Auto_Sea3 = value;
 end);
 Options.ToggleAutoSea3:SetValue(false);
@@ -7204,6 +7269,9 @@ local toggleNextIsland = Tabs.Raid:AddToggle("ToggleNextIsland", {
     Default = false
 });
 toggleNextIsland:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     AutoNextIsland = value
     if not value then
         _G.AutoNear = false
@@ -7392,6 +7460,9 @@ local toggleLaw = Tabs.Raid:AddToggle("ToggleLaw", {
     Default = false
 });
 toggleLaw:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     Auto_Law = value;
 end);
 Options.ToggleLaw:SetValue(false);
@@ -7565,6 +7636,9 @@ local toggleKillTrial = Tabs.Race:AddToggle("ToggleKillTrial", {
     Default = false
 });
 toggleKillTrial:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     _G.AutoKillTrial = value;
 end);
 Options.ToggleKillTrial:SetValue(false);
@@ -7601,6 +7675,9 @@ local toggleFarmRace = Tabs.Race:AddToggle("ToggleFarmRace", {
 });
 local farmRaceEnabled = false;
 toggleFarmRace:OnChanged(function(value)
+    if value == false then
+        CancelTween()
+    end
     farmRaceEnabled = value;
 end);
 Options.ToggleFarmRace:SetValue(false);
