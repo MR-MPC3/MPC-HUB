@@ -946,10 +946,7 @@ function CheckLevel()
                     -- Tất cả Sea đều dùng ngưỡng 3000
                     if distance > 3000 then
                         pcall(function()
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                                "requestEntrance",
-                                data.Entrance
-                            )
+                            GameTeleport(data.Entrance)
                         end)
                     end
                 end
@@ -1347,7 +1344,7 @@ function MaterialMon()
         if root then
             local dist = (root.Position - data.Entrance).Magnitude
             if dist >= data.Distance then
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", data.Entrance)
+                GameTeleport(data.Entrance)
             end
         end
     end
@@ -1879,20 +1876,26 @@ spawn(function()
 end)
 
 -------------------------------------------------
--- 14. MOVEMENT / TELEPORT SYSTEM
+-- 14. MOVEMENT SYSTEM
+-------------------------------------------------
+-- Chỉ có 2 hệ thống di chuyển:
+-- 1. BAY / FLY       -> Tween()
+-- 2. GAME TELEPORT   -> cổng / requestEntrance / cơ chế teleport của game
+--
+-- Noclip / BodyClip / Stun chỉ là hệ thống hỗ trợ, không phải kiểu di chuyển.
 -------------------------------------------------
 
--- 14.1 Movement Configuration
+-- 14.1 BAY / FLY
 local TweenSpeed = 270
 local CurrentTween = nil
 _G.StopTween = false
 
--- 14.2 Tween
-function Tween(targetCFrame)
+function Tween(targetCFrame, waitForArrival)
     if _G.StopTween then return end
-    if not plr.Character then return end
+    if not targetCFrame then return end
 
-    local root = plr.Character:FindFirstChild("HumanoidRootPart")
+    local character = plr.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
     local distance = (targetCFrame.Position - root.Position).Magnitude
@@ -1908,14 +1911,30 @@ function Tween(targetCFrame)
         CurrentTween = nil
     end
 
-    local time = distance / TweenSpeed
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-
-    CurrentTween = TweenService:Create(root, tweenInfo, {
-        CFrame = targetCFrame
-    })
+    local tweenTime = distance / TweenSpeed
+    CurrentTween = TweenService:Create(
+        root,
+        TweenInfo.new(tweenTime, Enum.EasingStyle.Linear),
+        {CFrame = targetCFrame}
+    )
 
     CurrentTween:Play()
+
+    if waitForArrival then
+        local tween = CurrentTween
+        while tween == CurrentTween and tween.PlaybackState == Enum.PlaybackState.Playing do
+            if _G.StopTween or not root.Parent then
+                break
+            end
+            task.wait()
+        end
+
+        if not _G.StopTween and root.Parent then
+            root.CFrame = targetCFrame
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
 end
 
 function CancelTween()
@@ -1928,131 +1947,47 @@ function CancelTween()
         CurrentTween = nil
     end
 
-    local char = plr.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local root = char.HumanoidRootPart
+    local character = plr.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if root then
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
     end
 end
 
-function Tween2(targetCFrame)
-    if not plr.Character then return end
+-- 14.2 GAME TELEPORT
+-- Dùng cơ chế teleport có sẵn của game.
+-- Nếu truyền targetCFrame thì sau khi teleport sẽ gọi lại Tween()
+-- để bay nốt tới vị trí đích chính xác.
+function GameTeleport(entrancePosition, targetCFrame)
+    if not entrancePosition then return false end
 
-    local root = plr.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+    local character = plr.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
 
-    local distance = (targetCFrame.Position - root.Position).Magnitude
-    if distance < 3 then
-        root.CFrame = targetCFrame
-        return
-    end
+    local remoteFolder = ReplicatedStorage:FindFirstChild("Remotes")
+    local commF = remoteFolder and remoteFolder:FindFirstChild("CommF_")
+    if not commF then return false end
 
-    _G.Clip2 = true
-    Tween(targetCFrame)
-
-    while (root.Position - targetCFrame.Position).Magnitude > 6 do
-        if _G.StopTween then break end
-        task.wait()
-    end
-
-    if not _G.StopTween and root.Parent then
-        root.CFrame = targetCFrame
-        root.AssemblyLinearVelocity = Vector3.zero
-    end
-
-    _G.Clip2 = false
-end
-
--- 14.3 Teleport
-function BTPZ(cf)
-    -- Teleport nhanh 2 lần (bypass một số check khoảng cách)
-    plr.Character.HumanoidRootPart.CFrame = cf
-    task.wait()
-    plr.Character.HumanoidRootPart.CFrame = cf
-end
-
-function to(targetCF)
-    repeat
-        wait(_G.Fast_Delay)
-        plr.Character.Humanoid:ChangeState(15)
-        plr.Character.HumanoidRootPart.CFrame = targetCF
-        task.wait()
-        plr.Character.HumanoidRootPart.CFrame = targetCF
-    until (targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 2000
-end
-
-function toAdvanced(targetCF)
-    pcall(function()
-        if (((targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude >= 2000)
-            and not Auto_Raid
-            and (plr.Character.Humanoid.Health > 0)) then
-
-            if (NameMon == "FishmanQuest") then
-                Tween(plr.Character.HumanoidRootPart.CFrame)
-                wait()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)
-                )
-
-            elseif (Mon == "God's Guard") then
-                Tween(plr.Character.HumanoidRootPart.CFrame)
-                wait()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(-4607.82275, 872.54248, -1667.55688)
-                )
-
-            elseif (NameMon == "SkyExp1Quest") then
-                Tween(plr.Character.HumanoidRootPart.CFrame)
-                wait()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)
-                )
-
-            elseif (NameMon == "ShipQuest1") then
-                Tween(plr.Character.HumanoidRootPart.CFrame)
-                wait()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
-                )
-
-            elseif (NameMon == "ShipQuest2") then
-                Tween(plr.Character.HumanoidRootPart.CFrame)
-                wait()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)
-                )
-
-            elseif (NameMon == "FrostQuest") then
-                Tween(plr.Character.HumanoidRootPart.CFrame)
-                wait()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(-6508.5581054688, 89.034996032715, -132.83953857422)
-                )
-
-            else
-                repeat
-                    wait(_G.Fast_Delay)
-                    plr.Character.HumanoidRootPart.CFrame = targetCF
-                    wait(0.05)
-                    plr.Character.Head:Destroy()
-                    plr.Character.HumanoidRootPart.CFrame = targetCF
-                until ((targetCF.Position - plr.Character.HumanoidRootPart.Position).Magnitude < 2500)
-                    and (plr.Character.Humanoid.Health > 0)
-
-                wait()
-            end
-        end
+    local ok = pcall(function()
+        commF:InvokeServer("requestEntrance", entrancePosition)
     end)
+
+    if not ok then
+        return false
+    end
+
+    if targetCFrame then
+        task.wait()
+        Tween(targetCFrame, true)
+    end
+
+    return true
 end
 
--- 14.4 Movement Physics (BodyClip)
+-- 14.3 MOVEMENT SUPPORT - BodyClip
+-- BodyClip chỉ hỗ trợ ổn định nhân vật trong lúc các chức năng di chuyển.
 task.spawn(function()
     while task.wait() do
         pcall(function()
@@ -2101,7 +2036,6 @@ task.spawn(function()
                 or Auto_Quest_Tushita_1
                 or Auto_Quest_Tushita_2
                 or Auto_Quest_Tushita_3
-                or _G.Clip2
                 or _G.Auto_Regoku
                 or _G.AutoBone
                 or _G.AutoBoneNoQuest
@@ -2142,7 +2076,7 @@ task.spawn(function()
     end
 end)
 
--- 14.5 Noclip (RunService.Stepped)
+-- 14.4 MOVEMENT SUPPORT - Noclip
 task.spawn(function()
     pcall(function()
         RunService.Stepped:Connect(function()
@@ -2192,7 +2126,6 @@ task.spawn(function()
                 or AutoBartilo
                 or _G.Auto_Regoku
                 or _G.AutoLevel
-                or _G.Clip2
                 or _G.AutoBone
                 or _G.Auto_Canvander
                 or _G.AutoBoneNoQuest
@@ -2224,7 +2157,7 @@ task.spawn(function()
     end)
 end)
 
--- 14.6 Character Movement Protection (Stun)
+-- 14.5 MOVEMENT SUPPORT - Stun
 task.spawn(function()
     local character = plr.Character
     local stun = character and character:FindFirstChild("Stun")
@@ -2239,7 +2172,6 @@ task.spawn(function()
     end)
 end)
 
--------------------------------------------------
 -- 15. CHARACTER / TOOL HELPERS
 -------------------------------------------------
 function EquipTool(toolName)
@@ -2722,7 +2654,7 @@ local function equipAuraSkin(storageNameArg, targetCFrameArg)
         }
     };
     ReplicatedStorage.Modules.Net:FindFirstChild("RF/FruitCustomizerRF"):InvokeServer(unpack(fruitCustomArgs));
-    Tween2(targetCFrameArg);
+    Tween(targetCFrameArg, true);
 end
 local function isNearPosition(targetPos, maxDist)
     local character = plr.Character;
@@ -2784,7 +2716,7 @@ spawn(function()
             if nearestChest then
                 local chestPos = nearestChest:GetPivot().Position;
                 local chestCFrame = CFrame.new(chestPos);
-                Tween2(chestCFrame);
+                Tween(chestCFrame, true);
             end
         end
     end
@@ -3282,7 +3214,7 @@ if Sea2 then
                     else
                         local ectoplasmDist = (Vector3.new(904.4072265625, 181.05767822266, 33341.38671875) - plr.Character.HumanoidRootPart.Position).Magnitude;
                         if (ectoplasmDist > 20000) then
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
+                            GameTeleport(Vector3.new(923.21252441406, 126.9760055542, 32852.83203125));
                         end
                         Tween(CFrame.new(904.4072265625, 181.05767822266, 33341.38671875));
                     end
@@ -3697,7 +3629,7 @@ if Sea3 then
             isProcessing = true;
             for idx, boatName in pairs(boatList) do
                 if (boatName and enemy.Parent and (enemy.Name == "VehicleSeat") and not boatName.Occupant) then
-                    Tween2(boatName.CFrame);
+                    Tween(boatName.CFrame, true);
                     break;
                 end
             end
@@ -3792,7 +3724,7 @@ if Sea3 then
             isProcessing = true;
             for _, boatEntry in pairs(boatList) do
                 if (boatEntry and enemy.Parent and (enemy.Name == "VehicleSeat") and not boatEntry.Occupant) then
-                    Tween2(boatEntry.CFrame);
+                    Tween(boatEntry.CFrame, true);
                     break;
                 end
             end
@@ -3887,7 +3819,7 @@ if Sea3 then
             isProcessing = true;
             for _, boatEntry2 in pairs(boatList) do
                 if (boatEntry2 and enemy.Parent and (enemy.Name == "VehicleSeat") and not boatEntry2.Occupant) then
-                    Tween2(boatEntry2.CFrame);
+                    Tween(boatEntry2.CFrame, true);
                     break;
                 end
             end
@@ -4043,7 +3975,7 @@ if Sea3 then
         Description = "",
         Callback = function()
             _G.StopTween = false;
-            Tween2(CFrame.new(- 16917.154296875, 7.757596015930176, 511.8203125));
+            Tween(CFrame.new(- 16917.154296875, 7.757596015930176, 511.8203125), true);
         end
     });
     local boatList = {};
@@ -4094,7 +4026,7 @@ if Sea3 then
     local function paraSeaMobs()
         for _, boatCheck1 in pairs(boatList) do
             if (boatCheck1 and enemy.Parent and (enemy.Name == "VehicleSeat") and not boatCheck1.Occupant) then
-                Tween2(boatCheck1.CFrame);
+                Tween(boatCheck1.CFrame, true);
             end
         end
     end
@@ -4510,7 +4442,7 @@ if Sea3 then
                                                 AttackNoCoolDown();
                                                 EquipTool(SelectWeapon);
                                                 AutoHaki();
-                                                Tween2(enemy.HumanoidRootPart.CFrame * Pos);
+                                                Tween(enemy.HumanoidRootPart.CFrame * Pos, true);
                                                 enemy.Humanoid.WalkSpeed = 0;
                                                 enemy.HumanoidRootPart.CanCollide = false;
                                                 enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60);
@@ -4519,11 +4451,11 @@ if Sea3 then
                                     end
                                 end
                             elseif ReplicatedStorage:FindFirstChild("Diablo") then
-                                Tween2(ReplicatedStorage:FindFirstChild("Diablo").HumanoidRootPart.CFrame * CFrame.new(2, 20, 2));
+                                Tween(ReplicatedStorage:FindFirstChild("Diablo").HumanoidRootPart.CFrame * CFrame.new(2, 20, 2), true);
                             elseif ReplicatedStorage:FindFirstChild("Deandre") then
-                                Tween2(ReplicatedStorage:FindFirstChild("Deandre").HumanoidRootPart.CFrame * CFrame.new(2, 20, 2));
+                                Tween(ReplicatedStorage:FindFirstChild("Deandre").HumanoidRootPart.CFrame * CFrame.new(2, 20, 2), true);
                             elseif ReplicatedStorage:FindFirstChild("Urban") then
-                                Tween2(ReplicatedStorage:FindFirstChild("Urban").HumanoidRootPart.CFrame * CFrame.new(2, 20, 2));
+                                Tween(ReplicatedStorage:FindFirstChild("Urban").HumanoidRootPart.CFrame * CFrame.new(2, 20, 2), true);
                             end
                         end
                     else
@@ -4589,7 +4521,7 @@ if Sea3 then
     function TweenToHighestPoint()
         local highestPoint = getHighestPoint();
         if highestPoint then
-            Tween2(highestPoint.CFrame * CFrame.new(0, 211.88, 0));
+            Tween(highestPoint.CFrame * CFrame.new(0, 211.88, 0), true);
         end
     end
     function getHighestPoint()
@@ -4621,7 +4553,7 @@ spawn(function()
             if (enemyHRP and enemyHRP:IsA("Model")) then
                 local fruitDropPos = enemyHRP.PrimaryPart and enemyHRP.PrimaryPart.Position ;
                 if fruitDropPos then
-                    Tween2(CFrame.new(fruitDropPos));
+                    Tween(CFrame.new(fruitDropPos), true);
                 end
             end
         end
@@ -4645,7 +4577,7 @@ spawn(function()
                     for _, bossEnemy509 in pairs(Workspace.Map.MysticIsland:GetChildren()) do
                         if bossEnemy509:IsA("MeshPart") then
                             if (bossEnemy509.Material == Enum.Material.Neon) then
-                                Tween2(bossEnemy509.CFrame);
+                                Tween(bossEnemy509.CFrame, true);
                             end
                         end
                     end
@@ -6116,7 +6048,7 @@ spawn(function()
                 else
                     repeat
                         task.wait();
-                        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(2284.912109375, 15.537666320801, 905.48291015625));
+                        GameTeleport(Vector3.new(2284.912109375, 15.537666320801, 905.48291015625));
                     until ((CFrame.new(2284.912109375, 15.537666320801, 905.48291015625).Position - plr.Character.HumanoidRootPart.Position).Magnitude <= 4) or (_G.AutoFarmSwan == false)
                 end
             end
@@ -6813,7 +6745,7 @@ spawn(function()
         if _G.TeleportPly then
             pcall(function()
                 if Players:FindFirstChild(_G.SelectPly) then
-                    Tween2(Players[_G.SelectPly].Character.HumanoidRootPart.CFrame);
+                    Tween(Players[_G.SelectPly].Character.HumanoidRootPart.CFrame, true);
                 end
             end);
         end
@@ -7102,103 +7034,103 @@ Tabs.Teleport:AddButton({
     Callback = function()
         _G.StopTween = false;
         if (_G.SelectIsland == "WindMill") then
-            Tween2(CFrame.new(979.79895019531, 16.516613006592, 1429.0466308594));
+            Tween(CFrame.new(979.79895019531, 16.516613006592, 1429.0466308594), true);
         elseif (_G.SelectIsland == "Marine") then
-            Tween2(CFrame.new(- 2566.4296875, 6.8556680679321, 2045.2561035156));
+            Tween(CFrame.new(- 2566.4296875, 6.8556680679321, 2045.2561035156), true);
         elseif (_G.SelectIsland == "Middle Town") then
-            Tween2(CFrame.new(- 690.33081054688, 15.09425163269, 1582.2380371094));
+            Tween(CFrame.new(- 690.33081054688, 15.09425163269, 1582.2380371094), true);
         elseif (_G.SelectIsland == "Jungle") then
-            Tween2(CFrame.new(- 1612.7957763672, 36.852081298828, 149.12843322754));
+            Tween(CFrame.new(- 1612.7957763672, 36.852081298828, 149.12843322754), true);
         elseif (_G.SelectIsland == "Pirate Village") then
-            Tween2(CFrame.new(- 1181.3093261719, 4.7514905929565, 3803.5456542969));
+            Tween(CFrame.new(- 1181.3093261719, 4.7514905929565, 3803.5456542969), true);
         elseif (_G.SelectIsland == "Desert") then
-            Tween2(CFrame.new(944.15789794922, 20.919729232788, 4373.3002929688));
+            Tween(CFrame.new(944.15789794922, 20.919729232788, 4373.3002929688), true);
         elseif (_G.SelectIsland == "Snow Island") then
-            Tween2(CFrame.new(1347.8067626953, 104.66806030273, - 1319.7370605469));
+            Tween(CFrame.new(1347.8067626953, 104.66806030273, - 1319.7370605469), true);
         elseif (_G.SelectIsland == "MarineFord") then
-            Tween2(CFrame.new(- 4914.8212890625, 50.963626861572, 4281.0278320313));
+            Tween(CFrame.new(- 4914.8212890625, 50.963626861572, 4281.0278320313), true);
         elseif (_G.SelectIsland == "Colosseum") then
-            Tween2(CFrame.new(- 1427.6203613281, 7.2881078720093, - 2792.7722167969));
+            Tween(CFrame.new(- 1427.6203613281, 7.2881078720093, - 2792.7722167969), true);
         elseif (_G.SelectIsland == "Sky Island 1") then
-            Tween2(CFrame.new(- 4869.1025390625, 733.46051025391, - 2667.0180664063));
+            Tween(CFrame.new(- 4869.1025390625, 733.46051025391, - 2667.0180664063), true);
         elseif (_G.SelectIsland == "Sky Island 2") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
+            GameTeleport(Vector3.new(- 4607.82275, 872.54248, - 1667.55688));
         elseif (_G.SelectIsland == "Sky Island 3") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
+            GameTeleport(Vector3.new(- 7894.6176757813, 5547.1416015625, - 380.29119873047));
         elseif (_G.SelectIsland == "Prison") then
-            Tween2(CFrame.new(4875.330078125, 5.6519818305969, 734.85021972656));
+            Tween(CFrame.new(4875.330078125, 5.6519818305969, 734.85021972656), true);
         elseif (_G.SelectIsland == "Magma Village") then
-            Tween2(CFrame.new(- 5247.7163085938, 12.883934020996, 8504.96875));
+            Tween(CFrame.new(- 5247.7163085938, 12.883934020996, 8504.96875), true);
         elseif (_G.SelectIsland == "Under Water Island") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
+            GameTeleport(Vector3.new(61163.8515625, 11.6796875, 1819.7841796875));
         elseif (_G.SelectIsland == "Fountain City") then
-            Tween2(CFrame.new(5127.1284179688, 59.501365661621, 4105.4458007813));
+            Tween(CFrame.new(5127.1284179688, 59.501365661621, 4105.4458007813), true);
         elseif (_G.SelectIsland == "Shank Room") then
-            Tween2(CFrame.new(- 1442.16553, 29.8788261, - 28.3547478));
+            Tween(CFrame.new(- 1442.16553, 29.8788261, - 28.3547478), true);
         elseif (_G.SelectIsland == "Mob Island") then
-            Tween2(CFrame.new(- 2850.20068, 7.39224768, 5354.99268));
+            Tween(CFrame.new(- 2850.20068, 7.39224768, 5354.99268), true);
         elseif (_G.SelectIsland == "The Cafe") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
+            GameTeleport(Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
             wait();
-            Tween2(CFrame.new(- 380.47927856445, 77.220390319824, 255.82550048828));
+            Tween(CFrame.new(- 380.47927856445, 77.220390319824, 255.82550048828), true);
         elseif (_G.SelectIsland == "Frist Spot") then
-            Tween2(CFrame.new(- 11.311455726624, 29.276733398438, 2771.5224609375));
+            Tween(CFrame.new(- 11.311455726624, 29.276733398438, 2771.5224609375), true);
         elseif (_G.SelectIsland == "Dark Area") then
-            Tween2(CFrame.new(3780.0302734375, 22.652164459229, - 3498.5859375));
+            Tween(CFrame.new(3780.0302734375, 22.652164459229, - 3498.5859375), true);
         elseif (_G.SelectIsland == "Flamingo Mansion") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
+            GameTeleport(Vector3.new(- 281.93707275390625, 306.130615234375, 609.280029296875));
         elseif (_G.SelectIsland == "Flamingo Room") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625));
+            GameTeleport(Vector3.new(2284.912109375, 15.152034759521484, 905.48291015625));
         elseif (_G.SelectIsland == "Green Zone") then
-            Tween2(CFrame.new(- 2448.5300292969, 73.016105651855, - 3210.6306152344));
+            Tween(CFrame.new(- 2448.5300292969, 73.016105651855, - 3210.6306152344), true);
         elseif (_G.SelectIsland == "Factory") then
-            Tween2(CFrame.new(424.12698364258, 211.16171264648, - 427.54049682617));
+            Tween(CFrame.new(424.12698364258, 211.16171264648, - 427.54049682617), true);
         elseif (_G.SelectIsland == "Colossuim") then
-            Tween2(CFrame.new(- 1503.6224365234, 219.7956237793, 1369.3101806641));
+            Tween(CFrame.new(- 1503.6224365234, 219.7956237793, 1369.3101806641), true);
         elseif (_G.SelectIsland == "Zombie Island") then
-            Tween2(CFrame.new(- 5622.033203125, 492.19604492188, - 781.78552246094));
+            Tween(CFrame.new(- 5622.033203125, 492.19604492188, - 781.78552246094), true);
         elseif (_G.SelectIsland == "Two Snow Mountain") then
-            Tween2(CFrame.new(753.14288330078, 408.23559570313, - 5274.6147460938));
+            Tween(CFrame.new(753.14288330078, 408.23559570313, - 5274.6147460938), true);
         elseif (_G.SelectIsland == "Punk Hazard") then
-            Tween2(CFrame.new(- 6127.654296875, 15.951762199402, - 5040.2861328125));
+            Tween(CFrame.new(- 6127.654296875, 15.951762199402, - 5040.2861328125), true);
         elseif (_G.SelectIsland == "Cursed Ship") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(923.40197753906, 125.05712890625, 32885.875));
+            GameTeleport(Vector3.new(923.40197753906, 125.05712890625, 32885.875));
         elseif (_G.SelectIsland == "Ice Castle") then
-            Tween2(CFrame.new(6148.4116210938, 294.38687133789, - 6741.1166992188));
+            Tween(CFrame.new(6148.4116210938, 294.38687133789, - 6741.1166992188), true);
         elseif (_G.SelectIsland == "Forgotten Island") then
-            Tween2(CFrame.new(- 3032.7641601563, 317.89672851563, - 10075.373046875));
+            Tween(CFrame.new(- 3032.7641601563, 317.89672851563, - 10075.373046875), true);
         elseif (_G.SelectIsland == "Ussop Island") then
-            Tween2(CFrame.new(4816.8618164063, 8.4599885940552, 2863.8195800781));
+            Tween(CFrame.new(4816.8618164063, 8.4599885940552, 2863.8195800781), true);
         elseif (_G.SelectIsland == "Mini Sky Island") then
-            Tween2(CFrame.new(- 288.74060058594, 49326.31640625, - 35248.59375));
+            Tween(CFrame.new(- 288.74060058594, 49326.31640625, - 35248.59375), true);
         elseif (_G.SelectIsland == "Great Tree") then
-            Tween2(CFrame.new(2681.2736816406, 1682.8092041016, - 7190.9853515625));
+            Tween(CFrame.new(2681.2736816406, 1682.8092041016, - 7190.9853515625), true);
         elseif (_G.SelectIsland == "Castle On The Sea") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
+            GameTeleport(Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
         elseif (_G.SelectIsland == "MiniSky") then
-            Tween2(CFrame.new(- 260.65557861328, 49325.8046875, - 35253.5703125));
+            Tween(CFrame.new(- 260.65557861328, 49325.8046875, - 35253.5703125), true);
         elseif (_G.SelectIsland == "Port Town") then
-            Tween2(CFrame.new(- 290.7376708984375, 6.729952812194824, 5343.5537109375));
+            Tween(CFrame.new(- 290.7376708984375, 6.729952812194824, 5343.5537109375), true);
         elseif (_G.SelectIsland == "Hydra Island") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
+            GameTeleport(Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
         elseif (_G.SelectIsland == "Floating Turtle") then
-            Tween2(CFrame.new(- 13274.528320313, 531.82073974609, - 7579.22265625));
+            Tween(CFrame.new(- 13274.528320313, 531.82073974609, - 7579.22265625), true);
         elseif (_G.SelectIsland == "Mansion") then
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 12468.5380859375, 375.0094299316406, - 7554.62548828125));
+            GameTeleport(Vector3.new(- 12468.5380859375, 375.0094299316406, - 7554.62548828125));
         elseif (_G.SelectIsland == "Haunted Castle") then
-            Tween2(CFrame.new(- 9515.3720703125, 164.00624084473, 5786.0610351562));
+            Tween(CFrame.new(- 9515.3720703125, 164.00624084473, 5786.0610351562), true);
         elseif (_G.SelectIsland == "Ice Cream Island") then
-            Tween2(CFrame.new(- 902.56817626953, 79.93204498291, - 10988.84765625));
+            Tween(CFrame.new(- 902.56817626953, 79.93204498291, - 10988.84765625), true);
         elseif (_G.SelectIsland == "Peanut Island") then
-            Tween2(CFrame.new(- 2062.7475585938, 50.473892211914, - 10232.568359375));
+            Tween(CFrame.new(- 2062.7475585938, 50.473892211914, - 10232.568359375), true);
         elseif (_G.SelectIsland == "Cake Island") then
-            Tween2(CFrame.new(- 1884.7747802734375, 19.327526092529297, - 11666.8974609375));
+            Tween(CFrame.new(- 1884.7747802734375, 19.327526092529297, - 11666.8974609375), true);
         elseif (_G.SelectIsland == "Cocoa Island") then
-            Tween2(CFrame.new(87.94276428222656, 73.55451202392578, - 12319.46484375));
+            Tween(CFrame.new(87.94276428222656, 73.55451202392578, - 12319.46484375), true);
         elseif (_G.SelectIsland == "Candy Island") then
-            Tween2(CFrame.new(- 1014.4241943359375, 149.11068725585938, - 14555.962890625));
+            Tween(CFrame.new(- 1014.4241943359375, 149.11068725585938, - 14555.962890625), true);
         elseif (_G.SelectIsland == "Tiki Outpost") then
-            Tween2(CFrame.new(- 16542.447265625, 55.68632888793945, 1044.41650390625));
+            Tween(CFrame.new(- 16542.447265625, 55.68632888793945, 1044.41650390625), true);
         end
     end
 });
@@ -7628,15 +7560,15 @@ spawn(function()
                 if (Players['LocalPlayer'].PlayerGui.Main.Timer.Visible == false) then
                     if (not Workspace['_WorldOrigin'].Locations:FindFirstChild("Island 1") and (plr.Backpack:FindFirstChild("Special Microchip") or plr.Character:FindFirstChild("Special Microchip"))) then
                         if Sea2 then
-                            Tween2(CFrame.new(- 6438.73535, 250.645355, - 4501.50684));
+                            Tween(CFrame.new(- 6438.73535, 250.645355, - 4501.50684), true);
                             local setSpawnArgs = {
                                 [1] = "SetSpawnPoint"
                             };
                             ReplicatedStorage.Remotes.CommF_:InvokeServer(unpack(setSpawnArgs));
                             fireclickdetector(Workspace.Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector);
                         elseif Sea3 then
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
-                            Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
+                            GameTeleport(Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
+                            Tween(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818), true);
                             local setSpawnArgs2 = {
                                 [1] = "SetSpawnPoint"
                             };
@@ -7830,7 +7762,7 @@ if Sea2 then
         Description = "",
         Callback = function()
             _G.StopTween = false;
-            Tween2(CFrame.new(- 6438.73535, 250.645355, - 4501.50684));
+            Tween(CFrame.new(- 6438.73535, 250.645355, - 4501.50684), true);
         end
     });
 elseif Sea3 then
@@ -7839,8 +7771,8 @@ elseif Sea3 then
         Description = "",
         Callback = function()
             _G.StopTween = false;
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
-            Tween2(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818));
+            GameTeleport(Vector3.new(- 5075.50927734375, 314.5155029296875, - 3150.0224609375));
+            Tween(CFrame.new(- 5017.40869, 314.844055, - 2823.0127, - 0.925743818, 4.482175e-8, - 0.378151238, 4.5550315e-9, 1, 1.0737756e-7, 0.378151238, 9.768162e-8, - 0.925743818), true);
         end
     });
 end
@@ -7907,23 +7839,23 @@ Tabs.Race:AddButton({
     Title = "Đền Thời Gian",
     Description = "",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        GameTeleport(Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
     end
 });
 Tabs.Race:AddButton({
     Title = "Cần Gạt",
     Description = "",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
-        Tween2(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734));
+        GameTeleport(Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        Tween(CFrame.new(28575.181640625, 14936.6279296875, 72.31636810302734), true);
     end
 });
 Tabs.Race:AddButton({
     Title = "Chỗ Mua Gear",
     Description = "",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
-        Tween2(CFrame.new(28981.552734375, 14888.4267578125, - 120.245849609375));
+        GameTeleport(Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        Tween(CFrame.new(28981.552734375, 14888.4267578125, - 120.245849609375), true);
     end
 });
 local _section = Tabs.Race:AddSection("Tộc");
@@ -7931,19 +7863,19 @@ Tabs.Race:AddButton({
     Title = "Cửa Tộc",
     Description = "",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
+        GameTeleport(Vector3.new(28286.35546875, 14895.3017578125, 102.62469482421875));
         if (plr.Data.Race.Value == "Human") then
-            Tween2(CFrame.new(29221.822265625, 14890.9755859375, - 205.99114990234375));
+            Tween(CFrame.new(29221.822265625, 14890.9755859375, - 205.99114990234375), true);
         elseif (plr.Data.Race.Value == "Skypiea") then
-            Tween2(CFrame.new(28960.158203125, 14919.6240234375, 235.03948974609375));
+            Tween(CFrame.new(28960.158203125, 14919.6240234375, 235.03948974609375), true);
         elseif (plr.Data.Race.Value == "Fishman") then
-            Tween2(CFrame.new(28231.17578125, 14890.9755859375, - 211.64173889160156));
+            Tween(CFrame.new(28231.17578125, 14890.9755859375, - 211.64173889160156), true);
         elseif (plr.Data.Race.Value == "Cyborg") then
-            Tween2(CFrame.new(28502.681640625, 14895.9755859375, - 423.7279357910156));
+            Tween(CFrame.new(28502.681640625, 14895.9755859375, - 423.7279357910156), true);
         elseif (plr.Data.Race.Value == "Ghoul") then
-            Tween2(CFrame.new(28674.244140625, 14890.6767578125, 445.4310607910156));
+            Tween(CFrame.new(28674.244140625, 14890.6767578125, 445.4310607910156), true);
         elseif (plr.Data.Race.Value == "Mink") then
-            Tween2(CFrame.new(29012.341796875, 14890.9755859375, - 380.1492614746094));
+            Tween(CFrame.new(29012.341796875, 14890.9755859375, - 380.1492614746094), true);
         end
     end
 });
@@ -7987,7 +7919,7 @@ spawn(function()
                     if skyTrial and skyTrial:FindFirstChild("Model") then
                         for _, part in pairs(skyTrial.Model:GetDescendants()) do
                             if part.Name == "snowisland_Cylinder.081" then
-                                BTPZ(part.CFrame)
+                                Tween(part.CFrame)
                             end
                         end
                     end
@@ -8336,8 +8268,8 @@ Tabs.Shop:AddButton({
     Title = "Đổi Tộc Draco",
     Description = "Chỉ Ở Biển 3",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
-        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938));
+        GameTeleport(Vector3.new(5661.5322265625, 1013.0907592773438, - 334.9649963378906));
+        Tween(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938), true);
         local dracoPos = Vector3.new(5814.42724609375, 1208.3267822265625, 884.5785522460938);
         local dracoPlayer = plr;
         local dracoChar = dracoPlayer.Character or dracoPlayer.CharacterAdded:Wait() ;
@@ -8687,8 +8619,8 @@ ReceiveQuestToggle:OnChanged(function(value)
     _G.AutoReceiveQuest = value
     if IsResettingConfig then return end
     if _G.AutoReceiveQuest then
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
-        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
+        GameTeleport(Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
+        Tween(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938), true)
         spawn(function()
             pcall(function()
                 while task.wait() do
@@ -8789,7 +8721,7 @@ spawn(function()
             AutoHaki()
             for _, pos in ipairs(HydraTreePositions) do
                 if not _G.AutoHydraTree then break end
-                Tween2(pos)
+                Tween(pos, true)
                 task.wait()
                 local character = plr.Character
                 if character and character:FindFirstChild("HumanoidRootPart") then
@@ -8809,8 +8741,8 @@ DracoSection:AddButton({
     Title = "Bay Đến Khu Vực Dragon Dojo",
     Description = "",
     Callback = function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
-        Tween2(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938))
+        GameTeleport(Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
+        Tween(CFrame.new(5814.42724609375, 1208.3267822265625, 884.5785522460938), true)
     end
 })
 
@@ -8854,7 +8786,7 @@ spawn(function()
                                 task.wait(1.5)
                                 VirtualInputManager:SendKeyEvent(false, "E", false, game)
                             else
-                                Tween2(CFrame.new(flowerPos))
+                                Tween(CFrame.new(flowerPos), true)
                             end
                         end
                     end
@@ -8922,7 +8854,7 @@ spawn(function()
         if _G.AutoTrialTeleport then
             local trialPart = workspace.Map.PrehistoricIsland and workspace.Map.PrehistoricIsland:FindFirstChild("TrialTeleport")
             if trialPart and trialPart:IsA("Part") then
-                Tween2(CFrame.new(trialPart.Position))
+                Tween(CFrame.new(trialPart.Position), true)
             end
         end
     end
@@ -8973,7 +8905,7 @@ spawn(function()
                 local relic = core and core:FindFirstChild("PrehistoricRelic")
                 local skull = relic and relic:FindFirstChild("Skull")
                 if skull then
-                    Tween2(CFrame.new(skull.Position))
+                    Tween(CFrame.new(skull.Position), true)
                     _G.TweenToPrehistoric = false
                 end
             end
@@ -9071,7 +9003,7 @@ spawn(function()
             pcall(RemoveLava)
             local rock = FindActiveVolcanoRock()
             if rock then
-                Tween2(CFrame.new(rock.Position))
+                Tween(CFrame.new(rock.Position), true)
                 local color = rock.Color
                 if color ~= Color3.fromRGB(185, 53, 56) and color ~= Color3.fromRGB(185, 53, 57) then
                     rock = FindActiveVolcanoRock()
@@ -9141,7 +9073,7 @@ spawn(function()
         if _G.AutoCollectBone then
             for _, part in pairs(workspace:GetDescendants()) do
                 if part:IsA("BasePart") and part.Name == "DinoBone" then
-                    Tween2(CFrame.new(part.Position))
+                    Tween(CFrame.new(part.Position), true)
                 end
             end
         end
@@ -9168,7 +9100,7 @@ spawn(function()
                 if #eggs > 0 then
                     local egg = eggs[math.random(1, #eggs)]
                     if egg:IsA("Model") and egg.PrimaryPart then
-                        Tween2(egg.PrimaryPart.CFrame)
+                        Tween(egg.PrimaryPart.CFrame, true)
                         local character = plr.Character
                         if character and character:FindFirstChild("HumanoidRootPart") then
                             local distance = (character.HumanoidRootPart.Position - egg.PrimaryPart.Position).Magnitude
