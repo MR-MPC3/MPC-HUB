@@ -155,6 +155,7 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(500, 320), 
     MinimizeKey = Enum.KeyCode.End
 })
+-- Ẩn menu Fluent lúc khởi động
 pcall(function()
     if Window.Root then
         Window.Root.Visible = false
@@ -170,7 +171,6 @@ MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
 MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 MinGui.Parent = ParentGui
-MinGui.Enabled = false
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "MinButton"
@@ -430,16 +430,7 @@ local function FinishLoader()
 end
 
 FinishLoader()
-pcall(function()
-    if Window.Root then
-        Window.Root.Visible = true
-    end
-end)
-pcall(function()
-    MinGui.Enabled = true
-end)
 task.wait()
-
 Fluent:Notify({
     Title = "Min Gaming",
     Content = "Tải Xong - Sẵn sàng sử dụng!",
