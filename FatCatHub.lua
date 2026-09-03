@@ -165,6 +165,7 @@ SetLoaderProgress(30)
 -------------------------------------------------------
 -- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU & KÉO THẢ)
 -------------------------------------------------------
+
 local FatCatGui=Instance.new("ScreenGui")
 FatCatGui.Name="FatCatToggle"
 FatCatGui.ResetOnSpawn=false
@@ -175,7 +176,8 @@ local FatCatButton=Instance.new("ImageButton")
 FatCatButton.Name="FatCatButton"
 FatCatButton.BackgroundColor3=Color3.fromRGB(15,15,15)
 FatCatButton.BorderSizePixel=0
-FatCatButton.Position=UDim2.fromOffset(20,60)
+FatCatButton.Position=UDim2.fromOffset(45,85)
+FatCatButton.AnchorPoint=Vector2.new(0.5,0.5)
 FatCatButton.Size=UDim2.fromOffset(50,50)
 FatCatButton.Image="rbxassetid://13717478897"
 FatCatButton.AutoButtonColor=false
@@ -210,7 +212,9 @@ local function ButtonBounce()
         if not Dragging then
             AnimateButton(1.08,0.16,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
             task.delay(0.16,function()
-                if not Dragging then AnimateButton(NormalScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out) end
+                if not Dragging then
+                    AnimateButton(NormalScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+                end
             end)
         end
     end)
@@ -219,7 +223,12 @@ end
 local function UpdateDrag(input)
     local delta=input.Position-DragStart
     if delta.Magnitude>6 then IsDragged=true end
-    FatCatButton.Position=UDim2.new(StartPos.X.Scale,StartPos.X.Offset+delta.X,StartPos.Y.Scale,StartPos.Y.Offset+delta.Y)
+    FatCatButton.Position=UDim2.new(
+        StartPos.X.Scale,
+        StartPos.X.Offset+delta.X,
+        StartPos.Y.Scale,
+        StartPos.Y.Offset+delta.Y
+    )
 end
 
 FatCatButton.InputBegan:Connect(function(input)
@@ -229,12 +238,15 @@ FatCatButton.InputBegan:Connect(function(input)
         DragStart=input.Position
         StartPos=FatCatButton.Position
         AnimateButton(DragScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+
         input.Changed:Connect(function()
             if input.UserInputState==Enum.UserInputState.End then
                 Dragging=false
                 AnimateButton(1.08,0.18,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
                 task.delay(0.18,function()
-                    if not Dragging then AnimateButton(NormalScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out) end
+                    if not Dragging then
+                        AnimateButton(NormalScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+                    end
                 end)
             end
         end)
@@ -250,14 +262,20 @@ end)
 local MenuVisible=false
 
 FatCatButton.Activated:Connect(function()
-    if IsDragged then return end
+    if IsDragged then
+        IsDragged=false
+        return
+    end
+
     ButtonBounce()
     MenuVisible=not MenuVisible
+
     pcall(function()
-        if Window and Window.Root then Window.Root.Visible=MenuVisible end
+        if Window and Window.Root then
+            Window.Root.Visible=MenuVisible
+        end
     end)
 end)
-
 ---------------------
 -- CÁC TABS CHÍNH
 ---------------------
