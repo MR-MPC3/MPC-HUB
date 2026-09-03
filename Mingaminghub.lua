@@ -106,7 +106,7 @@ local TitleLabel = CreateObject("TextLabel", {
 
 local ProgressBG = CreateObject("Frame", {
     Name = "BG", Parent = MainFrame, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 0,
-    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 95), Size = UDim2.new(0.85, 0, 0, 12)
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 95), Size = UDim2.new(0.85, 0, 0, 24)
 })
 AddUICorner(6, ProgressBG)
 
