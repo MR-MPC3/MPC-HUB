@@ -391,7 +391,7 @@ function BuildUI()
 end
 
 ----------------------------------
--- CHẠY LOADER VÀ KẾT THÚC LOADER
+-- TIẾN TRÌNH LOADER VÀ KẾT THÚC LOADER
 ----------------------------------
 SetLoaderProgress(60)
 BuildUI()
