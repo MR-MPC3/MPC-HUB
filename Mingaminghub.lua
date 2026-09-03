@@ -1,6 +1,3 @@
--------------------------------------------------
--- 1. SERVICES CƠ BẢN
--------------------------------------------------
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -20,73 +17,112 @@ local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
 local RS = ReplicatedStorage
 
--------------------------------------------------
--- 2. ANTI-TAMPER / ANTI-SKID (TẠM THỜI ĐANG TẮT)
--------------------------------------------------
---[[
-spawn(function()
-    while task.wait() do
-        function print() end
-        function warn() end
-        function error() end
-        debug.traceback = function() return "Traceback blocked" end
-        debug.info = function() return "Info blocked" end
-
-        local meta = getrawmetatable(game)
-        if meta and not meta.__metatable then
-            setreadonly(meta, false)
-            local oldIndex = meta.__index
-            local oldNewIndex = meta.__newindex
-            meta.__index = function(metaObj, val4)
-                if val4 == "debug" or val4 == "getrawmetatable" then error("Anti Skid: Tampering detected!") end
-                return oldIndex(metaObj, val4)
-            end
-            meta.__newindex = function(metaObj2, val5, metaVal)
-                if val5 == "debug" or val5 == "getrawmetatable" then error("Anti Skid: Tampering detected!") end
-                return oldNewIndex(metaObj2, val5, metaVal)
-            end
-            setreadonly(meta, true)
-        end
-
-        local function checkEnvTamper()
-            local envDangerList = {"_G", "debug", "getgenv", "getrawmetatable", "setfenv", "loadstring", "hookfunction"}
-            for _, item in ipairs(envDangerList) do
-                local pcallOk, pcallResult = pcall(function() return _G[item] end)
-                if pcallOk and pcallResult then error("Anti Skid: Environment tampering detected!") end
-            end
-        end
-
-        local function checkHookTamper()
-            local hookDangerList = {getrawmetatable, setreadonly, getgenv, debug.getinfo, debug.getregistry}
-            for _, item in ipairs(hookDangerList) do
-                if item then error("Anti Skid: Hook tampering detected!") end
-            end
-        end
-
-        local temp1 = game:FindService("HttpService")
-        if temp1 then
-            temp1.RequestAsync = function() error("HTTP Requests Blocked") end
-            temp1.GetAsync = function() error("HTTP Get Blocked") end
-            temp1.PostAsync = function() error("HTTP Post Blocked") end
-        end
-
-        function collectgarbage() error("GC Blocked") end
-        os.time = function() error("OS Time Blocked") end
-
-        pcall(checkEnvTamper)
-        pcall(checkHookTamper)
-    end
+pcall(function()
+    local oldLoader = ParentGui:FindFirstChild("Core")
+    if oldLoader then oldLoader:Destroy() end
 end)
-]]
 
--------------------------------------------------
--- 3. LOAD FLUENT UI LIBRARY
--------------------------------------------------
+local LoaderTitle = "Đăng Ký Kênh Min Gaming"
+local LoaderColors = {
+    Main = Color3.fromRGB(0, 0, 0),
+    Topic = Color3.fromRGB(200, 200, 200),
+    Title = Color3.fromRGB(255, 255, 255),
+    LoaderBackground = Color3.fromRGB(40, 40, 40),
+    LoaderSplash = Color3.fromRGB(3, 252, 3)
+}
+
+local function TweenObject(object, duration, goals)
+    if not object then return end
+    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goals)
+    tween:Play()
+    return tween
+end
+
+local function CreateObject(className, props)
+    local instance = Instance.new(className)
+    for property, value in pairs(props) do
+        if property ~= "Parent" then instance[property] = value end
+    end
+    instance.Parent = props.Parent
+    return instance
+end
+
+local function AddUICorner(radius, parentObj)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius)
+    corner.Parent = parentObj
+end
+
+local LoaderGui = CreateObject("ScreenGui", {
+    Name = "Core", Parent = ParentGui, ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 999999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+})
+
+local MainFrame = CreateObject("Frame", {
+    Name = "Main", Parent = LoaderGui, BackgroundColor3 = LoaderColors.Main, BorderSizePixel = 0, ClipsDescendants = true, Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 0, 0, 0)
+})
+AddUICorner(12, MainFrame)
+
+local UserImage = CreateObject("ImageLabel", {
+    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://13717478897", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
+})
+AddUICorner(25, UserImage)
+
+local UserNameLabel = CreateObject("TextLabel", {
+    Name = "UserName", Parent = MainFrame, BackgroundTransparency = 1, Text = "Youtube: Min Gaming", Position = UDim2.new(0, 75, 0, 10), Size = UDim2.new(0, 200, 0, 50), Font = Enum.Font.GothamBold, TextColor3 = LoaderColors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
+})
+
+local TopicLabel = CreateObject("TextLabel", {
+    Name = "Top", Parent = MainFrame, TextTransparency = 1, BackgroundTransparency = 1, Position = UDim2.new(0, 30, 0, 70), Size = UDim2.new(0, 301, 0, 20), Font = Enum.Font.Gotham, Text = "Loader", TextColor3 = LoaderColors.Topic, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left
+})
+
+local TitleLabel = CreateObject("TextLabel", {
+    Name = "Title", Parent = MainFrame, TextTransparency = 1, BackgroundTransparency = 1, Position = UDim2.new(0, 30, 0, 90), Size = UDim2.new(0, 301, 0, 46), Font = Enum.Font.Gotham, RichText = true, Text = "<b>" .. LoaderTitle .. "</b>", TextColor3 = LoaderColors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
+})
+
+local ProgressBG = CreateObject("Frame", {
+    Name = "BG", Parent = MainFrame, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, BackgroundColor3 = LoaderColors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 70), Size = UDim2.new(0.85, 0, 0, 24)
+})
+AddUICorner(8, ProgressBG)
+
+local ProgressBar = CreateObject("Frame", {
+    Name = "Progress", Parent = ProgressBG, BackgroundColor3 = LoaderColors.LoaderSplash, BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.new(0, 0, 0, 24)
+})
+AddUICorner(8, ProgressBar)
+
+local StepLabel = CreateObject("TextLabel", {
+    Name = "StepLabel", Parent = MainFrame, BackgroundTransparency = 1, Position = UDim2.new(0.5, 0, 1, -25), Size = UDim2.new(1, -20, 0, 20), Font = Enum.Font.Gotham, Text = "", TextColor3 = LoaderColors.Topic, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, AnchorPoint = Vector2.new(0.5, 0.5)
+})
+
+local CurrentProgress = 0
+local function UpdatePercentage(percent)
+    percent = math.clamp(math.floor(percent), 0, 100)
+    if percent < CurrentProgress then return end
+    CurrentProgress = percent
+    TweenObject(ProgressBar, 0.25, {Size = UDim2.new(percent / 100, 0, 0, 24)})
+    task.wait()
+end
+
+TweenObject(MainFrame, 0.25, {Size = UDim2.new(0, 346, 0, 121)})
+task.wait(0.25)
+
+TweenObject(TopicLabel, 0.35, {TextTransparency = 0})
+TweenObject(TitleLabel, 0.35, {TextTransparency = 0})
+TweenObject(ProgressBG, 0.35, {BackgroundTransparency = 0})
+TweenObject(ProgressBar, 0.35, {BackgroundTransparency = 0})
+
+UpdatePercentage(5)
+UpdatePercentage(10)
+
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
 
-assert(success and Fluent, "[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+if not success or not Fluent then
+    if LoaderGui then LoaderGui:Destroy() end
+    error("[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+end
+
+UpdatePercentage(40)
 
 local Window = Fluent:CreateWindow({
     Title = "Min Gaming",
@@ -98,9 +134,8 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.End
 })
 
--------------------------------------------------
--- 4. MOBILE MINIMIZE / RESTORE BUTTON
--------------------------------------------------
+UpdatePercentage(50)
+
 pcall(function()
     local oldMinGui = ParentGui:FindFirstChild("MinGamingToggle")
     if oldMinGui then oldMinGui:Destroy() end
@@ -126,7 +161,10 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
 
-local Dragging, DragStart, StartPosition, DraggedFar = false, nil, nil, false
+local Dragging = false
+local DragStart = nil
+local StartPosition = nil
+local DraggedFar = false
 
 MinButton.InputBegan:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
@@ -142,10 +180,7 @@ UserInputService.InputChanged:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
         local Delta = Input.Position - DragStart
         if Delta.Magnitude > 5 then DraggedFar = true end
-        MinButton.Position = UDim2.new(
-            StartPosition.X.Scale, StartPosition.X.Offset + Delta.X,
-            StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y
-        )
+        MinButton.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
     end
 end)
 
@@ -163,44 +198,42 @@ MinButton.Activated:Connect(function()
     Window:Minimize()
 end)
 
--------------------------------------------------
--- 5. TẠO CÁC TAB CHÍNH
--------------------------------------------------
+UpdatePercentage(55)
+
 local TabDefinitions = {
-    {"Home",     "Thông Tin",   "info"},
-    {"Main",     "Cày",         "sword"},
-    {"Sea",      "Sự Kiện",     "waves"},
-    {"ITM",      "Vật Phẩm",    "package"},
-    {"Setting",  "Cài Đặt",     "settings"},
-    {"Status",   "Máy Chủ",     "server"},
-    {"Stats",    "Chỉ Số",      "bar-chart-2"},
-    {"Player",   "Người Chơi",  "user"},
+    {"Home", "Thông Tin", "info"},
+    {"Main", "Cày", "sword"},
+    {"Sea", "Sự Kiện", "waves"},
+    {"ITM", "Vật Phẩm", "package"},
+    {"Setting", "Cài Đặt", "settings"},
+    {"Status", "Máy Chủ", "server"},
+    {"Stats", "Chỉ Số", "bar-chart-2"},
+    {"Player", "Người Chơi", "user"},
     {"Teleport", "Dịch Chuyển", "map-pin"},
-    {"Fruit",    "Trái",        "apple"},
-    {"Raid",     "Tập Kích",    "swords"},
-    {"Race",     "Tộc",         "shield"},
-    {"Shop",     "Cửa Hàng",    "shopping-cart"},
-    {"Misc",     "Khác",        "layers"}
+    {"Fruit", "Trái", "apple"},
+    {"Raid", "Tập Kích", "swords"},
+    {"Race", "Tộc", "shield"},
+    {"Shop", "Cửa Hàng", "shopping-cart"},
+    {"Misc", "Khác", "layers"}
 }
 
 local Tabs = {}
-for _, tab in ipairs(TabDefinitions) do
+local TotalTabs = #TabDefinitions
+
+for index, tab in ipairs(TabDefinitions) do
     local ok, result = pcall(Window.AddTab, Window, {Title = tab[2], Icon = tab[3]})
     if not ok or not result then
         result = Window:AddTab({Title = tab[2]})
     end
     Tabs[tab[1]] = result
+    local progress = 55 + math.floor((index / TotalTabs) * 15)
+    UpdatePercentage(progress)
 end
 
--------------------------------------------------
--- 6. PLAYER & SEA DETECTION
--------------------------------------------------
 local PlaceId = game.PlaceId
 local Options = Fluent.Options
+UpdatePercentage(72)
 
--------------------------------------------------
--- 7. PERSISTENT CONFIG SYSTEM
--------------------------------------------------
 local CONFIG_FOLDER = "MinGamingHub"
 local CONFIG_FILE = CONFIG_FOLDER .. "/DU_LIEU_TK_" .. tostring(plr.Name) .. ".json"
 local IsResettingConfig = false
@@ -230,12 +263,15 @@ local function WriteConfig(data)
 end
 
 local function SaveConfig()
-    if IsResettingConfig or typeof(writefile) ~= "function" then return end
+    if IsResettingConfig then return end
+    if typeof(writefile) ~= "function" then return end
     pcall(function()
         EnsureConfigFolder()
         local data = {}
         for idx, opt in pairs(Options) do
-            if opt and opt.Value ~= nil then data[idx] = DeepCopy(opt.Value) end
+            if opt and opt.Value ~= nil then
+                data[idx] = DeepCopy(opt.Value)
+            end
         end
         WriteConfig(data)
     end)
@@ -254,10 +290,11 @@ local function QueueSaveConfig()
 end
 
 local function LoadConfig()
-    if typeof(readfile) ~= "function" or typeof(isfile) ~= "function" or not isfile(CONFIG_FILE) then return end
+    if typeof(readfile) ~= "function" or typeof(isfile) ~= "function" then return end
+    if not isfile(CONFIG_FILE) then return end
     local ok, content = pcall(readfile, CONFIG_FILE)
     if not ok or type(content) ~= "string" or content == "" then return end
-    local ok2, data = pcall(function() return HttpService:JSONEncode(content) end)
+    local ok2, data = pcall(function() return HttpService:JSONDecode(content) end)
     if not ok2 or type(data) ~= "table" then return end
     for idx, value in pairs(data) do
         local opt = Options[idx]
@@ -269,7 +306,9 @@ end
 
 local function CaptureDefaults()
     for idx, opt in pairs(Options) do
-        if opt and opt.Value ~= nil then DefaultConfig[idx] = DeepCopy(opt.Value) end
+        if opt and opt.Value ~= nil then
+            DefaultConfig[idx] = DeepCopy(opt.Value)
+        end
     end
 end
 
@@ -319,9 +358,8 @@ local function WrapOptionsForAutoSave()
     end
 end
 
--------------------------------------------------
--- 8. MAP / SEA
--------------------------------------------------
+UpdatePercentage(78)
+
 local MAP_SEAS = {
     [85211729168715] = 1,
     [79091703265657] = 2,
@@ -330,28 +368,34 @@ local MAP_SEAS = {
 
 local currentSea = MAP_SEAS[PlaceId]
 if not currentSea then
+    if LoaderGui then LoaderGui:Destroy() end
     plr:Kick("PlaceId không hợp lệ")
     return
 end
 
-local Sea1 = (currentSea == 1)
-local Sea2 = (currentSea == 2)
-local Sea3 = (currentSea == 3)
+local Sea1 = currentSea == 1
+local Sea2 = currentSea == 2
+local Sea3 = currentSea == 3
 
--------------------------------------------------
--- 9. DATA TABLES / HELPERS / BUILDUI
--------------------------------------------------
+UpdatePercentage(82)
+
 function BuildUI()
-    -- Menu trống: chưa gắn chức năng phát triển sau 
 end
 
--------------------------------------------------
--- 10. KHỞI CHẠY
--------------------------------------------------
 BuildUI()
+UpdatePercentage(88)
+
 CaptureDefaults()
+UpdatePercentage(92)
+
 WrapOptionsForAutoSave()
+UpdatePercentage(95)
+
 LoadConfig()
+UpdatePercentage(98)
+
+UpdatePercentage(100)
+task.wait(0.35)
 
 Fluent:Notify({
     Title = "Min Gaming",
@@ -359,4 +403,16 @@ Fluent:Notify({
     Duration = 10
 })
 
--- discord.gg/25ms
+TweenObject(TopicLabel, 0.4, {TextTransparency = 1})
+TweenObject(TitleLabel, 0.4, {TextTransparency = 1})
+TweenObject(ProgressBG, 0.4, {BackgroundTransparency = 1})
+TweenObject(ProgressBar, 0.4, {BackgroundTransparency = 1})
+
+task.wait(0.45)
+
+TweenObject(MainFrame, 0.25, {Size = UDim2.new(0, 0, 0, 0)})
+task.wait(0.25)
+
+if LoaderGui and LoaderGui.Parent then
+    LoaderGui:Destroy()
+end
