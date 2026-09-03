@@ -409,7 +409,14 @@ SetLoaderProgress(55)
 -- BUILD UI 
 ----------------------------
 function BuildUI()
-    -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
+Tabs.Setting:AddButton({
+    Title="Khôi Phục Thiết Lập Mặc Định",
+    Description="Đưa toàn bộ cài đặt về mặc định",
+    Callback=function()
+        ResetAllToDefault()
+    end
+})
+    
 end
 
 ---------------------------------------
