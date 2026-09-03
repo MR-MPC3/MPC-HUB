@@ -212,12 +212,18 @@ UserInputService.InputEnded:Connect(function(Input)
     end
 end)
 
+local MenuVisible = false
 MinButton.Activated:Connect(function()
     if DraggedFar then
         DraggedFar = false
         return
     end
-    Window:Minimize()
+    MenuVisible = not MenuVisible
+    pcall(function()
+        if Window.Root then
+            Window.Root.Visible = MenuVisible
+        end
+    end)
 end)
 
 ---------------------
