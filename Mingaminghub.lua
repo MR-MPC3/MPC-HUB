@@ -106,14 +106,14 @@ local TitleLabel = CreateObject("TextLabel", {
 
 local ProgressBG = CreateObject("Frame", {
     Name = "BG", Parent = MainFrame, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 0,
-    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 95), Size = UDim2.new(0.85, 0, 0, 24)
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 70), Size = UDim2.new(0.85, 0, 0, 24)
 })
-AddUICorner(6, ProgressBG)
+AddUICorner(8, ProgressBG)
 
 local ProgressBar = CreateObject("Frame", {
     Name = "Progress", Parent = ProgressBG, BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderSplash, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0)
 })
-AddUICorner(6, ProgressBar)
+AddUICorner(8, ProgressBar)
 
 local LoaderProgress = 0
 local LoaderFinished = false
