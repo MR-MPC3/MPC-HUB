@@ -41,9 +41,9 @@ pcall(function()
     if ParentGui:FindFirstChild("MinGamingToggle") then ParentGui.MinGamingToggle:Destroy() end
 end)
 
-------------------------------
--- LOADER CONFIG & HELPER
------------------------------
+--------------------------------------------------
+-- GIAO DIỆN LOADER VÀ BẮT ĐÀU KHỞI CHẠY LOADER
+-------------------------------------------------
 shared.LoaderTitle = "Đăng Ký Kênh Min Gaming"
 local LoaderConfig = {
     LoaderData = {
@@ -80,9 +80,6 @@ local function AddUICorner(radius, parentObj)
     corner.Parent = parentObj
 end
 
----------------------
--- GIAO DIỆN LOADER
----------------------
 local LoaderGui = CreateObject("ScreenGui", {Name = "Core", Parent = ParentGui, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
 local MainFrame = CreateObject("Frame", {
     Name = "Main", Parent = LoaderGui, BackgroundColor3 = LoaderConfig.LoaderData.Colors.Main,
@@ -387,9 +384,9 @@ function BuildUI()
     -- task.spawn / task.delay có thể sử dụng bình thường
 end
 
-----------------------------
--- HOẠT ĐỘNG LOADER 
-----------------------------
+----------------------------------
+-- CHẠY LOADER VÀ KẾT THÚC LOADER
+----------------------------------
 SetLoaderProgress(60)
 BuildUI()
 SetLoaderProgress(78)
