@@ -177,105 +177,72 @@ FatCatButton.Name="FatCatButton"
 FatCatButton.BackgroundColor3=Color3.fromRGB(15,15,15)
 FatCatButton.BorderSizePixel=0
 FatCatButton.Position=UDim2.fromOffset(45,85)
-FatCatButton.AnchorPoint=Vector2.new(0.5,0.5)
+FatCatButton.AnchorPoint=Vector2.new(.5,.5)
 FatCatButton.Size=UDim2.fromOffset(50,50)
 FatCatButton.Image="rbxassetid://13717478897"
 FatCatButton.AutoButtonColor=false
 FatCatButton.Parent=FatCatGui
 
-local FatCatCorner=Instance.new("UICorner")
-FatCatCorner.CornerRadius=UDim.new(0,14)
-FatCatCorner.Parent=FatCatButton
+local Corner=Instance.new("UICorner",FatCatButton)
+Corner.CornerRadius=UDim.new(0,14)
 
-local ButtonScale=Instance.new("UIScale")
-ButtonScale.Scale=1
-ButtonScale.Parent=FatCatButton
+local Scale=Instance.new("UIScale",FatCatButton)
+local Tween,Dragging,DragStart,StartPos,IsDragged=false,false,nil,nil,false
 
-local NormalScale=1
-local PressScale=0.82
-local DragScale=0.88
-local ScaleTween
-local Dragging=false
-local DragStart
-local StartPos
-local IsDragged=false
-
-local function AnimateButton(scale,duration,style,direction)
-    if ScaleTween then pcall(function() ScaleTween:Cancel() end) end
-    ScaleTween=TweenService:Create(ButtonScale,TweenInfo.new(duration or 0.15,style or Enum.EasingStyle.Back,direction or Enum.EasingDirection.Out),{Scale=scale})
-    ScaleTween:Play()
+local function Animate(s,t,style)
+    if Tween then pcall(Tween.Cancel,Tween) end
+    Tween=TweenService:Create(Scale,TweenInfo.new(t,style or Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Scale=s})
+    Tween:Play()
 end
 
-local function ButtonBounce()
-    AnimateButton(PressScale,0.08,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-    task.delay(0.08,function()
+local function Bounce()
+    Animate(.82,.08)
+    task.delay(.08,function()
         if not Dragging then
-            AnimateButton(1.08,0.16,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
-            task.delay(0.16,function()
-                if not Dragging then
-                    AnimateButton(NormalScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-                end
+            Animate(1.08,.16,Enum.EasingStyle.Back)
+            task.delay(.16,function()
+                if not Dragging then Animate(1,.12) end
             end)
         end
     end)
 end
 
-local function UpdateDrag(input)
-    local delta=input.Position-DragStart
-    if delta.Magnitude>6 then IsDragged=true end
-    FatCatButton.Position=UDim2.new(
-        StartPos.X.Scale,
-        StartPos.X.Offset+delta.X,
-        StartPos.Y.Scale,
-        StartPos.Y.Offset+delta.Y
-    )
-end
-
 FatCatButton.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-        Dragging=true
-        IsDragged=false
-        DragStart=input.Position
-        StartPos=FatCatButton.Position
-        AnimateButton(DragScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-
-        input.Changed:Connect(function()
-            if input.UserInputState==Enum.UserInputState.End then
-                Dragging=false
-                AnimateButton(1.08,0.18,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
-                task.delay(0.18,function()
-                    if not Dragging then
-                        AnimateButton(NormalScale,0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-                    end
-                end)
-            end
-        end)
-    end
+    if input.UserInputType~=Enum.UserInputType.MouseButton1 and input.UserInputType~=Enum.UserInputType.Touch then return end
+    Dragging=true
+    IsDragged=false
+    DragStart=input.Position
+    StartPos=FatCatButton.Position
+    Animate(.88,.12)
+    input.Changed:Connect(function()
+        if input.UserInputState==Enum.UserInputState.End then
+            Dragging=false
+            Animate(1.08,.18,Enum.EasingStyle.Back)
+            task.delay(.18,function()
+                if not Dragging then Animate(1,.12) end
+            end)
+        end
+    end)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if Dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
-        UpdateDrag(input)
-    end
+    if not Dragging or (input.UserInputType~=Enum.UserInputType.MouseMovement and input.UserInputType~=Enum.UserInputType.Touch) then return end
+    local d=input.Position-DragStart
+    if d.Magnitude>6 then IsDragged=true end
+    FatCatButton.Position=UDim2.new(StartPos.X.Scale,StartPos.X.Offset+d.X,StartPos.Y.Scale,StartPos.Y.Offset+d.Y)
 end)
 
 local MenuVisible=false
 
 FatCatButton.Activated:Connect(function()
-    if IsDragged then
-        IsDragged=false
-        return
-    end
-
-    ButtonBounce()
+    if IsDragged then IsDragged=false return end
+    Bounce()
     MenuVisible=not MenuVisible
-
     pcall(function()
-        if Window and Window.Root then
-            Window.Root.Visible=MenuVisible
-        end
+        if Window and Window.Root then Window.Root.Visible=MenuVisible end
     end)
 end)
+
 ---------------------
 -- CÁC TABS CHÍNH
 ---------------------
@@ -372,7 +339,7 @@ local function LoadConfig()
     if not isfile(CONFIG_FILE) then return end
     local ok, content = pcall(readfile, CONFIG_FILE)
     if not ok or type(content) ~= "string" or content == "" then return end
-    local ok2, data = pcall(function() return HttpService:JSONEncode(content) end)
+    local ok2,data=pcall(function() return HttpService:JSONDecode(content) end)
     if not ok2 or type(data) ~= "table" then return end
     for idx, value in pairs(data) do
         local opt = Options[idx]
