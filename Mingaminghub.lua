@@ -155,6 +155,11 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(500, 320), 
     MinimizeKey = Enum.KeyCode.End
 })
+pcall(function()
+    if Window.Root then
+        Window.Root.Visible = false
+    end
+end)
 SetLoaderProgress(30)
 
 ---------------------------------------
@@ -165,6 +170,7 @@ MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
 MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 MinGui.Parent = ParentGui
+MinGui.Enabled = false
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "MinButton"
@@ -424,6 +430,15 @@ local function FinishLoader()
 end
 
 FinishLoader()
+pcall(function()
+    if Window.Root then
+        Window.Root.Visible = true
+    end
+end)
+pcall(function()
+    MinGui.Enabled = true
+end)
+task.wait()
 
 Fluent:Notify({
     Title = "Min Gaming",
