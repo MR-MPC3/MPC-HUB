@@ -40,14 +40,14 @@ pcall(function()
 end)
 
 ---------------------------------------------------
--- BẢNG MÀU CHUẨN THEO LOGO FAT CAT HUB
+-- BẢNG MÀU CHUẨN THEO LOGO FAT CAT HUB (CYBERPUNK NEON)
 ---------------------------------------------------
 local LOGO_THEME = {
-    Background = Color3.fromRGB(18, 14, 38),
-    AccentCyan = Color3.fromRGB(0, 225, 255),
-    AccentOrange = Color3.fromRGB(255, 140, 40),
-    AccentPink = Color3.fromRGB(210, 60, 255),
-    BarBackground = Color3.fromRGB(28, 22, 56)
+    Background = Color3.fromRGB(11, 16, 38),      -- Xanh đen Cyber Circuit
+    AccentCyan = Color3.fromRGB(0, 229, 255),      -- Neon Cyan sáng
+    AccentOrange = Color3.fromRGB(255, 140, 0),    -- Cam mèo Fat Cat
+    AccentPink = Color3.fromRGB(255, 64, 129),     -- Hồng Neon chân mèo
+    BarBackground = Color3.fromRGB(22, 27, 54)     -- Nền thanh progress
 }
 
 --------------------------------------------------
@@ -108,7 +108,7 @@ MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MainStroke.Parent = MainFrame
 
 local UserImage = CreateObject("ImageLabel", {
-    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://75302950398404", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
+    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://128712761453276", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
 })
 AddUICorner(25, UserImage)
 
@@ -197,7 +197,7 @@ MinButton.BackgroundColor3 = LOGO_THEME.Background
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
 MinButton.Size = UDim2.fromOffset(52, 52)
-MinButton.Image = "rbxassetid://75302950398404"
+MinButton.Image = "rbxassetid://128712761453276"
 MinButton.AutoButtonColor = false
 MinButton.Parent = MinGui
 
@@ -365,8 +365,11 @@ local function LoadConfig()
     if not isfile(CONFIG_FILE) then return end
     local ok, content = pcall(readfile, CONFIG_FILE)
     if not ok or type(content) ~= "string" or content == "" then return end
-    local ok2, data = pcall(function() return HttpService:JSONEncode(content) end)
+    
+    -- ĐÃ SỬA: Thay JSONEncode thành JSONDecode
+    local ok2, data = pcall(function() return HttpService:JSONDecode(content) end)
     if not ok2 or type(data) ~= "table" then return end
+    
     for idx, value in pairs(data) do
         local opt = Options[idx]
         if opt and type(opt.SetValue) == "function" then
@@ -435,7 +438,7 @@ SetLoaderProgress(55)
 -- BUILD UI 
 ----------------------------
 function BuildUI()
-    --hiện chưa có gì sau này phát triển thêm có cho sài task
+    -- Nơi phát triển thêm chức năng cho các Tab
 end
 
 ----------------------------------
