@@ -48,8 +48,8 @@ local LOGO_THEME = {
     Background  = Color3.fromRGB(18, 14, 38),   
     AccentCyan  = Color3.fromRGB(0, 225, 255),  
     AccentOrange= Color3.fromRGB(255, 140, 40),  
-    AccentPink  = Color3.fromRGB(210, 60, 255), 
-    BarBackground = Color3.fromRGB(28, 22, 56) -
+    AccentPink  = Color3.fromRGB(210, 60, 255),  
+    BarBackground = Color3.fromRGB(28, 22, 56) 
 }
 
 --------------------------------------------------
