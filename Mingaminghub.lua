@@ -388,7 +388,6 @@ SetLoaderProgress(55)
 function BuildUI()
     -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
     -- task.spawn / task.delay có thể sử dụng bình thường
-    Tabs.Setting:AddButton({ Title = "Khôi Phục Thiết Lập Mặc Định", Description = "Đưa toàn bộ cài đặt về mặc định", Callback = function() ResetAllToDefault() end })
 end
 
 ----------------------------------
