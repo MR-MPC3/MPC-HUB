@@ -166,31 +166,31 @@ SetLoaderProgress(30)
 -------------------------------------------------------
 -- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU & KÉO THẢ MƯỢT MÀ)
 -------------------------------------------------------
-local MinGui = Instance.new("ScreenGui")
-MinGui.Name = "FatCatToggle"
-MinGui.ResetOnSpawn = false
-MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-MinGui.Parent = ParentGui
+local FatCatGui = Instance.new("ScreenGui")
+FatCatGui.Name = "FatCatToggle"
+FatCatGui.ResetOnSpawn = false
+FatCatGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+FatCatGui.Parent = ParentGui
 
-local MinButton = Instance.new("ImageButton")
-MinButton.Name = "FatCatButton"
-MinButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MinButton.BorderSizePixel = 0
-MinButton.Position = UDim2.fromOffset(20, 60)
-MinButton.Size = UDim2.fromOffset(50, 50)
-MinButton.Image = "rbxassetid://13717478897"
-MinButton.AutoButtonColor = false
-MinButton.Parent = MinGui
+local FatCatButton = Instance.new("ImageButton")
+FatCatButton.Name = "FatCatButton"
+FatCatButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+FatCatButton.BorderSizePixel = 0
+FatCatButton.Position = UDim2.fromOffset(20, 60)
+FatCatButton.Size = UDim2.fromOffset(50, 50)
+FatCatButton.Image = "rbxassetid://13717478897"
+FatCatButton.AutoButtonColor = false
+FatCatButton.Parent = FatCatGui
 
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 14)
-MinCorner.Parent = MinButton
+local FatCatCorner = Instance.new("UICorner")
+FatCatCorner.CornerRadius = UDim.new(0, 14)
+FatCatCorner.Parent = FatCatButton
 
-local MinStroke = Instance.new("UIStroke")
-MinStroke.Thickness = 1.5
-MinStroke.Color = Color3.fromRGB(255, 255, 255)
-MinStroke.Transparency = 0.85
-MinStroke.Parent = MinButton
+local FatCatStroke = Instance.new("UIStroke")
+FatCatStroke.Thickness = 1.5
+FatCatStroke.Color = Color3.fromRGB(255, 255, 255)
+FatCatStroke.Transparency = 0.85
+FatCatStroke.Parent = FatCatButton
 
 ---------------------------------------
 -- XỬ LÝ KÉO THẢ (SMOOTH DRAG) & CLICK
@@ -208,25 +208,22 @@ local function UpdateDrag(input)
         StartPos.X.Scale, StartPos.X.Offset + delta.X,
         StartPos.Y.Scale, StartPos.Y.Offset + delta.Y
     )
-    -- Tween di chuyển vị trí mượt mà
-    TweenObject(MinButton, 0.08, {Position = newPos}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+    TweenObject(FatCatButton, 0.08, {Position = newPos}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 end
 
-MinButton.InputBegan:Connect(function(input)
+FatCatButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         Dragging = true
         IsDragged = false
         DragStart = input.Position
-        StartPos = MinButton.Position
+        StartPos = FatCatButton.Position
 
-        -- Hiệu ứng co nhẹ khi bắt đầu ấn vào
-        TweenObject(MinButton, 0.15, {Size = UDim2.fromOffset(42, 42)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenObject(FatCatButton, 0.15, {Size = UDim2.fromOffset(42, 42)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 Dragging = false
-                -- Khôi phục kích thước với hiệu ứng nảy (Back Easing)
-                TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(50, 50)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                TweenObject(FatCatButton, 0.25, {Size = UDim2.fromOffset(50, 50)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
             end
         end)
     end
@@ -243,14 +240,13 @@ end)
 ---------------------------------------
 local MenuVisible = false
 
-MinButton.Activated:Connect(function()
-    if IsDragged then return end -- Nếu đang kéo thì bỏ qua click
+FatCatButton.Activated:Connect(function()
+    if IsDragged then return end
 
     MenuVisible = not MenuVisible
 
-    -- Xoay tròn nút tạo hiệu ứng chuyển đổi đẹp mắt
     local targetRotation = MenuVisible and 360 or 0
-    TweenObject(MinButton, 0.4, {Rotation = targetRotation}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    TweenObject(FatCatButton, 0.4, {Rotation = targetRotation}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
     pcall(function()
         if Window and Window.Root then
