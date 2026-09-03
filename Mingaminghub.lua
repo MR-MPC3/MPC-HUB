@@ -38,16 +38,16 @@ local Sea3 = currentSea == 3
 -----------------------
 pcall(function()
     if ParentGui:FindFirstChild("Core") then ParentGui.Core:Destroy() end
-    if ParentGui:FindFirstChild("MinGamingToggle") then ParentGui.MinGamingToggle:Destroy() end
+    if ParentGui:FindFirstChild("FatCatToggle") then ParentGui.FatCatToggle:Destroy() end
 end)
 
 --------------------------------------------------
 -- GIAO DIỆN LOADER VÀ BẮT ĐÀU KHỞI CHẠY LOADER
 -------------------------------------------------
-shared.LoaderTitle = "Đăng Ký Kênh Min Gaming"
+shared.LoaderTitle = "Đăng Ký Kênh Fat Cat Hub"
 local LoaderConfig = {
     LoaderData = {
-        Name = shared.LoaderTitle or "Min Gaming",
+        Name = shared.LoaderTitle or "Fat Cat Hub",
         Colors = shared.LoaderColors or {
             Main = Color3.fromRGB(0, 0, 0),
             Title = Color3.fromRGB(255, 255, 255),
@@ -93,7 +93,7 @@ local UserImage = CreateObject("ImageLabel", {
 AddUICorner(25, UserImage)
 
 local UserNameLabel = CreateObject("TextLabel", {
-    Name = "UserName", Parent = MainFrame, BackgroundTransparency = 1, Text = "Youtube: Min Gaming",
+    Name = "UserName", Parent = MainFrame, BackgroundTransparency = 1, Text = "Youtube: Fat Cat",
     Position = UDim2.new(0, 75, 0, 10), Size = UDim2.new(0, 220, 0, 50), Font = Enum.Font.GothamBold,
     TextColor3 = LoaderConfig.LoaderData.Colors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
 })
@@ -142,12 +142,12 @@ end)
 if not success or not Fluent then
     LoaderFailed = true
     if LoaderGui and LoaderGui.Parent then LoaderGui:Destroy() end
-    error("[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
+    error("[Fat Cat Hub] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor")
 end
 SetLoaderProgress(25)
 
 local Window = Fluent:CreateWindow({
-    Title = "Min Gaming", 
+    Title = "Fat Cat", 
     SubTitle = "", 
     TabWidth = 160, 
     Theme = "Light",
@@ -166,13 +166,13 @@ SetLoaderProgress(30)
 -- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU)
 ---------------------------------------
 local MinGui = Instance.new("ScreenGui")
-MinGui.Name = "MinGamingToggle"
+MinGui.Name = "FatCatToggle"
 MinGui.ResetOnSpawn = false
 MinGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 MinGui.Parent = ParentGui
 
 local MinButton = Instance.new("ImageButton")
-MinButton.Name = "MinButton"
+MinButton.Name = "FatCatButton"
 MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
@@ -261,7 +261,7 @@ SetLoaderProgress(50)
 -- LƯU DỮ LẠI DỮ LIỆU NGƯỜI DÙNG ĐỂ SÀI CHO LẦN SAU
 -----------------------------------------------------------
 local Options = Fluent.Options
-local CONFIG_FOLDER = "MinGamingHub"
+local CONFIG_FOLDER = "FatCatHub"
 local CONFIG_FILE = CONFIG_FOLDER .. "/DU_LIEU_TK_" .. tostring(plr.Name) .. ".json"
 local IsResettingConfig = false
 local DefaultConfig = {}
@@ -368,19 +368,19 @@ local function ResetAllToDefault()
         end
         WriteConfig(DeepCopy(DefaultConfig))
         IsResettingConfig = false
-        Fluent:Notify({Title = "Min Gaming", Content = "Đã khôi phục thiết lập mặc định!", Duration = 3})
+        Fluent:Notify({Title = "Fat Cat Hub", Content = "Đã khôi phục thiết lập mặc định!", Duration = 3})
     end)
 end
 
 local function WrapOptionsForAutoSave()
     for idx, opt in pairs(Options) do
-        if opt and type(opt.SetValue) == "function" and not opt.__MinGamingWrapped then
+        if opt and type(opt.SetValue) == "function" and not opt.__FatCatWrapped then
             local originalSetValue = opt.SetValue
             opt.SetValue = function(self, value, ...)
                 originalSetValue(self, value, ...)
                 if not IsResettingConfig then QueueSaveConfig() end
             end
-            opt.__MinGamingWrapped = true
+            opt.__FatCatWrapped = true
         end
     end
 end
@@ -437,7 +437,7 @@ end
 FinishLoader()
 task.wait()
 Fluent:Notify({
-    Title = "Min Gaming",
+    Title = "Fat Cat Hub",
     Content = "Tải Xong - Sẵn sàng sử dụng!",
     Duration = 10
 })
