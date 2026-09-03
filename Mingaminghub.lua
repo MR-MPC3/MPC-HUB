@@ -155,7 +155,6 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(500, 320), 
 })
 
--- Ẩn menu Fluent lúc khởi động
 pcall(function()
     if Window.Root then
         Window.Root.Visible = false
@@ -164,7 +163,7 @@ end)
 SetLoaderProgress(30)
 
 -------------------------------------------------------
--- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU & KÉO THẢ MƯỢT MÀ)
+-- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU & KÉO THẢ)
 -------------------------------------------------------
 local FatCatGui = Instance.new("ScreenGui")
 FatCatGui.Name = "FatCatToggle"
@@ -192,9 +191,6 @@ FatCatStroke.Color = Color3.fromRGB(255, 255, 255)
 FatCatStroke.Transparency = 0.85
 FatCatStroke.Parent = FatCatButton
 
----------------------------------------
--- XỬ LÝ KÉO THẢ (SMOOTH DRAG) & CLICK
----------------------------------------
 local Dragging = false
 local DragStart, StartPos
 local IsDragged = false
@@ -204,13 +200,11 @@ local function UpdateDrag(input)
     if delta.Magnitude > 6 then
         IsDragged = true
     end
-    local newPos = UDim2.new(
+    FatCatButton.Position = UDim2.new(
         StartPos.X.Scale, StartPos.X.Offset + delta.X,
         StartPos.Y.Scale, StartPos.Y.Offset + delta.Y
     )
-    TweenObject(FatCatButton, 0.08, {Position = newPos}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 end
-
 FatCatButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         Dragging = true
@@ -218,36 +212,49 @@ FatCatButton.InputBegan:Connect(function(input)
         DragStart = input.Position
         StartPos = FatCatButton.Position
 
-        TweenObject(FatCatButton, 0.15, {Size = UDim2.fromOffset(42, 42)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 Dragging = false
-                TweenObject(FatCatButton, 0.25, {Size = UDim2.fromOffset(50, 50)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
             end
         end)
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         UpdateDrag(input)
     end
 end)
-
----------------------------------------
--- XỬ LÝ BẬT / TẮT MENU (TOGGLE EFFECT)
----------------------------------------
 local MenuVisible = false
-
 FatCatButton.Activated:Connect(function()
     if IsDragged then return end
-
     MenuVisible = not MenuVisible
-
-    local targetRotation = MenuVisible and 360 or 0
-    TweenObject(FatCatButton, 0.4, {Rotation = targetRotation}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
+    TweenObject(FatCatButton, 0.08, {
+        Size = UDim2.fromOffset(44, 44)
+    }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    task.delay(0.08, function()
+        if FatCatButton and FatCatButton.Parent then
+            TweenObject(FatCatButton, 0.15, {
+                Size = UDim2.fromOffset(50, 50)
+            }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        end
+    end)
+    if MenuVisible then
+        TweenObject(FatCatStroke, 0.2, {
+            Transparency = 0.15,
+            Thickness = 2
+        })
+        TweenObject(FatCatButton, 0.2, {
+            BackgroundTransparency = 0.05
+        })
+    else
+        TweenObject(FatCatStroke, 0.2, {
+            Transparency = 0.85,
+            Thickness = 1.5
+        })
+        TweenObject(FatCatButton, 0.2, {
+            BackgroundTransparency = 0
+        })
+    end
     pcall(function()
         if Window and Window.Root then
             Window.Root.Visible = MenuVisible
@@ -424,9 +431,9 @@ function BuildUI()
     -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
 end
 
-----------------------------------
+---------------------------------------
 -- TIẾN TRÌNH LOADER VÀ KẾT THÚC LOADER
-----------------------------------
+----------------------------------------
 SetLoaderProgress(60)
 BuildUI()
 SetLoaderProgress(78)
@@ -467,6 +474,6 @@ FinishLoader()
 task.wait()
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Sẵn sàng sử dụng!",
+    Content = "Tải Xong - Anh Em Chơi Vui Vẻ",
     Duration = 10
 })
