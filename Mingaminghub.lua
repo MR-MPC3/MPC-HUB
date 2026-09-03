@@ -95,7 +95,7 @@ MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MainStroke.Parent = MainFrame
 
 local UserImage = CreateObject("ImageLabel", {
-    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://114534750921003", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
+    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://102012067289809", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
 })
 AddUICorner(25, UserImage)
 
@@ -185,7 +185,7 @@ MinButton.BackgroundColor3 = Color3.fromRGB(15, 12, 25) -- Màu nền đen tím
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
 MinButton.Size = UDim2.fromOffset(50, 50)
-MinButton.Image = "rbxassetid://114534750921003"
+MinButton.Image = "rbxassetid://102012067289809"
 MinButton.AutoButtonColor = false
 MinButton.Parent = MinGui
 
