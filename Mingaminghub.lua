@@ -153,7 +153,6 @@ local Window = Fluent:CreateWindow({
     Theme = "Light",
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320), 
-    MinimizeKey = Enum.KeyCode.End
 })
 -- Ẩn menu Fluent lúc khởi động
 pcall(function()
