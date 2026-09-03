@@ -185,28 +185,32 @@ local FatCatCorner = Instance.new("UICorner")
 FatCatCorner.CornerRadius = UDim.new(0, 14)
 FatCatCorner.Parent = FatCatButton
 
-local FatCatStroke = Instance.new("UIStroke")
-FatCatStroke.Thickness = 1.5
-FatCatStroke.Color = Color3.fromRGB(255, 255, 255)
-FatCatStroke.Transparency = 0.85
-FatCatStroke.Parent = FatCatButton
-
+-------------------------------------------------------
+-- XỬ LÝ KÉO THẢ
+-------------------------------------------------------
 local Dragging = false
 local DragStart, StartPos
 local IsDragged = false
 
 local function UpdateDrag(input)
     local delta = input.Position - DragStart
+
     if delta.Magnitude > 6 then
         IsDragged = true
     end
+
     FatCatButton.Position = UDim2.new(
-        StartPos.X.Scale, StartPos.X.Offset + delta.X,
-        StartPos.Y.Scale, StartPos.Y.Offset + delta.Y
+        StartPos.X.Scale,
+        StartPos.X.Offset + delta.X,
+        StartPos.Y.Scale,
+        StartPos.Y.Offset + delta.Y
     )
 end
+
 FatCatButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
         Dragging = true
         IsDragged = false
         DragStart = input.Position
@@ -219,42 +223,47 @@ FatCatButton.InputBegan:Connect(function(input)
         end)
     end
 end)
+
 UserInputService.InputChanged:Connect(function(input)
-    if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    if Dragging
+        and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+
         UpdateDrag(input)
     end
 end)
+
+-------------------------------------------------------
+-- MỞ / ĐÓNG MENU + HIỆU ỨNG NHẤN NÚT
+-------------------------------------------------------
 local MenuVisible = false
+
 FatCatButton.Activated:Connect(function()
     if IsDragged then return end
+
     MenuVisible = not MenuVisible
-    TweenObject(FatCatButton, 0.08, {
-        Size = UDim2.fromOffset(44, 44)
-    }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+    TweenObject(
+        FatCatButton,
+        0.08,
+        {Size = UDim2.fromOffset(44, 44)},
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+
     task.delay(0.08, function()
         if FatCatButton and FatCatButton.Parent then
-            TweenObject(FatCatButton, 0.15, {
-                Size = UDim2.fromOffset(50, 50)
-            }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            TweenObject(
+                FatCatButton,
+                0.15,
+                {Size = UDim2.fromOffset(50, 50)},
+                Enum.EasingStyle.Back,
+                Enum.EasingDirection.Out
+            )
         end
     end)
-    if MenuVisible then
-        TweenObject(FatCatStroke, 0.2, {
-            Transparency = 0.15,
-            Thickness = 2
-        })
-        TweenObject(FatCatButton, 0.2, {
-            BackgroundTransparency = 0.05
-        })
-    else
-        TweenObject(FatCatStroke, 0.2, {
-            Transparency = 0.85,
-            Thickness = 1.5
-        })
-        TweenObject(FatCatButton, 0.2, {
-            BackgroundTransparency = 0
-        })
-    end
     pcall(function()
         if Window and Window.Root then
             Window.Root.Visible = MenuVisible
