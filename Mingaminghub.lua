@@ -1,35 +1,59 @@
+-----------------------------------------------------
+-- SERVICES KHAI BÁO 1 LẦN DƯỚI CHỈ VIỆC GỌI SÀI
+-----------------------------------------------------------
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
-local Lighting = game:GetService("Lighting")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
-local CollectionService = game:GetService("CollectionService")
-local LocalizationService = game:GetService("LocalizationService")
-local VirtualUser = game:GetService("VirtualUser")
 
 local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
-local RS = ReplicatedStorage
 
+---------------------------
+-- KIỂM TRA MAP
+-------------------------
+local MAP_SEAS = {
+    [85211729168715] = 1,
+    [79091703265657] = 2,
+    [100117331123089] = 3
+}
+
+local currentSea = MAP_SEAS[game.PlaceId]
+if not currentSea then
+    plr:Kick("PlaceId không hợp lệ!")
+    return
+end
+
+local Sea1 = currentSea == 1
+local Sea2 = currentSea == 2
+local Sea3 = currentSea == 3
+
+-------------------------
+-- CLEANUP OLD GUI
+-----------------------
 pcall(function()
-    local oldLoader = ParentGui:FindFirstChild("Core")
-    if oldLoader then oldLoader:Destroy() end
+    if ParentGui:FindFirstChild("Core") then ParentGui.Core:Destroy() end
+    if ParentGui:FindFirstChild("MinGamingToggle") then ParentGui.MinGamingToggle:Destroy() end
 end)
 
-local LoaderTitle = "Đăng Ký Kênh Min Gaming"
-local LoaderColors = {
-    Main = Color3.fromRGB(0, 0, 0),
-    Topic = Color3.fromRGB(200, 200, 200),
-    Title = Color3.fromRGB(255, 255, 255),
-    LoaderBackground = Color3.fromRGB(40, 40, 40),
-    LoaderSplash = Color3.fromRGB(3, 252, 3)
+------------------------------
+-- LOADER CONFIG & HELPER
+-----------------------------
+shared.LoaderTitle = "Đăng Ký Kênh Min Gaming"
+local LoaderConfig = {
+    LoaderData = {
+        Name = shared.LoaderTitle or "Min Gaming",
+        Colors = shared.LoaderColors or {
+            Main = Color3.fromRGB(0, 0, 0),
+            Title = Color3.fromRGB(255, 255, 255),
+            LoaderBackground = Color3.fromRGB(40, 40, 40),
+            LoaderSplash = Color3.fromRGB(3, 252, 3)
+        }
+    }
 }
+_G.LoaderConfig = LoaderConfig
 
 local function TweenObject(object, duration, goals)
     if not object then return end
@@ -53,12 +77,13 @@ local function AddUICorner(radius, parentObj)
     corner.Parent = parentObj
 end
 
-local LoaderGui = CreateObject("ScreenGui", {
-    Name = "Core", Parent = ParentGui, ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 999999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-})
-
+---------------------
+-- GIAO DIỆN LOADER
+---------------------
+local LoaderGui = CreateObject("ScreenGui", {Name = "Core", Parent = ParentGui, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
 local MainFrame = CreateObject("Frame", {
-    Name = "Main", Parent = LoaderGui, BackgroundColor3 = LoaderColors.Main, BorderSizePixel = 0, ClipsDescendants = true, Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 0, 0, 0)
+    Name = "Main", Parent = LoaderGui, BackgroundColor3 = LoaderConfig.LoaderData.Colors.Main,
+    BorderSizePixel = 0, ClipsDescendants = true, Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 0, 0, 0)
 })
 AddUICorner(12, MainFrame)
 
@@ -68,79 +93,73 @@ local UserImage = CreateObject("ImageLabel", {
 AddUICorner(25, UserImage)
 
 local UserNameLabel = CreateObject("TextLabel", {
-    Name = "UserName", Parent = MainFrame, BackgroundTransparency = 1, Text = "Youtube: Min Gaming", Position = UDim2.new(0, 75, 0, 10), Size = UDim2.new(0, 200, 0, 50), Font = Enum.Font.GothamBold, TextColor3 = LoaderColors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
-})
-
-local TopicLabel = CreateObject("TextLabel", {
-    Name = "Top", Parent = MainFrame, TextTransparency = 1, BackgroundTransparency = 1, Position = UDim2.new(0, 30, 0, 70), Size = UDim2.new(0, 301, 0, 20), Font = Enum.Font.Gotham, Text = "Loader", TextColor3 = LoaderColors.Topic, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left
+    Name = "UserName", Parent = MainFrame, BackgroundTransparency = 1, Text = "Youtube: Min Gaming",
+    Position = UDim2.new(0, 75, 0, 10), Size = UDim2.new(0, 220, 0, 50), Font = Enum.Font.GothamBold,
+    TextColor3 = LoaderConfig.LoaderData.Colors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
 })
 
 local TitleLabel = CreateObject("TextLabel", {
-    Name = "Title", Parent = MainFrame, TextTransparency = 1, BackgroundTransparency = 1, Position = UDim2.new(0, 30, 0, 90), Size = UDim2.new(0, 301, 0, 46), Font = Enum.Font.Gotham, RichText = true, Text = "<b>" .. LoaderTitle .. "</b>", TextColor3 = LoaderColors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
+    Name = "Title", Parent = MainFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 30, 0, 65),
+    Size = UDim2.new(0, 286, 0, 25), Font = Enum.Font.Gotham, RichText = true, Text = "<b>" .. LoaderConfig.LoaderData.Name .. "</b>",
+    TextColor3 = LoaderConfig.LoaderData.Colors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
 })
 
 local ProgressBG = CreateObject("Frame", {
-    Name = "BG", Parent = MainFrame, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, BackgroundColor3 = LoaderColors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 70), Size = UDim2.new(0.85, 0, 0, 24)
+    Name = "BG", Parent = MainFrame, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 0,
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 95), Size = UDim2.new(0.85, 0, 0, 12)
 })
-AddUICorner(8, ProgressBG)
+AddUICorner(6, ProgressBG)
 
 local ProgressBar = CreateObject("Frame", {
-    Name = "Progress", Parent = ProgressBG, BackgroundColor3 = LoaderColors.LoaderSplash, BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.new(0, 0, 0, 24)
+    Name = "Progress", Parent = ProgressBG, BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderSplash, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0)
 })
-AddUICorner(8, ProgressBar)
+AddUICorner(6, ProgressBar)
 
-local StepLabel = CreateObject("TextLabel", {
-    Name = "StepLabel", Parent = MainFrame, BackgroundTransparency = 1, Position = UDim2.new(0.5, 0, 1, -25), Size = UDim2.new(1, -20, 0, 20), Font = Enum.Font.Gotham, Text = "", TextColor3 = LoaderColors.Topic, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, AnchorPoint = Vector2.new(0.5, 0.5)
-})
+local LoaderProgress = 0
+local LoaderFinished = false
+local LoaderFailed = false
 
-local CurrentProgress = 0
-local function UpdatePercentage(percent)
-    percent = math.clamp(math.floor(percent), 0, 100)
-    if percent < CurrentProgress then return end
-    CurrentProgress = percent
-    TweenObject(ProgressBar, 0.25, {Size = UDim2.new(percent / 100, 0, 0, 24)})
-    task.wait()
+local function SetLoaderProgress(percent)
+    if LoaderFinished or LoaderFailed then return end
+    percent = math.clamp(tonumber(percent) or 0, 0, 100)
+    if percent < LoaderProgress then percent = LoaderProgress end
+    LoaderProgress = percent
+    TweenObject(ProgressBar, 0.25, {Size = UDim2.new(percent / 100, 0, 1, 0)})
 end
 
 TweenObject(MainFrame, 0.25, {Size = UDim2.new(0, 346, 0, 121)})
 task.wait(0.25)
+SetLoaderProgress(0)
 
-TweenObject(TopicLabel, 0.35, {TextTransparency = 0})
-TweenObject(TitleLabel, 0.35, {TextTransparency = 0})
-TweenObject(ProgressBG, 0.35, {BackgroundTransparency = 0})
-TweenObject(ProgressBar, 0.35, {BackgroundTransparency = 0})
-
-UpdatePercentage(5)
-UpdatePercentage(10)
-
+-------------------------
+-- THƯ VIỆN FLUENT UI
+--------------------------
+SetLoaderProgress(10)
 local success, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/MR-MPC3/Fluent/master/main.lua"))()
 end)
 
 if not success or not Fluent then
-    if LoaderGui then LoaderGui:Destroy() end
+    LoaderFailed = true
+    if LoaderGui and LoaderGui.Parent then LoaderGui:Destroy() end
     error("[Min Gaming] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor.")
 end
-
-UpdatePercentage(40)
+SetLoaderProgress(25)
 
 local Window = Fluent:CreateWindow({
-    Title = "Min Gaming",
-    SubTitle = "",
-    TabWidth = 160,
+    Title = "Min Gaming", 
+    SubTitle = "", 
+    TabWidth = 160, 
     Theme = "Light",
     Acrylic = false,
-    Size = UDim2.fromOffset(500, 320),
+    Size = UDim2.fromOffset(500, 320), 
     MinimizeKey = Enum.KeyCode.End
 })
+SetLoaderProgress(30)
 
-UpdatePercentage(50)
-
-pcall(function()
-    local oldMinGui = ParentGui:FindFirstChild("MinGamingToggle")
-    if oldMinGui then oldMinGui:Destroy() end
-end)
-
+---------------------------------------
+-- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU)
+---------------------------------------
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "MinGamingToggle"
 MinGui.ResetOnSpawn = false
@@ -161,10 +180,7 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
 
-local Dragging = false
-local DragStart = nil
-local StartPosition = nil
-local DraggedFar = false
+local Dragging, DragStart, StartPosition, DraggedFar = false, nil, nil, false
 
 MinButton.InputBegan:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
@@ -198,8 +214,9 @@ MinButton.Activated:Connect(function()
     Window:Minimize()
 end)
 
-UpdatePercentage(55)
-
+---------------------
+-- CÁC TABS CHÍNH
+---------------------
 local TabDefinitions = {
     {"Home", "Thông Tin", "info"},
     {"Main", "Cày", "sword"},
@@ -218,22 +235,21 @@ local TabDefinitions = {
 }
 
 local Tabs = {}
-local TotalTabs = #TabDefinitions
-
-for index, tab in ipairs(TabDefinitions) do
+for i, tab in ipairs(TabDefinitions) do
     local ok, result = pcall(Window.AddTab, Window, {Title = tab[2], Icon = tab[3]})
     if not ok or not result then
         result = Window:AddTab({Title = tab[2]})
     end
     Tabs[tab[1]] = result
-    local progress = 55 + math.floor((index / TotalTabs) * 15)
-    UpdatePercentage(progress)
+    SetLoaderProgress(30 + ((i / #TabDefinitions) * 20))
+    task.wait()
 end
+SetLoaderProgress(50)
 
-local PlaceId = game.PlaceId
+---------------------------------------------------------
+-- LƯU DỮ LẠI DỮ LIỆU NGƯỜI DÙNG ĐỂ SÀI CHO LẦN SAU
+-----------------------------------------------------------
 local Options = Fluent.Options
-UpdatePercentage(72)
-
 local CONFIG_FOLDER = "MinGamingHub"
 local CONFIG_FILE = CONFIG_FOLDER .. "/DU_LIEU_TK_" .. tostring(plr.Name) .. ".json"
 local IsResettingConfig = false
@@ -358,61 +374,59 @@ local function WrapOptionsForAutoSave()
     end
 end
 
-UpdatePercentage(78)
+SetLoaderProgress(55)
 
-local MAP_SEAS = {
-    [85211729168715] = 1,
-    [79091703265657] = 2,
-    [100117331123089] = 3
-}
-
-local currentSea = MAP_SEAS[PlaceId]
-if not currentSea then
-    if LoaderGui then LoaderGui:Destroy() end
-    plr:Kick("PlaceId không hợp lệ")
-    return
-end
-
-local Sea1 = currentSea == 1
-local Sea2 = currentSea == 2
-local Sea3 = currentSea == 3
-
-UpdatePercentage(82)
-
+----------------------------
+-- BUILD UI 
+----------------------------
 function BuildUI()
+    -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
+    -- task.spawn / task.delay có thể sử dụng bình thường
 end
 
+----------------------------
+-- HOẠT ĐỘNG LOADER 
+----------------------------
+SetLoaderProgress(60)
 BuildUI()
-UpdatePercentage(88)
+SetLoaderProgress(78)
 
-CaptureDefaults()
-UpdatePercentage(92)
+CaptureDefaults()         
+SetLoaderProgress(84)
 
-WrapOptionsForAutoSave()
-UpdatePercentage(95)
+LoadConfig()               
+SetLoaderProgress(90)
 
-LoadConfig()
-UpdatePercentage(98)
+WrapOptionsForAutoSave()  
+SetLoaderProgress(96)
 
-UpdatePercentage(100)
-task.wait(0.35)
+task.wait()
+SetLoaderProgress(100)
+task.wait(0.5)
+
+local function FinishLoader()
+    if LoaderFinished then return end
+    LoaderFinished = true
+
+    TweenObject(UserImage, 0.35, {ImageTransparency = 1})
+    TweenObject(UserNameLabel, 0.35, {TextTransparency = 1})
+    TweenObject(TitleLabel, 0.35, {TextTransparency = 1})
+    TweenObject(ProgressBG, 0.35, {BackgroundTransparency = 1})
+    TweenObject(ProgressBar, 0.35, {BackgroundTransparency = 1})
+    task.wait(0.4)
+
+    TweenObject(MainFrame, 0.25, {Size = UDim2.new(0, 0, 0, 0)})
+    task.wait(0.3)
+
+    if LoaderGui and LoaderGui.Parent then
+        LoaderGui:Destroy()
+    end
+end
+
+FinishLoader()
 
 Fluent:Notify({
     Title = "Min Gaming",
     Content = "Tải Xong - Sẵn sàng sử dụng!",
     Duration = 10
 })
-
-TweenObject(TopicLabel, 0.4, {TextTransparency = 1})
-TweenObject(TitleLabel, 0.4, {TextTransparency = 1})
-TweenObject(ProgressBG, 0.4, {BackgroundTransparency = 1})
-TweenObject(ProgressBar, 0.4, {BackgroundTransparency = 1})
-
-task.wait(0.45)
-
-TweenObject(MainFrame, 0.25, {Size = UDim2.new(0, 0, 0, 0)})
-task.wait(0.25)
-
-if LoaderGui and LoaderGui.Parent then
-    LoaderGui:Destroy()
-end
