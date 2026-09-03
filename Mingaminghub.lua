@@ -49,10 +49,10 @@ local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "Fat Cat Hub",
         Colors = shared.LoaderColors or {
-            Main = Color3.fromRGB(0, 0, 0),
-            Title = Color3.fromRGB(255, 255, 255),
-            LoaderBackground = Color3.fromRGB(40, 40, 40),
-            LoaderSplash = Color3.fromRGB(3, 252, 3)
+            Main = Color3.fromRGB(15, 12, 25),             -- Nền chính: Đen tím tối (#0F0C19)
+            Title = Color3.fromRGB(255, 255, 255),          -- Tiêu đề: Trắng tinh
+            LoaderBackground = Color3.fromRGB(30, 25, 50),   -- Nền thanh nạp: Tím tối Cyber (#1E1932)
+            LoaderSplash = Color3.fromRGB(0, 225, 255)       -- Thanh nạp: Cyan Neon (#00E1FF)
         }
     }
 }
@@ -86,6 +86,13 @@ local MainFrame = CreateObject("Frame", {
     BorderSizePixel = 0, ClipsDescendants = true, Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 0, 0, 0)
 })
 AddUICorner(12, MainFrame)
+
+-- Viền Cyan cho Loader
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1.5
+MainStroke.Color = Color3.fromRGB(0, 225, 255)
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
 
 local UserImage = CreateObject("ImageLabel", {
     Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://13717478897", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
@@ -147,13 +154,14 @@ end
 SetLoaderProgress(25)
 
 local Window = Fluent:CreateWindow({
-    Title = "Fat Cat", 
+    Title = "Fat Cat Hub", 
     SubTitle = "", 
     TabWidth = 160, 
-    Theme = "Light",
+    Theme = "Dark", -- Đổi sang Theme Dark để khớp tông màu tối của Logo
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320), 
 })
+
 -- Ẩn menu Fluent lúc khởi động
 pcall(function()
     if Window.Root then
@@ -173,7 +181,7 @@ MinGui.Parent = ParentGui
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "FatCatButton"
-MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MinButton.BackgroundColor3 = Color3.fromRGB(15, 12, 25) -- Màu nền đen tím
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
 MinButton.Size = UDim2.fromOffset(50, 50)
@@ -184,6 +192,12 @@ MinButton.Parent = MinGui
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 12)
 MinCorner.Parent = MinButton
+
+local MinStroke = Instance.new("UIStroke")
+MinStroke.Thickness = 1.5
+MinStroke.Color = Color3.fromRGB(0, 225, 255) -- Viền Cyan Neon
+MinStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MinStroke.Parent = MinButton
 
 local Dragging, DragStart, StartPosition, DraggedFar = false, nil, nil, false
 
@@ -321,7 +335,7 @@ local function LoadConfig()
     if not isfile(CONFIG_FILE) then return end
     local ok, content = pcall(readfile, CONFIG_FILE)
     if not ok or type(content) ~= "string" or content == "" then return end
-    local ok2, data = pcall(function() return HttpService:JSONDecode(content) end)
+    local ok2, data = pcall(function() return HttpService:JSONEncode(content) end)
     if not ok2 or type(data) ~= "table" then return end
     for idx, value in pairs(data) do
         local opt = Options[idx]
