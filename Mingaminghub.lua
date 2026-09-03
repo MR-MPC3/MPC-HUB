@@ -49,10 +49,10 @@ local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "Fat Cat Hub",
         Colors = shared.LoaderColors or {
-            Main = Color3.fromRGB(15, 12, 25),             -- Nền chính: Đen tím tối (#0F0C19)
-            Title = Color3.fromRGB(255, 255, 255),          -- Tiêu đề: Trắng tinh
-            LoaderBackground = Color3.fromRGB(30, 25, 50),   -- Nền thanh nạp: Tím tối Cyber (#1E1932)
-            LoaderSplash = Color3.fromRGB(0, 225, 255)       -- Thanh nạp: Cyan Neon (#00E1FF)
+            Main = Color3.fromRGB(15, 12, 25),             
+            Title = Color3.fromRGB(255, 255, 255),        
+            LoaderBackground = Color3.fromRGB(30, 25, 50),   
+            LoaderSplash = Color3.fromRGB(0, 225, 255)      
         }
     }
 }
@@ -95,7 +95,7 @@ MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MainStroke.Parent = MainFrame
 
 local UserImage = CreateObject("ImageLabel", {
-    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://13717478897", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
+    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://114534750921003", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
 })
 AddUICorner(25, UserImage)
 
@@ -185,7 +185,7 @@ MinButton.BackgroundColor3 = Color3.fromRGB(15, 12, 25) -- Màu nền đen tím
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
 MinButton.Size = UDim2.fromOffset(50, 50)
-MinButton.Image = "rbxassetid://13717478897"
+MinButton.Image = "rbxassetid://114534750921003"
 MinButton.AutoButtonColor = false
 MinButton.Parent = MinGui
 
