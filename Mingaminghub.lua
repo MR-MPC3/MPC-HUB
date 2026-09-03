@@ -1,4 +1,4 @@
------------------------------------------------------
+-------------------------------------------------------
 -- SERVICES KHAI BÁO 1 LẦN DƯỚI CHỈ VIỆC GỌI SÀI
 -----------------------------------------------------------
 local Players = game:GetService("Players")
@@ -154,6 +154,7 @@ local Window = Fluent:CreateWindow({
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320), 
 })
+
 -- Ẩn menu Fluent lúc khởi động
 pcall(function()
     if Window.Root then
@@ -162,9 +163,9 @@ pcall(function()
 end)
 SetLoaderProgress(30)
 
----------------------------------------
--- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU)
----------------------------------------
+-------------------------------------------------------
+-- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU & KÉO THẢ MƯỢT MÀ)
+-------------------------------------------------------
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "FatCatToggle"
 MinGui.ResetOnSpawn = false
@@ -173,7 +174,7 @@ MinGui.Parent = ParentGui
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "FatCatButton"
-MinButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MinButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
 MinButton.Size = UDim2.fromOffset(50, 50)
@@ -182,61 +183,80 @@ MinButton.AutoButtonColor = false
 MinButton.Parent = MinGui
 
 local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 12)
+MinCorner.CornerRadius = UDim.new(0, 14)
 MinCorner.Parent = MinButton
 
-local Dragging, DragStart, StartPosition, DraggedFar = false, nil, nil, false
+local MinStroke = Instance.new("UIStroke")
+MinStroke.Thickness = 1.5
+MinStroke.Color = Color3.fromRGB(255, 255, 255)
+MinStroke.Transparency = 0.85
+MinStroke.Parent = MinButton
 
-MinButton.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+---------------------------------------
+-- XỬ LÝ KÉO THẢ (SMOOTH DRAG) & CLICK
+---------------------------------------
+local Dragging = false
+local DragStart, StartPos
+local IsDragged = false
+
+local function UpdateDrag(input)
+    local delta = input.Position - DragStart
+    if delta.Magnitude > 6 then
+        IsDragged = true
+    end
+    local newPos = UDim2.new(
+        StartPos.X.Scale, StartPos.X.Offset + delta.X,
+        StartPos.Y.Scale, StartPos.Y.Offset + delta.Y
+    )
+    -- Tween di chuyển vị trí mượt mà
+    TweenObject(MinButton, 0.08, {Position = newPos}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+end
+
+MinButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         Dragging = true
-        DraggedFar = false
-        DragStart = Input.Position
-        StartPosition = MinButton.Position
+        IsDragged = false
+        DragStart = input.Position
+        StartPos = MinButton.Position
+
+        -- Hiệu ứng co nhẹ khi bắt đầu ấn vào
+        TweenObject(MinButton, 0.15, {Size = UDim2.fromOffset(42, 42)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+                -- Khôi phục kích thước với hiệu ứng nảy (Back Easing)
+                TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(50, 50)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            end
+        end)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(Input)
-    if not Dragging then return end
-    if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
-        local Delta = Input.Position - DragStart
-        if Delta.Magnitude > 5 then DraggedFar = true end
-        MinButton.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
+UserInputService.InputChanged:Connect(function(input)
+    if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        UpdateDrag(input)
     end
 end)
 
-UserInputService.InputEnded:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = false
-    end
-end)
-
+---------------------------------------
+-- XỬ LÝ BẬT / TẮT MENU (TOGGLE EFFECT)
+---------------------------------------
 local MenuVisible = false
-local MenuAnimating = false
+
 MinButton.Activated:Connect(function()
-    if DraggedFar then DraggedFar = false return end
-    if MenuAnimating then return end
-    MenuAnimating = true
+    if IsDragged then return end -- Nếu đang kéo thì bỏ qua click
+
     MenuVisible = not MenuVisible
-    if MenuVisible then
-        TweenObject(MinButton, 0.12, {Size = UDim2.fromOffset(44, 44), Rotation = -12}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        task.wait(0.12)
 
-        pcall(function()
-            if Window.Root then Window.Root.Visible = true end
-        end)
-        TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(50, 50), Rotation = 0}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    else
-        TweenObject(MinButton, 0.12, {Size = UDim2.fromOffset(44, 44), Rotation = 12}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        task.wait(0.12)
+    -- Xoay tròn nút tạo hiệu ứng chuyển đổi đẹp mắt
+    local targetRotation = MenuVisible and 360 or 0
+    TweenObject(MinButton, 0.4, {Rotation = targetRotation}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-        pcall(function()
-            if Window.Root then Window.Root.Visible = false end
-        end)
-        TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(50, 50), Rotation = 0}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    end
-    task.wait(0.25)
-    MenuAnimating = false
+    pcall(function()
+        if Window and Window.Root then
+            Window.Root.Visible = MenuVisible
+        end
+    end)
 end)
 
 ---------------------
@@ -406,7 +426,6 @@ SetLoaderProgress(55)
 ----------------------------
 function BuildUI()
     -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
-    -- task.spawn / task.delay có thể sử dụng bình thường
 end
 
 ----------------------------------
@@ -454,4 +473,4 @@ Fluent:Notify({
     Title = "Fat Cat Hub",
     Content = "Tải Xong - Sẵn sàng sử dụng!",
     Duration = 10
-}) 
+})
