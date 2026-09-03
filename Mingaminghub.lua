@@ -8,9 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 
--- Ưu tiên gethui() nếu executor hỗ trợ (an toàn hơn CoreGui)
 local ParentGui = (gethui and gethui()) or CoreGui
-
 local plr = Players.LocalPlayer
 local RS = ReplicatedStorage
 
@@ -45,26 +43,29 @@ end)
 -- BẢNG MÀU CHUẨN THEO LOGO FAT CAT HUB
 ---------------------------------------------------
 local LOGO_THEME = {
-    Background  = Color3.fromRGB(18, 14, 38),   
-    AccentCyan  = Color3.fromRGB(0, 225, 255),  
-    AccentOrange= Color3.fromRGB(255, 140, 40),  
-    AccentPink  = Color3.fromRGB(210, 60, 255),  
-    BarBackground = Color3.fromRGB(28, 22, 56) 
+    Background = Color3.fromRGB(18, 14, 38),
+    AccentCyan = Color3.fromRGB(0, 225, 255),
+    AccentOrange = Color3.fromRGB(255, 140, 40),
+    AccentPink = Color3.fromRGB(210, 60, 255),
+    BarBackground = Color3.fromRGB(28, 22, 56)
 }
 
 --------------------------------------------------
 -- GIAO DIỆN LOADER VÀ BẮT ĐẦU KHỞI CHẠY LOADER
 --------------------------------------------------
 shared.LoaderTitle = "Đăng Ký Kênh Fat Cat Hub"
+
+local DefaultColors = {
+    Main = LOGO_THEME.Background,             
+    Title = LOGO_THEME.AccentOrange,        
+    LoaderBackground = LOGO_THEME.BarBackground,   
+    LoaderSplash = LOGO_THEME.AccentCyan
+}
+
 local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "Fat Cat Hub",
-        Colors = shared.LoaderColors or {
-            Main = LOGO_THEME.Background,             
-            Title = LOGO_THEME.AccentOrange,        
-            LoaderBackground = LOGO_THEME.BarBackground,   
-            LoaderSplash = LOGO_THEME.AccentCyan      
-        }
+        Colors = shared.LoaderColors or DefaultColors
     }
 }
 _G.LoaderConfig = LoaderConfig
@@ -100,7 +101,6 @@ local MainFrame = CreateObject("Frame", {
 })
 AddUICorner(14, MainFrame)
 
--- Viền Cyan cho Loader
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 1.8
 MainStroke.Color = LOGO_THEME.AccentCyan
@@ -172,10 +172,9 @@ local Window = Fluent:CreateWindow({
     TabWidth = 160, 
     Theme = "Dark", 
     Acrylic = false,
-    Size = UDim2.fromOffset(500, 320), 
+    Size = UDim2.fromOffset(500, 320)
 })
 
--- Ẩn menu Fluent lúc khởi động
 pcall(function()
     if Window.Root then
         Window.Root.Visible = false
@@ -184,7 +183,7 @@ end)
 SetLoaderProgress(30)
 
 ---------------------------------------
--- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU) + HIỆU ỨNG TƯƠNG TÁC
+-- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU)
 ---------------------------------------
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "FatCatToggle"
@@ -221,7 +220,6 @@ MinButton.InputBegan:Connect(function(Input)
         DragStart = Input.Position
         StartPosition = MinButton.Position
         
-        -- Hiệu ứng co lại nhẹ khi nhấn xuống
         TweenObject(MinButton, 0.15, {Size = UDim2.fromOffset(45, 45)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     end
 end)
@@ -238,7 +236,6 @@ end)
 UserInputService.InputEnded:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         Dragging = false
-        -- Hiệu ứng nảy trở lại kích thước cũ
         TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(52, 52)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     end
 end)
@@ -251,15 +248,14 @@ MinButton.Activated:Connect(function()
     end
     MenuVisible = not MenuVisible
     
-    -- Hiệu ứng xoay nhẹ và chuyển màu viền khi Toggle Menu
     if MenuVisible then
-        TweenObject(MinStroke, 0.3, {Color = LOGO_THEME.AccentOrange}) -- Đổi viền sang Cam khi mở
+        TweenObject(MinStroke, 0.3, {Color = LOGO_THEME.AccentOrange})
         TweenObject(MinButton, 0.15, {Rotation = -12})
         task.delay(0.15, function()
             TweenObject(MinButton, 0.2, {Rotation = 0}, Enum.EasingStyle.Back)
         end)
     else
-        TweenObject(MinStroke, 0.3, {Color = LOGO_THEME.AccentCyan})   -- Đổi viền về Cyan khi đóng
+        TweenObject(MinStroke, 0.3, {Color = LOGO_THEME.AccentCyan})
         TweenObject(MinButton, 0.15, {Rotation = 12})
         task.delay(0.15, function()
             TweenObject(MinButton, 0.2, {Rotation = 0}, Enum.EasingStyle.Back)
@@ -306,7 +302,7 @@ end
 SetLoaderProgress(50)
 
 ---------------------------------------------------------
--- LƯU DỮ LẠI DỮ LIỆU NGƯỜI DÙNG ĐỂ SÀI CHO LẦN SAU
+-- LƯU DỮ LẠI DỮ LIỆU NGƯỜI DÙNG
 -----------------------------------------------------------
 local Options = Fluent.Options
 local CONFIG_FOLDER = "FatCatHub"
@@ -439,7 +435,7 @@ SetLoaderProgress(55)
 -- BUILD UI 
 ----------------------------
 function BuildUI()
-    -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
+    --hiện chưa có gì sau này phát triển thêm có cho sài task
 end
 
 ----------------------------------
