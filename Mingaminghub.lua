@@ -58,9 +58,9 @@ local LoaderConfig = {
 }
 _G.LoaderConfig = LoaderConfig
 
-local function TweenObject(object, duration, goals)
+local function TweenObject(object, duration, goals, easingStyle, easingDirection)
     if not object then return end
-    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goals)
+    local tween = TweenService:Create(object, TweenInfo.new(duration, easingStyle or Enum.EasingStyle.Quad, easingDirection or Enum.EasingDirection.Out), goals)
     tween:Play()
     return tween
 end
@@ -212,17 +212,31 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 local MenuVisible = false
+local MenuAnimating = false
 MinButton.Activated:Connect(function()
-    if DraggedFar then
-        DraggedFar = false
-        return
-    end
+    if DraggedFar then DraggedFar = false return end
+    if MenuAnimating then return end
+    MenuAnimating = true
     MenuVisible = not MenuVisible
-    pcall(function()
-        if Window.Root then
-            Window.Root.Visible = MenuVisible
-        end
-    end)
+    if MenuVisible then
+        TweenObject(MinButton, 0.12, {Size = UDim2.fromOffset(44, 44), Rotation = -12}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        task.wait(0.12)
+
+        pcall(function()
+            if Window.Root then Window.Root.Visible = true end
+        end)
+        TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(50, 50), Rotation = 0}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    else
+        TweenObject(MinButton, 0.12, {Size = UDim2.fromOffset(44, 44), Rotation = 12}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        task.wait(0.12)
+
+        pcall(function()
+            if Window.Root then Window.Root.Visible = false end
+        end)
+        TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(50, 50), Rotation = 0}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    end
+    task.wait(0.25)
+    MenuAnimating = false
 end)
 
 ---------------------
