@@ -1,4 +1,4 @@
------------------------------------------------------
+-----------------------------------------------------------
 -- SERVICES KHAI BÁO 1 LẦN DƯỚI CHỈ VIỆC GỌI SÀI
 -----------------------------------------------------------
 local Players = game:GetService("Players")
@@ -16,7 +16,7 @@ local RS = ReplicatedStorage
 
 ---------------------------
 -- KIỂM TRA MAP
--------------------------
+---------------------------
 local MAP_SEAS = {
     [85211729168715] = 1,
     [79091703265657] = 2,
@@ -33,34 +33,47 @@ local Sea1 = currentSea == 1
 local Sea2 = currentSea == 2
 local Sea3 = currentSea == 3
 
--------------------------
+---------------------------
 -- CLEANUP OLD GUI
------------------------
+---------------------------
 pcall(function()
     if ParentGui:FindFirstChild("Core") then ParentGui.Core:Destroy() end
     if ParentGui:FindFirstChild("FatCatToggle") then ParentGui.FatCatToggle:Destroy() end
 end)
 
+---------------------------------------------------
+-- BẢNG MÀU CHUẨN THEO LOGO FAT CAT HUB
+---------------------------------------------------
+local LOGO_THEME = {
+    Background  = Color3.fromRGB(18, 14, 38),   
+    AccentCyan  = Color3.fromRGB(0, 225, 255),  
+    AccentOrange= Color3.fromRGB(255, 140, 40),  
+    AccentPink  = Color3.fromRGB(210, 60, 255), 
+    BarBackground = Color3.fromRGB(28, 22, 56) -
+}
+
 --------------------------------------------------
--- GIAO DIỆN LOADER VÀ BẮT ĐÀU KHỞI CHẠY LOADER
--------------------------------------------------
+-- GIAO DIỆN LOADER VÀ BẮT ĐẦU KHỞI CHẠY LOADER
+--------------------------------------------------
 shared.LoaderTitle = "Đăng Ký Kênh Fat Cat Hub"
 local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "Fat Cat Hub",
         Colors = shared.LoaderColors or {
-            Main = Color3.fromRGB(15, 12, 25),             
-            Title = Color3.fromRGB(255, 255, 255),        
-            LoaderBackground = Color3.fromRGB(30, 25, 50),   
-            LoaderSplash = Color3.fromRGB(0, 225, 255)      
+            Main = LOGO_THEME.Background,             
+            Title = LOGO_THEME.AccentOrange,        
+            LoaderBackground = LOGO_THEME.BarBackground,   
+            LoaderSplash = LOGO_THEME.AccentCyan      
         }
     }
 }
 _G.LoaderConfig = LoaderConfig
 
-local function TweenObject(object, duration, goals)
+local function TweenObject(object, duration, goals, easingStyle, easingDir)
     if not object then return end
-    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goals)
+    easingStyle = easingStyle or Enum.EasingStyle.Quad
+    easingDir = easingDir or Enum.EasingDirection.Out
+    local tween = TweenService:Create(object, TweenInfo.new(duration, easingStyle, easingDir), goals)
     tween:Play()
     return tween
 end
@@ -85,12 +98,12 @@ local MainFrame = CreateObject("Frame", {
     Name = "Main", Parent = LoaderGui, BackgroundColor3 = LoaderConfig.LoaderData.Colors.Main,
     BorderSizePixel = 0, ClipsDescendants = true, Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 0, 0, 0)
 })
-AddUICorner(12, MainFrame)
+AddUICorner(14, MainFrame)
 
 -- Viền Cyan cho Loader
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 1.5
-MainStroke.Color = Color3.fromRGB(0, 225, 255)
+MainStroke.Thickness = 1.8
+MainStroke.Color = LOGO_THEME.AccentCyan
 MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MainStroke.Parent = MainFrame
 
@@ -101,19 +114,19 @@ AddUICorner(25, UserImage)
 
 local UserNameLabel = CreateObject("TextLabel", {
     Name = "UserName", Parent = MainFrame, BackgroundTransparency = 1, Text = "Youtube: Fat Cat",
-    Position = UDim2.new(0, 75, 0, 10), Size = UDim2.new(0, 220, 0, 50), Font = Enum.Font.GothamBold,
-    TextColor3 = LoaderConfig.LoaderData.Colors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
+    Position = UDim2.new(0, 75, 0, 10), Size = UDim2.new(0, 220, 0, 25), Font = Enum.Font.GothamBold,
+    TextColor3 = LOGO_THEME.AccentOrange, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
 })
 
 local TitleLabel = CreateObject("TextLabel", {
-    Name = "Title", Parent = MainFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 30, 0, 65),
-    Size = UDim2.new(0, 286, 0, 25), Font = Enum.Font.Gotham, RichText = true, Text = "<b>" .. LoaderConfig.LoaderData.Name .. "</b>",
-    TextColor3 = LoaderConfig.LoaderData.Colors.Title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left
+    Name = "Title", Parent = MainFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 75, 0, 32),
+    Size = UDim2.new(0, 240, 0, 25), Font = Enum.Font.Gotham, RichText = true, Text = "<b>" .. LoaderConfig.LoaderData.Name .. "</b>",
+    TextColor3 = Color3.fromRGB(255, 255, 255), TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left
 })
 
 local ProgressBG = CreateObject("Frame", {
     Name = "BG", Parent = MainFrame, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 0,
-    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 70), Size = UDim2.new(0.85, 0, 0, 24)
+    BackgroundColor3 = LoaderConfig.LoaderData.Colors.LoaderBackground, BorderSizePixel = 0, Position = UDim2.new(0.5, 0, 0, 75), Size = UDim2.new(0.88, 0, 0, 22)
 })
 AddUICorner(8, ProgressBG)
 
@@ -157,7 +170,7 @@ local Window = Fluent:CreateWindow({
     Title = "Fat Cat Hub", 
     SubTitle = "", 
     TabWidth = 160, 
-    Theme = "Dark", -- Đổi sang Theme Dark để khớp tông màu tối của Logo
+    Theme = "Dark", 
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320), 
 })
@@ -171,7 +184,7 @@ end)
 SetLoaderProgress(30)
 
 ---------------------------------------
--- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU)
+-- TOGGLE BUTTON (NÚT ẨN/HIỆN MENU) + HIỆU ỨNG TƯƠNG TÁC
 ---------------------------------------
 local MinGui = Instance.new("ScreenGui")
 MinGui.Name = "FatCatToggle"
@@ -181,21 +194,21 @@ MinGui.Parent = ParentGui
 
 local MinButton = Instance.new("ImageButton")
 MinButton.Name = "FatCatButton"
-MinButton.BackgroundColor3 = Color3.fromRGB(15, 12, 25) -- Màu nền đen tím
+MinButton.BackgroundColor3 = LOGO_THEME.Background
 MinButton.BorderSizePixel = 0
 MinButton.Position = UDim2.fromOffset(20, 60)
-MinButton.Size = UDim2.fromOffset(50, 50)
+MinButton.Size = UDim2.fromOffset(52, 52)
 MinButton.Image = "rbxassetid://102012067289809"
 MinButton.AutoButtonColor = false
 MinButton.Parent = MinGui
 
 local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 12)
+MinCorner.CornerRadius = UDim.new(0, 14)
 MinCorner.Parent = MinButton
 
 local MinStroke = Instance.new("UIStroke")
-MinStroke.Thickness = 1.5
-MinStroke.Color = Color3.fromRGB(0, 225, 255) -- Viền Cyan Neon
+MinStroke.Thickness = 2
+MinStroke.Color = LOGO_THEME.AccentCyan
 MinStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MinStroke.Parent = MinButton
 
@@ -207,6 +220,9 @@ MinButton.InputBegan:Connect(function(Input)
         DraggedFar = false
         DragStart = Input.Position
         StartPosition = MinButton.Position
+        
+        -- Hiệu ứng co lại nhẹ khi nhấn xuống
+        TweenObject(MinButton, 0.15, {Size = UDim2.fromOffset(45, 45)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     end
 end)
 
@@ -222,6 +238,8 @@ end)
 UserInputService.InputEnded:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         Dragging = false
+        -- Hiệu ứng nảy trở lại kích thước cũ
+        TweenObject(MinButton, 0.25, {Size = UDim2.fromOffset(52, 52)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     end
 end)
 
@@ -232,6 +250,22 @@ MinButton.Activated:Connect(function()
         return
     end
     MenuVisible = not MenuVisible
+    
+    -- Hiệu ứng xoay nhẹ và chuyển màu viền khi Toggle Menu
+    if MenuVisible then
+        TweenObject(MinStroke, 0.3, {Color = LOGO_THEME.AccentOrange}) -- Đổi viền sang Cam khi mở
+        TweenObject(MinButton, 0.15, {Rotation = -12})
+        task.delay(0.15, function()
+            TweenObject(MinButton, 0.2, {Rotation = 0}, Enum.EasingStyle.Back)
+        end)
+    else
+        TweenObject(MinStroke, 0.3, {Color = LOGO_THEME.AccentCyan})   -- Đổi viền về Cyan khi đóng
+        TweenObject(MinButton, 0.15, {Rotation = 12})
+        task.delay(0.15, function()
+            TweenObject(MinButton, 0.2, {Rotation = 0}, Enum.EasingStyle.Back)
+        end)
+    end
+
     pcall(function()
         if Window.Root then
             Window.Root.Visible = MenuVisible
@@ -406,7 +440,6 @@ SetLoaderProgress(55)
 ----------------------------
 function BuildUI()
     -- Tạo toàn bộ giao diện và khởi động các chức năng của Script tại đây.
-    -- task.spawn / task.delay có thể sử dụng bình thường
 end
 
 ----------------------------------
