@@ -8,8 +8,11 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 
+-- Ưu tiên gethui() nếu executor hỗ trợ (an toàn hơn CoreGui)
 local ParentGui = (gethui and gethui()) or CoreGui
+
 local plr = Players.LocalPlayer
+local RS = ReplicatedStorage
 
 ---------------------------
 -- KIỂM TRA MAP
