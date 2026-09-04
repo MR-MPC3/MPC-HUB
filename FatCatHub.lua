@@ -428,17 +428,51 @@ end
 
 SetLoaderProgress(55)
 
+-------------------------------------------------------
+-- MODULE FAST ATTACK
+-------------------------------------------------------
+_G.FastAttack = true
+
+local RegisterAttack = nil
+task.spawn(function()
+    local modules = RS:WaitForChild("Modules", 10)
+    local net = modules and modules:WaitForChild("Net", 10)
+    RegisterAttack = net and net:WaitForChild("RE/RegisterAttack", 10)
+end)
+
+-- Vòng lặp liên tục đánh khi bật FastAttack
+task.spawn(function()
+    while true do
+        if _G.FastAttack and RegisterAttack then
+            pcall(function()
+                RegisterAttack:FireServer(0)
+            end)
+        end
+        task.wait(0.01)
+    end
+end)
+
 ----------------------------
 -- BUILD UI 
 ----------------------------
 function BuildUI()
-Tabs.Setting:AddButton({
-    Title="Khôi Phục Thiết Lập Mặc Định",
-    Description="Đưa toàn bộ cài đặt về mặc định",
-    Callback=function()
-        ResetAllToDefault()
-    end
-})
+    
+    Tabs.Setting:AddToggle("FastAttack", {
+        Title = "Fast Attack",
+        Description = "",
+        Default = true,
+        Callback = function(Value)
+            _G.FastAttack = Value
+        end
+    })
+    
+    Tabs.Setting:AddButton({
+        Title="Khôi Phục Thiết Lập Mặc Định",
+        Description="Đưa toàn bộ cài đặt về mặc định",
+        Callback=function()
+            ResetAllToDefault()
+        end
+    })
     
 end
 
