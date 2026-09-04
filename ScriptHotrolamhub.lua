@@ -193,12 +193,10 @@ function BuildUI()
     local createdElements = {} 
     local posCount = 0
 
-    -- Biến quản lý trạng thái đóng băng vị trí
     local isFrozen = false
     local freezeConnection = nil
     local frozenPosition = nil
 
-    -- Nút Gạt Đóng Băng Vị Trí Nhân Vật (Góc quay vẫn xoay tự do)
     PlayerTab:AddToggle("FreezeToggle", {
         Title = "Đóng Băng Vị Trí Nhân Vật",
         Default = false,
@@ -212,7 +210,6 @@ function BuildUI()
                     frozenPosition = hrp.Position
                 end
 
-                -- Ghim chặt vị trí X, Y, Z nhưng cho phép camera và góc nhìn xoay tự do
                 freezeConnection = RunService.RenderStepped:Connect(function()
                     if isFrozen and hrp and frozenPosition then
                         local currentRot = hrp.CFrame - hrp.Position
@@ -242,7 +239,6 @@ function BuildUI()
         end
     })
 
-    -- Nút lấy tọa độ nhân vật và góc quay
     PlayerTab:AddButton({
         Title = "Lấy Tọa Độ Nhân Vật Và Góc Quay",
         Description = "Tạo một bảng lưu CFrame chuẩn xác không làm tròn",
@@ -306,7 +302,6 @@ function BuildUI()
         end
     })
 
-    -- Nút Xóa Tọa Độ
     PlayerTab:AddButton({
         Title = "Xóa Tọa Độ",
         Description = "Xóa toàn bộ các bảng tọa độ đã tạo bên dưới",
@@ -328,7 +323,142 @@ function BuildUI()
     -------------------------------------------------------
     -- TAB 2: LẤY TỌA ĐỘ QUÁI
     -------------------------------------------------------
+    local MobTab = Tabs["MobPos"]
 
+    local mobCreatedElements = {}
+    local mobPosCount = 0
+    local targetMobName = ""
+
+    -- Ô nhập tên quái
+    MobTab:AddInput("MobNameInput", {
+        Title = "Nhập Tên Quái",
+        Default = "",
+        Placeholder = "Nhập tên quái cần tìm...",
+        Numeric = false,
+        Finished = false,
+        Callback = function(value)
+            targetMobName = value
+        end
+    })
+
+    -- Nút lấy tọa độ quái
+    MobTab:AddButton({
+        Title = "Lấy Tọa Độ Quái",
+        Description = "Tìm quái theo tên và lấy tọa độ CFrame hiện tại",
+        Callback = function()
+            if targetMobName == "" then
+                Fluent:Notify({
+                    Title = "Lỗi",
+                    Content = "Vui lòng nhập tên quái trước!",
+                    Duration = 3
+                })
+                return
+            end
+
+            local foundPart = nil
+            local foundName = ""
+
+            local function searchFolder(parent)
+                for _, obj in ipairs(parent:GetChildren()) do
+                    if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetMobName)) then
+                        local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
+                        local hum = obj:FindFirstChildOfClass("Humanoid")
+                        if hrp and hum and hum.Health > 0 then
+                            foundPart = hrp
+                            foundName = obj.Name
+                            return true
+                        end
+                    end
+                end
+                return false
+            end
+
+            -- Tìm ưu tiên trong thư mục Enemies (chuẩn Blox Fruits)
+            local enemiesFolder = workspace:FindFirstChild("Enemies")
+            if enemiesFolder then
+                searchFolder(enemiesFolder)
+            end
+
+            -- Nếu chưa tìm thấy thì quét rộng toàn bộ Workspace
+            if not foundPart then
+                searchFolder(workspace)
+            end
+
+            if not foundPart then
+                Fluent:Notify({
+                    Title = "Không Tìm Thấy",
+                    Content = "Không tìm thấy quái khớp với tên: " .. targetMobName,
+                    Duration = 3
+                })
+                return
+            end
+
+            mobPosCount = mobPosCount + 1
+            local cf = foundPart.CFrame
+            local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
+            
+            local fullCFrameStr = string.format(
+                "CFrame.new(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tostring(x), tostring(y), tostring(z),
+                tostring(r00), tostring(r01), tostring(r02),
+                tostring(r10), tostring(r11), tostring(r12),
+                tostring(r20), tostring(r21), tostring(r22)
+            )
+
+            local paragraphBox = MobTab:AddParagraph({
+                Title = "Quái: " .. foundName .. " (" .. mobPosCount .. ")",
+                Content = fullCFrameStr
+            })
+            table.insert(mobCreatedElements, paragraphBox)
+
+            local copyButton = MobTab:AddButton({
+                Title = "Sao Chép Tọa Độ Quái",
+                Description = "Sao chép CFrame của " .. foundName,
+                Callback = function()
+                    if setclipboard then
+                        setclipboard(fullCFrameStr)
+                        Fluent:Notify({
+                            Title = "Thành công",
+                            Content = "Đã sao chép tọa độ quái!",
+                            Duration = 3
+                        })
+                    else
+                        Fluent:Notify({
+                            Title = "Lỗi",
+                            Content = "Executor không hỗ trợ setclipboard!",
+                            Duration = 3
+                        })
+                    end
+                end
+            })
+            table.insert(mobCreatedElements, copyButton)
+
+            Fluent:Notify({
+                Title = "Thành công",
+                Content = "Đã lấy tọa độ quái: " .. foundName,
+                Duration = 2
+            })
+        end
+    })
+
+    -- Nút Xóa Tọa Độ Quái
+    MobTab:AddButton({
+        Title = "Xóa Tọa Độ Quái",
+        Description = "Xóa toàn bộ các bảng tọa độ quái đã tạo bên dưới",
+        Callback = function()
+            for _, element in ipairs(mobCreatedElements) do
+                pcall(function() element:Destroy() end)
+            end
+            mobCreatedElements = {}
+            mobPosCount = 0
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ danh sách tọa độ quái!",
+                Duration = 2
+            })
+        end
+    })
 
     -------------------------------------------------------
     -- TAB 3: LẤY TỌA ĐỘ NPC
@@ -348,6 +478,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã bỏ khóa góc quay!",
+    Content = "Tải Xong - Đã thêm tính năng lấy tọa độ quái!",
     Duration = 5
 })
