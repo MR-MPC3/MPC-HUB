@@ -185,91 +185,68 @@ end
 ----------------------------
 function BuildUI()
     -------------------------------------------------------
-    -- TAB 1: LẤY TỌA ĐỘ NHÂN VẬT
+    -- TAB 1: LẤY TỌA ĐỘ NHÂN VẬT (GIAO DIỆN GỌN GÀNG)
     -------------------------------------------------------
     local PlayerTab = Tabs["PlayerPos"]
-    local createdElements = {}
-    local posCount = 0
 
-    -- Nút lấy tọa độ & góc quay đầy đủ
+    -- Ô chứa văn bản kết quả CFrame (Fluent tự tích hợp nút Copy)
+    local PosInput = PlayerTab:AddInput("PosResult", {
+        Title = "Kết Quả Tọa Độ CFrame",
+        Default = "Chưa lấy tọa độ...",
+        Numeric = false,
+        Finished = false,
+        Callback = function() end
+    })
+
+    -- Nút lấy tọa độ
     PlayerTab:AddButton({
-        Title = "Lấy Tọa Độ Nhân Vật",
-        Description = "Lấy toàn bộ Tọa Độ (X,Y,Z) và Ma Trận Góc Quay của nhân vật",
+        Title = "Lấy Tọa Độ Hiện Tại",
+        Description = "Lấy CFrame và hiển thị trực tiếp vào ô kết quả trên",
         Callback = function()
             local char = plr.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then
                 Fluent:Notify({
                     Title = "Lỗi",
-                    Content = "Không tìm thấy HumanoidRootPart của nhân vật!",
+                    Content = "Không tìm thấy HumanoidRootPart!",
                     Duration = 3
                 })
                 return
             end
 
-            posCount = posCount + 1
             local cf = hrp.CFrame
             local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
             
-            -- Chuỗi CFrame đầy đủ chứa cả vị trí lẫn góc quay
             local fullCFrameStr = string.format(
                 "CFrame.new(%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f)",
                 x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22
             )
 
-            -- Hiển thị Bảng thông tin Tọa độ & Góc quay
-            local p = PlayerTab:AddParagraph({
-                Title = "Bảng Tọa Độ #" .. posCount,
-                Content = fullCFrameStr
-            })
-            table.insert(createdElements, p)
+            PosInput:SetValue(fullCFrameStr)
 
-            -- Nút sao chép đi kèm bảng
-            local btnCopy = PlayerTab:AddButton({
-                Title = "Sao Chép Bảng #" .. posCount,
-                Description = "Chép chuỗi CFrame đầy đủ vào Clipboard",
-                Callback = function()
-                    if setclipboard then
-                        setclipboard(fullCFrameStr)
-                        Fluent:Notify({
-                            Title = "Thành công",
-                            Content = "Đã sao chép Bảng #" .. posCount .. " vào Clipboard!",
-                            Duration = 3
-                        })
-                    else
-                        Fluent:Notify({
-                            Title = "Lỗi",
-                            Content = "Executor của bạn không hỗ trợ setclipboard!",
-                            Duration = 3
-                        })
-                    end
-                end
-            })
-            table.insert(createdElements, btnCopy)
+            -- Tự động chép luôn vào Clipboard cho tiện
+            if setclipboard then
+                setclipboard(fullCFrameStr)
+            end
 
             Fluent:Notify({
-                Title = "Đã lấy tọa độ!",
-                Content = "Đã tạo Bảng Tọa Độ #" .. posCount,
+                Title = "Fat Cat Hub",
+                Content = "Đã cập nhật tọa độ & tự động sao chép!",
                 Duration = 3
             })
         end
     })
 
-    -- Nút xóa tất cả bảng tọa độ đã lấy
+    -- Nút xóa nội dung ô tọa độ
     PlayerTab:AddButton({
-        Title = "Xóa Danh Sách Tọa Độ",
-        Description = "Xóa toàn bộ các bảng tọa độ & nút sao chép ở bên dưới",
+        Title = "Xóa Ô Tọa Độ",
+        Description = "Xóa trắng ô dữ liệu tọa độ",
         Callback = function()
-            for _, element in ipairs(createdElements) do
-                pcall(function() element:Destroy() end)
-            end
-            createdElements = {}
-            posCount = 0
-
+            PosInput:SetValue("")
             Fluent:Notify({
                 Title = "Thông báo",
-                Content = "Đã xóa toàn bộ các bảng tọa độ!",
-                Duration = 3
+                Content = "Đã dọn dẹp ô tọa độ!",
+                Duration = 2
             })
         end
     })
@@ -300,6 +277,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã Cập Nhật Tab Nhân Vật!",
+    Content = "Tải Xong - Đã Tối Ưu Giao Diện Gọn Gàng!",
     Duration = 5
 })
