@@ -544,7 +544,6 @@ EventTab:AddButton({
         end
         eventCreatedElements = {}
         
-        -- Tạo lại ô hướng dẫn ban đầu sau khi xóa
         EventLogParagraph = EventTab:AddParagraph({
             Title = "Hướng Dẫn Sử Dụng",
             Content = "Đã dọn sạch bảng sự kiện! Hãy tương tác tiếp với NPC."
@@ -554,50 +553,6 @@ EventTab:AddButton({
         Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
     end
 })
-
--- Gán hàm callback để nhận dữ liệu từ hook truyền lên UI (Dạng tạo mới Paragraph mỗi lần bắt sự kiện)
-eventCallbackUI = function(remoteName, contentStr, argsTable)
-    eventCount = eventCount + 1
-    local currentId = eventCount
-    
-    -- Tạo đoạn mã Lua mẫu để gọi lại Remote đó
-    local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..remoteName..'"):InvokeServer('
-    for i, v in ipairs(argsTable) do
-        if type(v) == "string" then
-            luaCallCode = luaCallCode .. '"' .. tostring(v) .. '"'
-        else
-            luaCallCode = luaCallCode .. tostring(v)
-        end
-        if i < #argsTable then
-            luaCallCode = luaCallCode .. ", "
-        end
-    end
-    luaCallCode = luaCallCode .. ")"
-
-    -- Dùng task.defer để an toàn luồng khi tương tác với UI
-    task.defer(function()
-        pcall(function()
-            -- Thêm Paragraph mới hiển thị trực tiếp sự kiện bắt được lên đầu/dưới
-            local paragraph = EventTab:AddParagraph({
-                Title = "🔥 Sự Kiện Mới #" .. currentId .. " (" .. remoteName .. ")",
-                Content = contentStr
-            })
-            table.insert(eventCreatedElements, paragraph)
-
-            -- Nút sao chép dòng lệnh tái tạo sự kiện
-            local copyBtn = EventTab:AddButton({
-                Title = "📋 Sao chép mã lệnh gọi lại (Args) #" .. currentId,
-                Callback = function()
-                    if setclipboard then
-                        setclipboard(luaCallCode)
-                        Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép lệnh sự kiện #" .. currentId, Duration = 2 })
-                    end
-                end
-            })
-            table.insert(eventCreatedElements, copyBtn)
-        end)
-    end)
-end
     
 end
 
