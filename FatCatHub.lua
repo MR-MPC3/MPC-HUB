@@ -187,23 +187,37 @@ local Corner=Instance.new("UICorner",FatCatButton)
 Corner.CornerRadius=UDim.new(0,14)
 
 local Scale=Instance.new("UIScale",FatCatButton)
-local Tween,Dragging,DragStart,StartPos,IsDragged=false,false,nil,nil,false
+local ButtonTween=nil
+local Dragging=false
+local DragStart=nil
+local StartPos=nil
+local IsDragged=false
+local AnimationId=0
 
-local function Animate(s,t,style)
-    if Tween then pcall(Tween.Cancel,Tween) end
-    Tween=TweenService:Create(Scale,TweenInfo.new(t,style or Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Scale=s})
-    Tween:Play()
+local function StopButtonTween()
+    if ButtonTween then
+        pcall(function() ButtonTween:Cancel() end)
+        ButtonTween=nil
+    end
 end
 
-local function Bounce()
-    Animate(.82,.08)
+local function AnimateButton(scale,time,style)
+    StopButtonTween()
+    ButtonTween=TweenService:Create(Scale,TweenInfo.new(time,style or Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Scale=scale})
+    ButtonTween:Play()
+end
+
+local function BounceButton()
+    AnimationId=AnimationId+1
+    local id=AnimationId
+    AnimateButton(.82,.08)
     task.delay(.08,function()
-        if not Dragging then
-            Animate(1.08,.16,Enum.EasingStyle.Back)
-            task.delay(.16,function()
-                if not Dragging then Animate(1,.12) end
-            end)
-        end
+        if id~=AnimationId or Dragging then return end
+        AnimateButton(1.08,.16,Enum.EasingStyle.Back)
+        task.delay(.16,function()
+            if id~=AnimationId or Dragging then return end
+            AnimateButton(1,.12)
+        end)
     end)
 end
 
@@ -213,30 +227,41 @@ FatCatButton.InputBegan:Connect(function(input)
     IsDragged=false
     DragStart=input.Position
     StartPos=FatCatButton.Position
-    Animate(.88,.12)
-    input.Changed:Connect(function()
-        if input.UserInputState==Enum.UserInputState.End then
-            Dragging=false
-            Animate(1.08,.18,Enum.EasingStyle.Back)
-            task.delay(.18,function()
-                if not Dragging then Animate(1,.12) end
-            end)
-        end
-    end)
+    AnimationId=AnimationId+1
+    AnimateButton(.88,.12)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if not Dragging or (input.UserInputType~=Enum.UserInputType.MouseMovement and input.UserInputType~=Enum.UserInputType.Touch) then return end
-    local d=input.Position-DragStart
-    if d.Magnitude>6 then IsDragged=true end
-    FatCatButton.Position=UDim2.new(StartPos.X.Scale,StartPos.X.Offset+d.X,StartPos.Y.Scale,StartPos.Y.Offset+d.Y)
+    if not Dragging then return end
+    if input.UserInputType~=Enum.UserInputType.MouseMovement and input.UserInputType~=Enum.UserInputType.Touch then return end
+    local delta=input.Position-DragStart
+    if delta.Magnitude>6 then IsDragged=true end
+    if IsDragged then
+        FatCatButton.Position=UDim2.new(StartPos.X.Scale,StartPos.X.Offset+delta.X,StartPos.Y.Scale,StartPos.Y.Offset+delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if not Dragging then return end
+    if input.UserInputType~=Enum.UserInputType.MouseButton1 and input.UserInputType~=Enum.UserInputType.Touch then return end
+    Dragging=false
+    AnimationId=AnimationId+1
+    AnimateButton(1.08,.18,Enum.EasingStyle.Back)
+    local id=AnimationId
+    task.delay(.18,function()
+        if id~=AnimationId or Dragging then return end
+        AnimateButton(1,.12)
+    end)
 end)
 
 local MenuVisible=false
 
 FatCatButton.Activated:Connect(function()
-    if IsDragged then IsDragged=false return end
-    Bounce()
+    if IsDragged then
+        IsDragged=false
+        return
+    end
+    BounceButton()
     MenuVisible=not MenuVisible
     pcall(function()
         if Window and Window.Root then Window.Root.Visible=MenuVisible end
