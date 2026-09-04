@@ -320,7 +320,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI (ĐÃ CẬP NHẬT THÊM MONCF & TÊN NÚT SAO CHÉP)
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -384,7 +384,6 @@ function BuildUI()
                 return
             end
 
-            -- Hiển thị từng con quái
             for _, mob in ipairs(foundMobs) do
                 mobPosCount = mobPosCount + 1
                 local pos = mob.Part.Position
@@ -418,7 +417,6 @@ function BuildUI()
                 table.insert(mobCreatedElements, copyButton)
             end
 
-            -- TÍNH TOÁN VÀ HIỂN THỊ TỌA ĐỘ TÂM (MonCF)
             local sumPos = Vector3.new(0, 0, 0)
             for _, mob in ipairs(foundMobs) do
                 sumPos = sumPos + mob.Part.Position
@@ -603,91 +601,90 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER)
+    -- TAB 4: BẮT SỰ KIỆN (ACTION & REMOTE LOGGER)
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
-    local eventElements = {}
     local isListening = false
-    local remoteNameFilter = ""
-    local remoteLogCount = 0
 
-    EventTab:AddInput("RemoteFilterInput", {
-        Title = "Lọc Tên Remote (Tùy chọn)",
-        Default = "",
-        Placeholder = "Nhập từ khóa tên Remote...",
-        Numeric = false,
-        Finished = false,
-        Callback = function(value)
-            remoteNameFilter = value
-        end
-    })
+    -- Tạo một Frame tùy chỉnh chứa Khung Cuộn hiển thị log ngay trong Tab của Fluent UI
+    local LogContainer = Instance.new("ScrollingFrame")
+    LogContainer.Size = UDim2.new(1, 0, 0, 200)
+    LogContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    LogContainer.BorderSizePixel = 0
+    LogContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+    LogContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    LogContainer.ScrollBarThickness = 6
 
-    EventTab:AddToggle("ListenRemoteToggle", {
-        Title = "Bật/Tắt Lắng Nghe RemoteEvent",
+    local UICorner = Instance.new("UICorner", LogContainer)
+    UICorner.CornerRadius = UDim.new(0, 6)
+
+    local UIListLayout = Instance.new("UIListLayout", LogContainer)
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 4)
+
+    -- Hàm thêm log vào khung hiển thị
+    local function addActionLog(text)
+        if not isListening then return end
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 22)
+        label.BackgroundTransparency = 1
+        label.Text = " > " .. text
+        label.TextColor3 = Color3.fromRGB(0, 255, 150)
+        label.TextSize = 13
+        label.Font = Enum.Font.Code
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = LogContainer
+    end
+
+    -- Đưa khung cuộn vào Tab Bắt Sự Kiện bằng một Paragraph giả lập hoặc gọi thô
+    -- Vì Fluent hỗ trợ thành phần tùy chỉnh, cách an toàn nhất là tạo qua phần tử chuẩn hoặc đặt trực tiếp nếu UI Library cho phép.
+    -- Ở đây ta dùng AddParagraph để chứa giao diện hoặc tích hợp thông qua cấu trúc của Fluent:
+    
+    EventTab:AddToggle("ListenToggle", {
+        Title = "Bật/Tắt Ghi Nhận Hành Động (Remote)",
         Default = false,
         Callback = function(state)
             isListening = state
             if isListening then
-                Fluent:Notify({
-                    Title = "Đang Bắt Sự Kiện",
-                    Content = "Đã bật theo dõi các RemoteEvent được gọi!",
-                    Duration = 2
-                })
+                addActionLog("[SYSTEM] Đã bật ghi nhận sự kiện/remote...")
+                Fluent:Notify({Title = "Đã Bật", Content = "Hãy thực hiện đấm hoặc tương tác với NPC để bắt sự kiện!", Duration = 2})
             else
-                Fluent:Notify({
-                    Title = "Đã Dừng",
-                    Content = "Đã tắt theo dõi RemoteEvent.",
-                    Duration = 2
-                })
+                addActionLog("[SYSTEM] Đã dừng ghi nhận.")
+                Fluent:Notify({Title = "Đã Tắt", Content = "Đã dừng theo dõi sự kiện.", Duration = 2})
             end
         end
     })
 
+    EventTab:AddButton({
+        Title = "Xóa Log",
+        Description = "Xóa toàn bộ dòng sự kiện đã ghi lại bên dưới",
+        Callback = function()
+            for _, child in ipairs(LogContainer:GetChildren()) do
+                if child:IsA("TextLabel") then
+                    child:Destroy()
+                end
+            end
+            Fluent:Notify({Title = "Đã Xóa", Content = "Đã làm sạch khung log sự kiện!", Duration = 2})
+        end
+    })
+
+    -- Thêm trực tiếp LogContainer vào Tab của Fluent UI để nó hiển thị khung cuộn
+    pcall(function()
+        LogContainer.Parent = EventTab.Container or EventTab.Page
+    end)
+
+    -- Móc nối (Hook) để bắt sự kiện gọi Remote khi đấm, nói chuyện NPC,...
     pcall(function()
         local oldNamecall
         oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
             local method = getnamecallmethod()
-            if isListening and (method == "FireServer" or method == "InvokeServer") and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-                local name = self.Name
-                if remoteNameFilter == "" or string.find(string.lower(name), string.lower(remoteNameFilter)) then
-                    remoteLogCount = remoteLogCount + 1
-                    local args = {...}
-                    local argString = ""
-                    pcall(function()
-                        for i, v in ipairs(args) do
-                            argString = argString .. "[" .. i .. "]: " .. tostring(v) .. " "
-                        end
-                    end)
-                    
-                    if remoteLogCount <= 25 then
-                        local pBox = EventTab:AddParagraph({
-                            Title = "Log #" .. remoteLogCount .. " (" .. method .. ")",
-                            Content = "Tên: " .. name .. "\nTham số: " .. argString
-                        })
-                        table.insert(eventElements, pBox)
-                    end
-                end
+            if isListening and (method == "FireServer" or method == "InvokeServer") then
+                local remoteName = self.Name
+                addActionLog(string.format("[%s] %s", method, tostring(remoteName)))
             end
             return oldNamecall(self, ...)
         end)
     end)
-
-    EventTab:AddButton({
-        Title = "Xóa Log Sự Kiện",
-        Description = "Xóa danh sách các Remote đã bắt được",
-        Callback = function()
-            for _, el in ipairs(eventElements) do
-                pcall(function() el:Destroy() end)
-            end
-            eventElements = {}
-            remoteLogCount = 0
-            Fluent:Notify({
-                Title = "Thông báo",
-                Content = "Đã dọn sạch bảng log sự kiện!",
-                Duration = 2
-            })
-        end
-    })
 end
 
 BuildUI()
