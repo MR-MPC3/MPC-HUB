@@ -189,19 +189,13 @@ function BuildUI()
     -------------------------------------------------------
     local PlayerTab = Tabs["PlayerPos"]
 
-    local indexCount = 0
-    local currentCFrameStr = "Chưa có dữ liệu..."
+    local createdElements = {} -- Lưu trữ các bảng và nút để sau này bấm Xóa có thể dọn sạch
+    local posCount = 0
 
-    -- Bảng hiển thị thông tin duy nhất theo đúng ý bạn (có số thứ tự và CFrame không làm tròn)
-    local InfoParagraph = PlayerTab:AddParagraph({
-        Title = "Thông Tin Tọa Độ",
-        Content = "Tọa Độ: 0\nCFrame.new(...): Chưa có"
-    })
-
-    -- Nút lấy tọa độ nhân vật
+    -- 1. Nút lấy tọa độ nhân vật và góc quay (nằm trên cùng)
     PlayerTab:AddButton({
-        Title = "Lấy Tọa Độ Nhân Vật",
-        Description = "Tăng số thứ tự và lấy CFrame gốc chuẩn xác",
+        Title = "Lấy Tọa Độ Nhân Vật Và Góc Quay",
+        Description = "Tạo một bảng lưu CFrame chuẩn xác không làm tròn",
         Callback = function()
             local char = plr.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -214,12 +208,12 @@ function BuildUI()
                 return
             end
 
-            indexCount = indexCount + 1
+            posCount = posCount + 1
             local cf = hrp.CFrame
             local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
             
-            -- Giữ nguyên số chuẩn xác tuyệt đối, không làm tròn
-            currentCFrameStr = string.format(
+            -- Chuỗi CFrame đầy đủ, chính xác tuyệt đối không làm tròn
+            local fullCFrameStr = string.format(
                 "CFrame.new(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 tostring(x), tostring(y), tostring(z),
                 tostring(r00), tostring(r01), tostring(r02),
@@ -227,60 +221,58 @@ function BuildUI()
                 tostring(r20), tostring(r21), tostring(r22)
             )
 
-            -- Cập nhật vào bảng: dòng 1 là số thứ tự, dòng 2 là CFrame gốc
-            InfoParagraph:SetDesc("Tọa Độ: " .. indexCount .. "\n" .. currentCFrameStr)
+            -- Tạo Bảng (Paragraph) hiển thị đúng định dạng bạn muốn
+            local paragraphBox = PlayerTab:AddParagraph({
+                Title = "Tọa Độ : " .. posCount,
+                Content = fullCFrameStr
+            })
+            table.insert(createdElements, paragraphBox)
+
+            -- Tạo Nút Sao Chép ngay dưới bảng đó
+            local copyButton = PlayerTab:AddButton({
+                Title = "Sao Chép Tọa Độ",
+                Description = "Sao chép CFrame của Tọa Độ : " .. posCount,
+                Callback = function()
+                    if setclipboard then
+                        setclipboard(fullCFrameStr)
+                        Fluent:Notify({
+                            Title = "Thành công",
+                            Content = "Đã sao chép Tọa Độ : " .. posCount,
+                            Duration = 3
+                        })
+                    else
+                        Fluent:Notify({
+                            Title = "Lỗi",
+                            Content = "Executor không hỗ trợ setclipboard!",
+                            Duration = 3
+                        })
+                    end
+                end
+            })
+            table.insert(createdElements, copyButton)
 
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã lấy tọa độ lần thứ " .. indexCount,
+                Content = "Đã tạo bảng Tọa Độ : " .. posCount,
                 Duration = 2
             })
         end
     })
 
-    -- Nút sao chép tọa độ
-    PlayerTab:AddButton({
-        Title = "Sao Chép Tọa Độ",
-        Description = "Sao chép chuỗi CFrame vào bộ nhớ tạm",
-        Callback = function()
-            if currentCFrameStr == "Chưa có dữ liệu..." then
-                Fluent:Notify({
-                    Title = "Thông báo",
-                    Content = "Bạn chưa lấy tọa độ nào cả!",
-                    Duration = 2
-                })
-                return
-            end
-
-            if setclipboard then
-                setclipboard(currentCFrameStr)
-                Fluent:Notify({
-                    Title = "Thành công",
-                    Content = "Đã sao chép CFrame vào Clipboard!",
-                    Duration = 3
-                })
-            else
-                Fluent:Notify({
-                    Title = "Lỗi",
-                    Content = "Executor không hỗ trợ setclipboard!",
-                    Duration = 3
-                })
-            end
-        end
-    })
-
-    -- Nút xóa bảng tọa độ về mặc định
+    -- 2. Nút Xóa Tọa Độ (dùng để dọn sạch toàn bộ các bảng đã tạo)
     PlayerTab:AddButton({
         Title = "Xóa Tọa Độ",
-        Description = "Reset lại số thứ tự và bảng hiển thị",
+        Description = "Xóa toàn bộ các bảng tọa độ đã tạo bên dưới",
         Callback = function()
-            indexCount = 0
-            currentCFrameStr = "Chưa có dữ liệu..."
-            InfoParagraph:SetDesc("Tọa Độ: 0\nCFrame.new(...): Chưa có")
+            for _, element in ipairs(createdElements) do
+                pcall(function() element:Destroy() end)
+            end
+            createdElements = {}
+            posCount = 0
 
             Fluent:Notify({
                 Title = "Thông báo",
-                Content = "Đã reset bảng tọa độ về ban đầu!",
+                Content = "Đã xóa toàn bộ danh sách tọa độ!",
                 Duration = 2
             })
         end
@@ -309,6 +301,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã Sửa Lại Số Thứ Tự Đúng Ý!",
+    Content = "Tải Xong - Giao Diện Đã Chuẩn Khớp 100%!",
     Duration = 5
 })
