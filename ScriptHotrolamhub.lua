@@ -497,9 +497,9 @@ function BuildUI()
         end
     })
 
-    NpcTab:AddButton({
+NpcTab:AddButton({
         Title = "Lấy Tọa Độ NPC",
-        Description = "Tìm tất cả NPC khớp tên và lấy tọa độ CFrame.new(x, y, z)",
+        Description = "Tìm tất cả NPC khớp tên trên toàn bộ bản đồ và lấy tọa độ",
         Callback = function()
             if targetNpcName == "" then
                 Fluent:Notify({
@@ -511,26 +511,21 @@ function BuildUI()
             end
 
             local foundNpcs = {}
+            local checkedParts = {}
 
-            local function scanNpcFolder(parent)
-                for _, obj in ipairs(parent:GetChildren()) do
-                    if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
-                        local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
-                        if hrp then
-                            table.insert(foundNpcs, {
-                                Name = obj.Name,
-                                Part = hrp
-                            })
-                        end
+            -- Quét toàn bộ Workspace thay vì chỉ lấy thư mục ngoài
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
+                    local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
+                    if hrp and not checkedParts[hrp] then
+                        checkedParts[hrp] = true
+                        table.insert(foundNpcs, {
+                            Name = obj.Name,
+                            Part = hrp
+                        })
                     end
                 end
             end
-
-            local npcFolder = workspace:FindFirstChild("NPCs") or workspace:FindFirstChild("NPC")
-            if npcFolder then
-                scanNpcFolder(npcFolder)
-            end
-            scanNpcFolder(workspace)
 
             if #foundNpcs == 0 then
                 Fluent:Notify({
@@ -576,7 +571,7 @@ function BuildUI()
 
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã tìm thấy và lấy tọa độ của " .. #foundNpcs .. " NPC!",
+                Content = "Đã quét và tìm thấy " .. #foundNpcs .. " NPC trên toàn bản đồ!",
                 Duration = 3
             })
         end
