@@ -7,7 +7,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
 
 local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
@@ -30,7 +29,7 @@ local function TweenTo(targetCFrame)
     hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     
     local distance = (hrp.Position - targetCFrame.Position).Magnitude
-    local speed = 300
+    local speed = 300 -- Tốc độ bay (studs/s) - có thể tăng giảm tùy ý
     local duration = distance / speed
     if duration < 0.2 then duration = 0.2 end
     
@@ -74,7 +73,7 @@ local success, Fluent = pcall(function()
 end)
 
 if not success or not Fluent then
-    error("[Fat Cat Hub] Không thể tải Fluent UI!")
+    error("[Fat Cat Hub] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor")
 end
 
 local Window = Fluent:CreateWindow({
@@ -214,45 +213,6 @@ for _, tab in ipairs(TabDefinitions) do
     Tabs[tab[1]] = result
 end
 
--------------------------------------------------------
--- BIẾN TOÀN CỤC CHO EVENT HOOK
--------------------------------------------------------
-local isHookActive = false
-local oldNamecall
-local eventCallbackUI = nil -- Hàm dùng để đẩy dữ liệu lên Tab UI
-
-oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local methodLower = string.lower(tostring(method))
-
-    if isHookActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
-        if self.Name == "CommF_" or self.Name == "CommE" then
-            local args = {...}
-            
-            -- 1. In ra Console F9 như cũ
-            warn("----------------------------------------")
-            warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
-            local formattedText = "Remote: " .. self.Name .. " | Method: " .. method .. "\nArgs: "
-            
-            for i, arg in ipairs(args) do
-                local argStr = tostring(arg)
-                print(string.format("    👉 Tham số [%d] (%s) = %s", i, typeof(arg), argStr))
-                formattedText = formattedText .. "\n[" .. i .. "] (" .. typeof(arg) .. ") = " .. argStr
-            end
-            warn("----------------------------------------")
-
-            -- 2. Đẩy trực tiếp lên UI nếu có callback
-            if eventCallbackUI then
-                task.spawn(function()
-                    eventCallbackUI(self.Name, formattedText, args)
-                end)
-            end
-        end
-    end
-
-    return oldNamecall(self, ...)
-end))
-
 ----------------------------
 -- BUILD UI 
 ----------------------------
@@ -261,8 +221,10 @@ function BuildUI()
     -- TAB 1: LẤY TỌA ĐỘ NHÂN VẬT
     -------------------------------------------------------
     local PlayerTab = Tabs["PlayerPos"]
+
     local createdElements = {} 
     local posCount = 0
+
     local isFrozen = false
     local freezeConnection = nil
     local frozenPosition = nil
@@ -276,7 +238,10 @@ function BuildUI()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
             if isFrozen then
-                if hrp then frozenPosition = hrp.Position end
+                if hrp then
+                    frozenPosition = hrp.Position
+                end
+
                 freezeConnection = RunService.RenderStepped:Connect(function()
                     if isFrozen and hrp and frozenPosition then
                         local currentRot = hrp.CFrame - hrp.Position
@@ -284,14 +249,24 @@ function BuildUI()
                         hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                     end
                 end)
-                Fluent:Notify({ Title = "Đã Đóng Băng", Content = "Nhân vật đứng yên!", Duration = 2 })
+
+                Fluent:Notify({
+                    Title = "Đã Đóng Băng Vị Trí",
+                    Content = "Nhân vật đứng yên, góc quay xoay tự do!",
+                    Duration = 2
+                })
             else
                 if freezeConnection then
                     freezeConnection:Disconnect()
                     freezeConnection = nil
                 end
                 frozenPosition = nil
-                Fluent:Notify({ Title = "Đã Mở Khóa", Content = "Nhân vật di chuyển bình thường!", Duration = 2 })
+
+                Fluent:Notify({
+                    Title = "Đã Mở Khóa",
+                    Content = "Nhân vật di chuyển bình thường!",
+                    Duration = 2
+                })
             end
         end
     })
@@ -302,14 +277,31 @@ function BuildUI()
         Callback = function()
             local char = plr.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+            if not hrp then
+                Fluent:Notify({
+                    Title = "Lỗi",
+                    Content = "Không tìm thấy HumanoidRootPart của nhân vật!",
+                    Duration = 3
+                })
+                return
+            end
 
             posCount = posCount + 1
             local cf = hrp.CFrame
             local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
-            local fullCFrameStr = string.format("CFrame.new(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", tostring(x), tostring(y), tostring(z), tostring(r00), tostring(r01), tostring(r02), tostring(r10), tostring(r11), tostring(r12), tostring(r20), tostring(r21), tostring(r22))
+            
+            local fullCFrameStr = string.format(
+                "CFrame.new(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                tostring(x), tostring(y), tostring(z),
+                tostring(r00), tostring(r01), tostring(r02),
+                tostring(r10), tostring(r11), tostring(r12),
+                tostring(r20), tostring(r21), tostring(r22)
+            )
 
-            local paragraphBox = PlayerTab:AddParagraph({ Title = "Tọa Độ : " .. posCount, Content = fullCFrameStr })
+            local paragraphBox = PlayerTab:AddParagraph({
+                Title = "Tọa Độ : " .. posCount,
+                Content = fullCFrameStr
+            })
             table.insert(createdElements, paragraphBox)
 
             local copyButton = PlayerTab:AddButton({
@@ -317,11 +309,27 @@ function BuildUI()
                 Callback = function()
                     if setclipboard then
                         setclipboard(fullCFrameStr)
-                        Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép Tọa Độ : " .. posCount, Duration = 3 })
+                        Fluent:Notify({
+                            Title = "Thành công",
+                            Content = "Đã sao chép Tọa Độ : " .. posCount,
+                            Duration = 3
+                        })
+                    else
+                        Fluent:Notify({
+                            Title = "Lỗi",
+                            Content = "Executor không hỗ trợ setclipboard!",
+                            Duration = 3
+                        })
                     end
                 end
             })
             table.insert(createdElements, copyButton)
+
+            Fluent:Notify({
+                Title = "Thành công",
+                Content = "Đã tạo bảng Tọa Độ : " .. posCount,
+                Duration = 2
+            })
         end
     })
 
@@ -329,10 +337,17 @@ function BuildUI()
         Title = "Xóa Tọa Độ",
         Description = "Xóa toàn bộ các bảng tọa độ đã tạo bên dưới",
         Callback = function()
-            for _, element in ipairs(createdElements) do pcall(function() element:Destroy() end) end
+            for _, element in ipairs(createdElements) do
+                pcall(function() element:Destroy() end)
+            end
             createdElements = {}
             posCount = 0
-            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa danh sách!", Duration = 2 })
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ danh sách tọa độ!",
+                Duration = 2
+            })
         end
     })
 
@@ -340,39 +355,64 @@ function BuildUI()
     -- TAB 2: LẤY TỌA ĐỘ QUÁI
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
+
     local mobCreatedElements = {}
     local mobPosCount = 0
     local targetMobName = ""
 
     MobTab:AddInput("MobNameInput", {
         Title = "Nhập Tên Quái",
-        Placeholder = "Nhập tên quái...",
-        Callback = function(value) targetMobName = value end
+        Default = "",
+        Placeholder = "Nhập tên quái cần tìm (VD: Bandit)...",
+        Numeric = false,
+        Finished = false,
+        Callback = function(value)
+            targetMobName = value
+        end
     })
 
     MobTab:AddButton({
         Title = "Lấy Tọa Độ Quái",
+        Description = "Tìm tất cả quái khớp tên, lấy tọa độ từng con và tính tọa độ tâm (MonCF)",
         Callback = function()
-            if targetMobName == "" then return end
+            if targetMobName == "" then
+                Fluent:Notify({
+                    Title = "Lỗi",
+                    Content = "Vui lòng nhập tên quái trước!",
+                    Duration = 3
+                })
+                return
+            end
+
             local foundMobs = {}
 
             local function scanFolder(parent)
                 for _, obj in ipairs(parent:GetChildren()) do
                     if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetMobName)) then
-                        local hrp = obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart
+                        local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
                         local hum = obj:FindFirstChildOfClass("Humanoid")
                         if hrp and hum and hum.Health > 0 then
-                            table.insert(foundMobs, { Name = obj.Name, Part = hrp })
+                            table.insert(foundMobs, {
+                                Name = obj.Name,
+                                Part = hrp
+                            })
                         end
                     end
                 end
             end
 
-            if workspace:FindFirstChild("Enemies") then scanFolder(workspace.Enemies) end
+            local enemiesFolder = workspace:FindFirstChild("Enemies")
+            if enemiesFolder then
+                scanFolder(enemiesFolder)
+            end
             scanFolder(workspace)
 
             if #foundMobs == 0 then
-                Fluent:Notify({ Title = "Không Tìm Thấy", Content = "Không tìm thấy quái!", Duration = 3 })
+                Fluent:Notify({
+                    Title = "Không Tìm Thấy",
+                    Content = "Không tìm thấy con quái nào khớp với tên: " .. targetMobName,
+                    Duration = 3
+                })
                 return
             end
 
@@ -381,79 +421,172 @@ function BuildUI()
                 local pos = mob.Part.Position
                 local posStr = string.format("CFrame.new(%s, %s, %s)", tostring(pos.X), tostring(pos.Y), tostring(pos.Z))
 
-                local paragraphBox = MobTab:AddParagraph({ Title = mob.Name .. " [" .. mobPosCount .. "]", Content = posStr })
+                local paragraphBox = MobTab:AddParagraph({
+                    Title = mob.Name .. " [" .. mobPosCount .. "]",
+                    Content = posStr
+                })
                 table.insert(mobCreatedElements, paragraphBox)
 
                 local copyButton = MobTab:AddButton({
                     Title = "Sao chép",
-                    Callback = function() if setclipboard then setclipboard(posStr) end end
+                    Callback = function()
+                        if setclipboard then
+                            setclipboard(posStr)
+                            Fluent:Notify({
+                                Title = "Thành công",
+                                Content = "Đã sao chép tọa độ: " .. posStr,
+                                Duration = 3
+                            })
+                        else
+                            Fluent:Notify({
+                                Title = "Lỗi",
+                                Content = "Executor không hỗ trợ setclipboard!",
+                                Duration = 3
+                            })
+                        end
+                    end
                 })
                 table.insert(mobCreatedElements, copyButton)
 
+                -- THÊM NÚT BAY ĐẾN ĐÂY NẰM DƯỚI NÚT SAO CHÉP
                 local flyButton = MobTab:AddButton({
                     Title = "Bay đến đây",
-                    Callback = function() TweenTo(CFrame.new(pos)) end
+                    Callback = function()
+                        Fluent:Notify({
+                            Title = "Đang di chuyển",
+                            Content = "Đang bay đến " .. mob.Name,
+                            Duration = 2
+                        })
+                        TweenTo(CFrame.new(pos))
+                    end
                 })
                 table.insert(mobCreatedElements, flyButton)
             end
 
             local sumPos = Vector3.new(0, 0, 0)
-            for _, mob in ipairs(foundMobs) do sumPos = sumPos + mob.Part.Position end
+            for _, mob in ipairs(foundMobs) do
+                sumPos = sumPos + mob.Part.Position
+            end
             local centerPos = sumPos / #foundMobs
             local monCfStr = string.format("MonCF = CFrame.new(%s, %s, %s)", tostring(centerPos.X), tostring(centerPos.Y), tostring(centerPos.Z))
 
-            local centerParagraph = MobTab:AddParagraph({ Title = "Tọa Độ Trung Tâm Bãi (MonCF)", Content = monCfStr })
+            local centerParagraph = MobTab:AddParagraph({
+                Title = "Tọa Độ Trung Tâm Bãi (MonCF)",
+                Content = monCfStr
+            })
             table.insert(mobCreatedElements, centerParagraph)
 
             local copyCenterBtn = MobTab:AddButton({
-                Title = "Sao chép MonCF",
-                Callback = function() if setclipboard then setclipboard(monCfStr) end end
+                Title = "Sao chép",
+                Callback = function()
+                    if setclipboard then
+                        setclipboard(monCfStr)
+                        Fluent:Notify({
+                            Title = "Thành công",
+                            Content = "Đã sao chép MonCF của bãi!",
+                            Duration = 3
+                        })
+                    else
+                        Fluent:Notify({
+                            Title = "Lỗi",
+                            Content = "Executor không hỗ trợ setclipboard!",
+                            Duration = 3
+                        })
+                    end
+                end
             })
             table.insert(mobCreatedElements, copyCenterBtn)
 
+            -- NÚT BAY ĐẾN TÂM BÃI CHO MONCF
             local flyCenterBtn = MobTab:AddButton({
                 Title = "Bay đến tâm bãi",
-                Callback = function() TweenTo(CFrame.new(centerPos)) end
+                Callback = function()
+                    Fluent:Notify({
+                        Title = "Đang di chuyển",
+                        Content = "Đang bay đến tâm bãi quái",
+                        Duration = 2
+                    })
+                    TweenTo(CFrame.new(centerPos))
+                end
             })
             table.insert(mobCreatedElements, flyCenterBtn)
+
+            Fluent:Notify({
+                Title = "Thành công",
+                Content = "Đã tìm thấy " .. #foundMobs .. " con quái và tính tọa độ tâm!",
+                Duration = 3
+            })
         end
     })
 
     MobTab:AddButton({
         Title = "Xóa Tọa Độ Quái",
+        Description = "Xóa toàn bộ các bảng tọa độ quái đã tạo bên dưới",
         Callback = function()
-            for _, element in ipairs(mobCreatedElements) do pcall(function() element:Destroy() end) end
+            for _, element in ipairs(mobCreatedElements) do
+                pcall(function() element:Destroy() end)
+            end
             mobCreatedElements = {}
             mobPosCount = 0
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ danh sách tọa độ quái!",
+                Duration = 2
+            })
         end
     })
 
     -------------------------------------------------------
-    -- TAB 3: LẤY TỌA ĐỘ NPC
+    -- TAB 3: LẤY TỌA ĐỘ NPC & VẬT THỂ
     -------------------------------------------------------
     local NpcTab = Tabs["NPCPos"]
+
     local npcCreatedElements = {}
     local npcPosCount = 0
     local targetNpcName = ""
 
     NpcTab:AddInput("NpcNameInput", {
         Title = "Nhập Tên NPC / Vật Thể",
-        Placeholder = "Nhập tên...",
-        Callback = function(value) targetNpcName = value end
+        Default = "",
+        Placeholder = "Nhập tên cần tìm (VD: Set Home Point)...",
+        Numeric = false,
+        Finished = false,
+        Callback = function(value)
+            targetNpcName = value
+        end
     })
 
     NpcTab:AddButton({
         Title = "Lấy Tọa Độ NPC",
+        Description = "Tìm tất cả NPC/Vật thể khớp tên trên toàn bản đồ (Hỗ trợ cả Model và Part)",
         Callback = function()
-            if targetNpcName == "" then return end
+            if targetNpcName == "" then
+                Fluent:Notify({
+                    Title = "Lỗi",
+                    Content = "Vui lòng nhập tên cần tìm trước!",
+                    Duration = 3
+                })
+                return
+            end
+
             local foundNpcs = {}
             local checkedPositions = {}
 
             for _, obj in ipairs(workspace:GetDescendants()) do
                 if string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
                     local pos = nil
+
                     if obj:IsA("Model") then
-                        pcall(function() pos = obj:GetPivot().Position end)
+                        local successPivot, pivotPos = pcall(function()
+                            return obj:GetPivot().Position
+                        end)
+                        if successPivot and pivotPos then
+                            pos = pivotPos
+                        else
+                            local part = obj:FindFirstChildWhichIsA("BasePart")
+                            if part then pos = part.Position end
+                        end
                     elseif obj:IsA("BasePart") then
                         pos = obj.Position
                     end
@@ -462,10 +595,22 @@ function BuildUI()
                         local posKey = math.floor(pos.X / 5) .. "," .. math.floor(pos.Y / 5) .. "," .. math.floor(pos.Z / 5)
                         if not checkedPositions[posKey] then
                             checkedPositions[posKey] = true
-                            table.insert(foundNpcs, { Name = obj.Name, Position = pos })
+                            table.insert(foundNpcs, {
+                                Name = obj.Name,
+                                Position = pos
+                            })
                         end
                     end
                 end
+            end
+
+            if #foundNpcs == 0 then
+                Fluent:Notify({
+                    Title = "Không Tìm Thấy",
+                    Content = "Không tìm thấy đối tượng nào khớp với tên: " .. targetNpcName,
+                    Duration = 3
+                })
+                return
             end
 
             for _, npc in ipairs(foundNpcs) do
@@ -473,110 +618,77 @@ function BuildUI()
                 local pos = npc.Position
                 local posStr = string.format("CFrame.new(%s, %s, %s)", tostring(pos.X), tostring(pos.Y), tostring(pos.Z))
 
-                local paragraphBox = NpcTab:AddParagraph({ Title = npc.Name .. " [" .. npcPosCount .. "]", Content = posStr })
+                local paragraphBox = NpcTab:AddParagraph({
+                    Title = npc.Name .. " [" .. npcPosCount .. "]",
+                    Content = posStr
+                })
                 table.insert(npcCreatedElements, paragraphBox)
 
                 local copyButton = NpcTab:AddButton({
                     Title = "Sao chép",
-                    Callback = function() if setclipboard then setclipboard(posStr) end end
+                    Callback = function()
+                        if setclipboard then
+                            setclipboard(posStr)
+                            Fluent:Notify({
+                                Title = "Thành công",
+                                Content = "Đã sao chép tọa độ: " .. posStr,
+                                Duration = 3
+                            })
+                        else
+                            Fluent:Notify({
+                                Title = "Lỗi",
+                                Content = "Executor không hỗ trợ setclipboard!",
+                                Duration = 3
+                            })
+                        end
+                    end
                 })
                 table.insert(npcCreatedElements, copyButton)
 
+                -- THÊM NÚT BAY ĐẾN ĐÂY NẰM DƯỚI NÚT SAO CHÉP Ở TAB NPC
                 local flyButton = NpcTab:AddButton({
                     Title = "Bay đến đây",
-                    Callback = function() TweenTo(CFrame.new(pos)) end
+                    Callback = function()
+                        Fluent:Notify({
+                            Title = "Đang di chuyển",
+                            Content = "Đang bay đến " .. npc.Name,
+                            Duration = 2
+                        })
+                        TweenTo(CFrame.new(pos))
+                    end
                 })
                 table.insert(npcCreatedElements, flyButton)
             end
+
+            Fluent:Notify({
+                Title = "Thành công",
+                Content = "Đã quét và tìm thấy " .. #foundNpcs .. " kết quả trên toàn bản đồ!",
+                Duration = 3
+            })
         end
     })
 
     NpcTab:AddButton({
         Title = "Xóa Tọa Độ NPC",
+        Description = "Xóa toàn bộ các bảng tọa độ đã tạo bên dưới",
         Callback = function()
-            for _, element in ipairs(npcCreatedElements) do pcall(function() element:Destroy() end) end
+            for _, element in ipairs(npcCreatedElements) do
+                pcall(function() element:Destroy() end)
+            end
             npcCreatedElements = {}
             npcPosCount = 0
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ danh sách tọa độ!",
+                Duration = 2
+            })
         end
     })
 
+-------------------------------------------------------
+    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY UI + CONSOLE)
-    -------------------------------------------------------
-    local EventTab = Tabs["EventListener"]
-    local eventCreatedElements = {}
-    local eventCount = 0
-
-    EventTab:AddToggle("HookToggle", {
-        Title = "Bật Hook Namecall (CommF_ / CommE)",
-        Description = "Vừa in Console vừa hiển thị bảng trực tiếp trên UI khi tương tác NPC",
-        Default = false,
-        Callback = function(state)
-            isHookActive = state
-            if isHookActive then
-                Fluent:Notify({
-                    Title = "Hook Namecall",
-                    Content = "Đã BẬT! Tương tác NPC sẽ hiển thị kết quả ở dưới.",
-                    Duration = 3
-                })
-            else
-                Fluent:Notify({
-                    Title = "Hook Namecall",
-                    Content = "Đã TẮT bắt sự kiện!",
-                    Duration = 3
-                })
-            end
-        end
-    })
-
-    EventTab:AddButton({
-        Title = "Xóa Lịch Sử Sự Kiện",
-        Callback = function()
-            for _, element in ipairs(eventCreatedElements) do pcall(function() element:Destroy() end) end
-            eventCreatedElements = {}
-            eventCount = 0
-            Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
-        end
-    })
-
-    -- Gán hàm callback để nhận dữ liệu từ hook truyền lên UI
-    eventCallbackUI = function(remoteName, contentStr, argsTable)
-        eventCount = eventCount + 1
-        local currentId = eventCount
-        
-        -- Tạo đoạn mã Lua mẫu để gọi lại Remote đó (Ví dụ: ReplicatedStorage.Remotes.CommF_:InvokeServer(...))
-        local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..remoteName..'"):InvokeServer('
-        for i, v in ipairs(argsTable) do
-            if type(v) == "string" then
-                luaCallCode = luaCallCode .. '"' .. tostring(v) .. '"'
-            else
-                luaCallCode = luaCallCode .. tostring(v)
-            end
-            if i < #argsTable then
-                luaCallCode = luaCallCode .. ", "
-            end
-        end
-        luaCallCode = luaCallCode .. ")"
-
-        -- Thêm Paragraph hiển thị chi tiết trong UI
-        local paragraph = EventTab:AddParagraph({
-            Title = "Sự Kiện #" .. currentId .. " (" .. remoteName .. ")",
-            Content = contentStr
-        })
-        table.insert(eventCreatedElements, paragraph)
-
-        -- Nút sao chép dòng lệnh tái tạo sự kiện
-        local copyBtn = EventTab:AddButton({
-            Title = "Sao chép mã lệnh gọi lại (Args)",
-            Callback = function()
-                if setclipboard then
-                    setclipboard(luaCallCode)
-                    Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép lệnh sự kiện #" .. currentId, Duration = 2 })
-                end
-            end
-        })
-        table.insert(eventCreatedElements, copyBtn)
-    end
 end
 
 BuildUI()
