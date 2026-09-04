@@ -46,7 +46,7 @@ end
 
 local Window = Fluent:CreateWindow({
     Title = "Fat Cat Hub - Tool Dev", 
-    SubTitle = "Lấy Tọa Độ", 
+    SubTitle = "Lấy Tọa Độ & Bắt Sự Kiện", 
     TabWidth = 180, 
     Theme = "Dark",
     Acrylic = false,
@@ -168,7 +168,8 @@ end)
 local TabDefinitions = {
     {"PlayerPos", "Lấy Tọa Độ Nhân Vật", "user"},
     {"MobPos", "Lấy Tọa Độ Quái", "swords"},
-    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"}
+    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"},
+    {"EventListener", "Bắt Sự Kiện", "activity"}
 }
 
 local Tabs = {}
@@ -600,8 +601,10 @@ function BuildUI()
             })
         end
     })
-end
 
+    -------------------------------------------------------
+    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER) chư phát triển
+    -------------------------------------------------------
 BuildUI()
 
 ---------------------------------------
