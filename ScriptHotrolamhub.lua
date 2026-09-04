@@ -687,40 +687,54 @@ function BuildUI()
     })
 
 -------------------------------------------------------
-    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC (FIXED)
+    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC (FIXED FULL)
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
+    local HttpService = game:GetService("HttpService")
 
     local isListening = false
     local eventCreatedElements = {}
     local eventCount = 0
 
-    -- Hàm chuyển đổi các tham số (Arguments) thành chuỗi Code Lua
+    -- Hàm đọc sâu dữ liệu table/tham số NPC gửi lên Server
+    local function serializeValue(v)
+        local t = typeof(v)
+        if t == "string" then
+            return string.format("%q", v)
+        elseif t == "number" or t == "boolean" then
+            return tostring(v)
+        elseif t == "Instance" then
+            return "game." .. v:GetFullName()
+        elseif t == "CFrame" then
+            local p = v.Position
+            return string.format("CFrame.new(%.2f, %.2f, %.2f)", p.X, p.Y, p.Z)
+        elseif t == "Vector3" then
+            return string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z)
+        elseif t == "table" then
+            local ok, json = pcall(function() return HttpService:JSONEncode(v) end)
+            if ok then 
+                return json 
+            else
+                local str = "{"
+                for k, val in pairs(v) do
+                    str = str .. tostring(k) .. "=" .. serializeValue(val) .. ", "
+                end
+                return str .. "}"
+            end
+        else
+            return "nil"
+        end
+    end
+
     local function serializeArgs(args)
         local formatted = {}
         for _, v in ipairs(args) do
-            local t = typeof(v)
-            if t == "string" then
-                table.insert(formatted, string.format("%q", v))
-            elseif t == "number" or t == "boolean" then
-                table.insert(formatted, tostring(v))
-            elseif t == "Instance" then
-                table.insert(formatted, "game." .. v:GetFullName())
-            elseif t == "CFrame" then
-                local p = v.Position
-                table.insert(formatted, string.format("CFrame.new(%.2f, %.2f, %.2f)", p.X, p.Y, p.Z))
-            elseif t == "Vector3" then
-                table.insert(formatted, string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z))
-            elseif t == "table" then
-                table.insert(formatted, "{...}")
-            else
-                table.insert(formatted, "nil")
-            end
+            table.insert(formatted, serializeValue(v))
         end
         return table.concat(formatted, ", ")
     end
 
-    -- Hook __namecall chuẩn hóa chữ thường và xử lý luồng an toàn
+    -- Hook __namecall bắt đúng Remote do Game phát ra
     local oldNamecall
     local hookSuccess = false
 
@@ -730,41 +744,35 @@ function BuildUI()
                 local method = getnamecallmethod()
                 local lowerMethod = string.lower(tostring(method))
                 
-                -- So sánh chữ thường để tránh lỗi Executor
-                if isListening and (lowerMethod == "invokeserver" or lowerMethod == "fireserver") then
+                -- Chỉ bắt các gói tin do Game gửi (not checkcaller) khi bật công tắc
+                if isListening and not checkcaller() and (lowerMethod == "invokeserver" or lowerMethod == "fireserver") then
                     local args = {...}
                     local remotePath = "game." .. self:GetFullName()
                     local argsStr = serializeArgs(args)
                     local correctMethod = (lowerMethod == "invokeserver" and "InvokeServer") or "FireServer"
                     local fullCode = string.format("%s:%s(%s)", remotePath, correctMethod, argsStr)
 
-                    -- In ra DevConsole (Bấm F9 để xem dự phòng nếu UI không kịp hiện)
+                    -- In trực tiếp ra F9 (DevConsole) để tránh tràn bộ nhớ UI
                     print("[FatCat Spy]: " .. fullCode)
 
-                    -- Trì hoãn nhẹ việc tạo UI để không ngắt luồng gửi gói tin của Game
                     task.defer(function()
+                        if eventCount >= 25 then return end -- Giới hạn 25 sự kiện/lần tránh đơ UI
                         eventCount = eventCount + 1
                         
                         local paragraphBox = EventTab:AddParagraph({
-                            Title = string.format("Sự Kiện [%d]: %s (%s)", eventCount, self.Name, correctMethod),
+                            Title = string.format("Sự Kiện [%d]: %s", eventCount, self.Name),
                             Content = fullCode
                         })
                         table.insert(eventCreatedElements, paragraphBox)
 
                         local copyBtn = EventTab:AddButton({
-                            Title = "Sao chép Code Remote",
+                            Title = "Sao chép Code [" .. eventCount .. "]",
                             Callback = function()
                                 if setclipboard then
                                     setclipboard(fullCode)
                                     Fluent:Notify({
                                         Title = "Thành công",
-                                        Content = "Đã sao chép lệnh Remote vào bộ nhớ tạm!",
-                                        Duration = 2
-                                    })
-                                else
-                                    Fluent:Notify({
-                                        Title = "Lỗi",
-                                        Content = "Executor không hỗ trợ setclipboard!",
+                                        Content = "Đã copy code Remote NPC!",
                                         Duration = 2
                                     })
                                 end
@@ -780,14 +788,14 @@ function BuildUI()
         if success then hookSuccess = true end
     end
 
-    -- 1. Nút Toggle Bật/Tắt bắt sự kiện
+    -- Toggle Bật/Tắt
     EventTab:AddToggle("EventListenerToggle", {
-        Title = "Bật / Tắt Bắt Sự Kiện Remote",
+        Title = "Bật / Tắt Bắt Sự Kiện NPC",
         Default = false,
         Callback = function(state)
             if not hookSuccess then
                 Fluent:Notify({
-                    Title = "Cảnh Báo Executor",
+                    Title = "Lỗi Executor",
                     Content = "Executor của bạn không hỗ trợ hookmetamethod!",
                     Duration = 4
                 })
@@ -797,16 +805,16 @@ function BuildUI()
             isListening = state
             Fluent:Notify({
                 Title = isListening and "Đã Bật Lắng Nghe" or "Đã Tắt Lắng Nghe",
-                Content = isListening and "Hãy tương tác với NPC. (Có thể mở F9 để kiểm tra log!)" or "Đã tạm dừng bắt tín hiệu.",
+                Content = isListening and "Bắt đầu nhấn nói chuyện với NPC! (Hoặc mở F9 để xem log)" or "Đã dừng bắt tín hiệu.",
                 Duration = 3
             })
         end
     })
 
-    -- 2. Nút Xóa danh sách
+    -- Nút Xóa danh sách
     EventTab:AddButton({
         Title = "Xóa Bảng Lịch Sử Sự Kiện",
-        Description = "Xóa toàn bộ các sự kiện đã bắt được ở bên dưới",
+        Description = "Xóa danh sách để bắt đợt NPC mới",
         Callback = function()
             for _, element in ipairs(eventCreatedElements) do
                 pcall(function() element:Destroy() end)
@@ -816,7 +824,7 @@ function BuildUI()
 
             Fluent:Notify({
                 Title = "Thông báo",
-                Content = "Đã xóa sạch danh sách sự kiện!",
+                Content = "Đã xóa sạch lịch sử!",
                 Duration = 2
             })
         end
