@@ -686,8 +686,8 @@ function BuildUI()
         end
     })
 
-    -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN
+-------------------------------------------------------
+    -- TAB 4: BẮT SỰ KIỆN NÓI CHUYỆN NPC
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
 
@@ -695,53 +695,29 @@ function BuildUI()
     local EventLogs = {}
     local EventCount = 0
     local MaxEventLogs = 100
-
-    -------------------------------------------------------
-    -- HÀM CẬP NHẬT BẢNG HIỂN THỊ
-    -------------------------------------------------------
     local EventParagraph
 
     local function UpdateEventDisplay()
-        if not EventParagraph then
-            return
-        end
-
+        if not EventParagraph then return end
         if #EventLogs == 0 then
-            EventParagraph:SetDesc("Chưa có sự kiện nào...")
+            EventParagraph:SetDesc("Chưa có sự kiện NPC nào...")
             return
         end
-
-        EventParagraph:SetDesc(
-            table.concat(EventLogs, "\n\n")
-        )
+        EventParagraph:SetDesc(table.concat(EventLogs, "\n\n"))
     end
 
-    -------------------------------------------------------
-    -- HÀM GHI SỰ KIỆN
-    -------------------------------------------------------
     local function AddEventLog(eventName, eventData)
-        if not EventLoggerEnabled then
-            return
-        end
+        if not EventLoggerEnabled then return end
 
         EventCount = EventCount + 1
-
         local timeText = os.date("%H:%M:%S")
-
-        local text =
-            "[" .. EventCount .. "] " ..
-            "[" .. timeText .. "] " ..
-            tostring(eventName)
+        local text = "[" .. EventCount .. "] [" .. timeText .. "] " .. tostring(eventName)
 
         if eventData ~= nil and tostring(eventData) ~= "" then
             text = text .. "\n" .. tostring(eventData)
         end
 
         table.insert(EventLogs, text)
-
-        -------------------------------------------------------
-        -- GIỚI HẠN TỐI ĐA 100 SỰ KIỆN
-        -------------------------------------------------------
         if #EventLogs > MaxEventLogs then
             table.remove(EventLogs, 1)
         end
@@ -749,129 +725,77 @@ function BuildUI()
         UpdateEventDisplay()
     end
 
-    -------------------------------------------------------
-    -- 1. TOGGLE BẬT / TẮT BẮT SỰ KIỆN
-    -------------------------------------------------------
     EventTab:AddToggle("EventLoggerToggle", {
-        Title = "Bắt Sự Kiện",
-        Description = "Bật để bắt và ghi lại các sự kiện",
+        Title = "Bắt Sự Kiện Nói Chuyện NPC",
+        Description = "Bật để bắt các sự kiện khi tương tác hoặc đối thoại với NPC",
         Default = false,
-
         Callback = function(value)
             EventLoggerEnabled = value
-
             if value then
-                Fluent:Notify({
-                    Title = "Bắt Sự Kiện",
-                    Content = "Đã bật bắt sự kiện!",
-                    Duration = 2
-                })
-
-                AddEventLog(
-                    "LOGGER",
-                    "Đã bắt đầu theo dõi sự kiện."
-                )
+                Fluent:Notify({ Title = "Bắt Sự Kiện NPC", Content = "Đã bật bắt sự kiện NPC!", Duration = 2 })
+                AddEventLog("LOGGER", "Đã bắt đầu theo dõi sự kiện NPC.")
             else
-                Fluent:Notify({
-                    Title = "Bắt Sự Kiện",
-                    Content = "Đã tắt bắt sự kiện!",
-                    Duration = 2
-                })
+                Fluent:Notify({ Title = "Bắt Sự Kiện NPC", Content = "Đã tắt bắt sự kiện!", Duration = 2 })
             end
         end
     })
 
-    -------------------------------------------------------
-    -- 2. NÚT XÓA SỰ KIỆN
-    -------------------------------------------------------
     EventTab:AddButton({
         Title = "Xóa Sự Kiện",
-        Description = "Xóa toàn bộ sự kiện đang hiển thị",
-
+        Description = "Xóa toàn bộ lịch sử sự kiện hiển thị",
         Callback = function()
             table.clear(EventLogs)
             EventCount = 0
-
             UpdateEventDisplay()
-
-            Fluent:Notify({
-                Title = "Thông báo",
-                Content = "Đã xóa toàn bộ sự kiện!",
-                Duration = 2
-            })
+            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa toàn bộ sự kiện!", Duration = 2 })
         end
     })
 
-    -------------------------------------------------------
-    -- 3. BẢNG HIỂN THỊ SỰ KIỆN
-    -------------------------------------------------------
     EventParagraph = EventTab:AddParagraph({
-        Title = "Danh Sách Sự Kiện",
-        Content = "Chưa có sự kiện nào..."
+        Title = "Danh Sách Tương Tác NPC",
+        Content = "Chưa có sự kiện NPC nào..."
     })
 
     -------------------------------------------------------
-    -- CÁC SỰ KIỆN CLIENT CƠ BẢN
+    -- HOOK SỰ KIỆN NÓI CHUYỆN / TƯƠNG TÁC NPC
     -------------------------------------------------------
+    
+    -- 1. Bắt tương tác qua ProximityPrompt (Nút ấn E trên NPC/Vật thể)
+    ProximityPromptService.PromptTriggered:Connect(function(prompt, playerWhoTriggered)
+        if playerWhoTriggered == plr then
+            local parentObj = prompt.Parent
+            local npcName = (parentObj and parentObj.Parent and parentObj.Parent.Name) or (parentObj and parentObj.Name) or "Không xác định"
+            local actText = prompt.ActionText ~= "" and prompt.ActionText or "Tương tác"
+            local objText = prompt.ObjectText ~= "" and prompt.ObjectText or npcName
 
-    -- Nhân vật spawn / respawn
-    plr.CharacterAdded:Connect(function(character)
-        AddEventLog(
-            "CharacterAdded",
-            "Character: " .. character.Name
-        )
+            AddEventLog("Tương tác ProximityPrompt", "NPC/Vật thể: " .. tostring(objText) .. "\nHành động: " .. tostring(actText))
+        end
     end)
 
-    -------------------------------------------------------
-    -- TOOL ĐƯỢC THÊM / XÓA
-    -------------------------------------------------------
-    local function HookBackpack()
-        local backpack = plr:FindFirstChild("Backpack")
-
-        if not backpack then
-            return
+    -- 2. Theo dõi Dialogue UI / Khung thoại xuất hiện trên màn hình
+    local playerGui = plr:WaitForChild("PlayerGui", 5)
+    if playerGui then
+        local function checkAndHookGui(gui)
+            if not gui:IsA("ScreenGui") then return end
+            
+            local lowerName = string.lower(gui.Name)
+            if string.find(lowerName, "dialog") or string.find(lowerName, "npc") or string.find(lowerName, "talk") or string.find(lowerName, "speak") then
+                gui:GetPropertyChangedSignal("Enabled"):Connect(function()
+                    if gui.Enabled then
+                        AddEventLog("Mở Khung Thoại NPC", "Tên UI Hội Thoại: " .. gui.Name)
+                    end
+                end)
+            end
         end
 
-        backpack.ChildAdded:Connect(function(child)
-            AddEventLog(
-                "Backpack.ChildAdded",
-                "Tên: " .. child.Name ..
-                "\nClass: " .. child.ClassName
-            )
-        end)
+        for _, gui in ipairs(playerGui:GetChildren()) do
+            checkAndHookGui(gui)
+        end
 
-        backpack.ChildRemoved:Connect(function(child)
-            AddEventLog(
-                "Backpack.ChildRemoved",
-                "Tên: " .. child.Name ..
-                "\nClass: " .. child.ClassName
-            )
+        playerGui.ChildAdded:Connect(function(gui)
+            checkAndHookGui(gui)
         end)
     end
-
-    HookBackpack()
-
-    -------------------------------------------------------
-    -- QUÁI SPAWN / BIẾN MẤT
-    -------------------------------------------------------
-    local EnemiesFolder = workspace:FindFirstChild("Enemies")
-
-    if EnemiesFolder then
-        EnemiesFolder.ChildAdded:Connect(function(enemy)
-            AddEventLog(
-                "Enemy Spawn",
-                "Tên: " .. enemy.Name
-            )
-        end)
-
-        EnemiesFolder.ChildRemoved:Connect(function(enemy)
-            AddEventLog(
-                "Enemy Removed",
-                "Tên: " .. enemy.Name
-            )
-        end)
-    end
-    
 end
 
 BuildUI()
