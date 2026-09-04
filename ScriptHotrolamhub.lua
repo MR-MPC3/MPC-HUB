@@ -46,7 +46,7 @@ end
 
 local Window = Fluent:CreateWindow({
     Title = "Fat Cat Hub - Tool Dev", 
-    SubTitle = "Lấy Tọa Độ & Bắt Sự Kiện", 
+    SubTitle = "Lấy Tọa Độ", 
     TabWidth = 180, 
     Theme = "Dark",
     Acrylic = false,
@@ -168,8 +168,7 @@ end)
 local TabDefinitions = {
     {"PlayerPos", "Lấy Tọa Độ Nhân Vật", "user"},
     {"MobPos", "Lấy Tọa Độ Quái", "swords"},
-    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"},
-    {"EventListener", "Bắt Sự Kiện", "activity"}
+    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"}
 }
 
 local Tabs = {}
@@ -273,7 +272,7 @@ function BuildUI()
             table.insert(createdElements, paragraphBox)
 
             local copyButton = PlayerTab:AddButton({
-                Title = "Sao chép",
+                Title = "Sao Chép",
                 Callback = function()
                     if setclipboard then
                         setclipboard(fullCFrameStr)
@@ -341,7 +340,7 @@ function BuildUI()
 
     MobTab:AddButton({
         Title = "Lấy Tọa Độ Quái",
-        Description = "Tìm tất cả quái khớp tên, lấy tọa độ từng con và tính tọa độ tâm (MonCF)",
+        Description = "Tìm tất cả quái khớp tên và lấy tọa độ CFrame.new(x, y, z)",
         Callback = function()
             if targetMobName == "" then
                 Fluent:Notify({
@@ -396,7 +395,7 @@ function BuildUI()
                 table.insert(mobCreatedElements, paragraphBox)
 
                 local copyButton = MobTab:AddButton({
-                    Title = "Sao chép",
+                    Title = "Sao Chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
@@ -417,43 +416,9 @@ function BuildUI()
                 table.insert(mobCreatedElements, copyButton)
             end
 
-            local sumPos = Vector3.new(0, 0, 0)
-            for _, mob in ipairs(foundMobs) do
-                sumPos = sumPos + mob.Part.Position
-            end
-            local centerPos = sumPos / #foundMobs
-            local monCfStr = string.format("MonCF = CFrame.new(%s, %s, %s)", tostring(centerPos.X), tostring(centerPos.Y), tostring(centerPos.Z))
-
-            local centerParagraph = MobTab:AddParagraph({
-                Title = "Tọa Độ Trung Tâm Bãi (MonCF)",
-                Content = monCfStr
-            })
-            table.insert(mobCreatedElements, centerParagraph)
-
-            local copyCenterBtn = MobTab:AddButton({
-                Title = "Sao chép",
-                Callback = function()
-                    if setclipboard then
-                        setclipboard(monCfStr)
-                        Fluent:Notify({
-                            Title = "Thành công",
-                            Content = "Đã sao chép MonCF của bãi!",
-                            Duration = 3
-                        })
-                    else
-                        Fluent:Notify({
-                            Title = "Lỗi",
-                            Content = "Executor không hỗ trợ setclipboard!",
-                            Duration = 3
-                        })
-                    end
-                end
-            })
-            table.insert(mobCreatedElements, copyCenterBtn)
-
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã tìm thấy " .. #foundMobs .. " con quái và tính tọa độ tâm!",
+                Content = "Đã tìm thấy và lấy tọa độ của " .. #foundMobs .. " con quái!",
                 Duration = 3
             })
         end
@@ -553,7 +518,7 @@ function BuildUI()
                 table.insert(npcCreatedElements, paragraphBox)
 
                 local copyButton = NpcTab:AddButton({
-                    Title = "Sao chép",
+                    Title = "Sao Chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
@@ -599,17 +564,7 @@ function BuildUI()
             })
         end
     })
-
-    -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER)
-    -------------------------------------------------------
-    local EventTab = Tabs["EventListener"]
-    EventTab:AddParagraph({
-        Title = "Trạng Thái",
-        Content = "Tính năng Bắt Sự Kiện đang được phát triển..."
-    })
-
-end -- Đóng hàm BuildUI() hoàn chỉnh ở đây
+end
 
 BuildUI()
 
