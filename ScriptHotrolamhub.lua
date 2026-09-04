@@ -500,95 +500,93 @@ function BuildUI()
         end
     })
 
-    -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY UI + CONSOLE)
-    -------------------------------------------------------
-    local EventTab = Tabs["EventListener"]
-    local eventCreatedElements = {}
-    local eventCount = 0
+-------------------------------------------------------
+-- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY UI + CONSOLE)
+-------------------------------------------------------
+local EventTab = Tabs["EventListener"]
+local eventCreatedElements = {}
+local eventCount = 0
 
-    EventTab:AddToggle("HookToggle", {
-        Title = "Bật Hook Namecall (CommF_ / CommE)",
-        Description = "Vừa in Console vừa hiển thị bảng trực tiếp trên UI khi tương tác NPC",
-        Default = false,
-        Callback = function(state)
-            isHookActive = state
-            if isHookActive then
-                Fluent:Notify({
-                    Title = "Hook Namecall",
-                    Content = "Đã BẬT! Tương tác NPC sẽ hiển thị kết quả ở dưới.",
-                    Duration = 3
-                })
-            else
-                Fluent:Notify({
-                    Title = "Hook Namecall",
-                    Content = "Đã TẮT bắt sự kiện!",
-                    Duration = 3
-                })
-            end
+EventTab:AddToggle("HookToggle", {
+    Title = "Bật Hook Namecall (CommF_ / CommE)",
+    Description = "Vừa in Console vừa hiển thị bảng trực tiếp trên UI khi tương tác NPC",
+    Default = false,
+    Callback = function(state)
+        isHookActive = state
+        if isHookActive then
+            Fluent:Notify({
+                Title = "Hook Namecall",
+                Content = "Đã BẬT! Tương tác NPC sẽ hiển thị kết quả ở dưới.",
+                Duration = 3
+            })
+        else
+            Fluent:Notify({
+                Title = "Hook Namecall",
+                Content = "Đã TẮT bắt sự kiện!",
+                Duration = 3
+            })
         end
-    })
+    end
+})
 
-    -- BẢNG HIỂN THỊ KẾT QUẢ SỰ KIỆN TRỰC TIẾP TRÊN GIAO DIỆN (NẰM NGAY DƯỚI TOGGLE)
-    local EventLogParagraph = EventTab:AddParagraph({
-        Title = "Bảng Hiển Thị Sự Kiện (Live Log)",
-        Content = "Chưa có sự kiện nào được bắt. Hãy bật Toggle phía trên và tương tác với NPC!"
-    })
-    table.insert(eventCreatedElements, EventLogParagraph)
+-- HƯỚNG DẪN / TRẠNG THÁI BAN ĐẦU
+local EventLogParagraph = EventTab:AddParagraph({
+    Title = "Hướng Dẫn Sử Dụng",
+    Content = "Hãy bật Toggle phía trên và tương tác với NPC để bắt sự kiện!"
+})
+table.insert(eventCreatedElements, EventLogParagraph)
 
-    EventTab:AddButton({
-        Title = "Xóa Lịch Sử Sự Kiện",
-        Callback = function()
-            for _, element in ipairs(eventCreatedElements) do 
-                if element ~= EventLogParagraph then
-                    pcall(function() element:Destroy() end) 
-                end
-            end
-            eventCreatedElements = {EventLogParagraph}
-            eventCount = 0
-            EventLogParagraph:SetDesc("Đã dọn sạch bảng sự kiện!")
-            EventLogParagraph:SetTitle("Bảng Hiển Thị Sự Kiện (Live Log)")
-            Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
+EventTab:AddButton({
+    Title = "Xóa Lịch Sử Sự Kiện",
+    Callback = function()
+        for _, element in ipairs(eventCreatedElements) do 
+            pcall(function() element:Destroy() end) 
         end
-    })
-
--- Gán hàm callback để nhận dữ liệu từ hook truyền lên UI
-    eventCallbackUI = function(remoteName, contentStr, argsTable)
-        eventCount = eventCount + 1
-        local currentId = eventCount
+        eventCreatedElements = {}
         
-        -- Tạo đoạn mã Lua mẫu để gọi lại Remote đó
-        local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..remoteName..'"):InvokeServer('
-        for i, v in ipairs(argsTable) do
-            if type(v) == "string" then
-                luaCallCode = luaCallCode .. '"' .. tostring(v) .. '"'
-            else
-                luaCallCode = luaCallCode .. tostring(v)
-            end
-            if i < #argsTable then
-                luaCallCode = luaCallCode .. ", "
-            end
+        -- Tạo lại ô hướng dẫn ban đầu sau khi xóa
+        EventLogParagraph = EventTab:AddParagraph({
+            Title = "Hướng Dẫn Sử Dụng",
+            Content = "Đã dọn sạch bảng sự kiện! Hãy tương tác tiếp với NPC."
+        })
+        table.insert(eventCreatedElements, EventLogParagraph)
+        eventCount = 0
+        Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
+    end
+})
+
+-- Gán hàm callback để nhận dữ liệu từ hook truyền lên UI (Dạng tạo mới Paragraph mỗi lần bắt sự kiện)
+eventCallbackUI = function(remoteName, contentStr, argsTable)
+    eventCount = eventCount + 1
+    local currentId = eventCount
+    
+    -- Tạo đoạn mã Lua mẫu để gọi lại Remote đó
+    local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..remoteName..'"):InvokeServer('
+    for i, v in ipairs(argsTable) do
+        if type(v) == "string" then
+            luaCallCode = luaCallCode .. '"' .. tostring(v) .. '"'
+        else
+            luaCallCode = luaCallCode .. tostring(v)
         end
-        luaCallCode = luaCallCode .. ")"
+        if i < #argsTable then
+            luaCallCode = luaCallCode .. ", "
+        end
+    end
+    luaCallCode = luaCallCode .. ")"
 
-        -- Dùng task.defer để an toàn luồng khi tương tác với UI
-        task.defer(function()
-            pcall(function()
-                -- Cập nhật trực tiếp nội dung lên Paragraph Live Log chính
-                EventLogParagraph:SetTitle("Sự Kiện Mới Nhất #" .. currentId .. " (" .. remoteName .. ")")
-                EventLogParagraph:SetDesc(contentStr)
-            end)
-
-            -- Thêm Paragraph hiển thị chi tiết trong UI
+    -- Dùng task.defer để an toàn luồng khi tương tác với UI
+    task.defer(function()
+        pcall(function()
+            -- Thêm Paragraph mới hiển thị trực tiếp sự kiện bắt được lên đầu/dưới
             local paragraph = EventTab:AddParagraph({
-                Title = "Lịch Sử #" .. currentId .. " (" .. remoteName .. ")",
+                Title = "🔥 Sự Kiện Mới #" .. currentId .. " (" .. remoteName .. ")",
                 Content = contentStr
             })
             table.insert(eventCreatedElements, paragraph)
 
             -- Nút sao chép dòng lệnh tái tạo sự kiện
             local copyBtn = EventTab:AddButton({
-                Title = "Sao chép mã lệnh gọi lại (Args) #" .. currentId,
+                Title = "📋 Sao chép mã lệnh gọi lại (Args) #" .. currentId,
                 Callback = function()
                     if setclipboard then
                         setclipboard(luaCallCode)
@@ -598,7 +596,9 @@ function BuildUI()
             })
             table.insert(eventCreatedElements, copyBtn)
         end)
-    end
+    end)
+end
+    
 end
 
 BuildUI()
