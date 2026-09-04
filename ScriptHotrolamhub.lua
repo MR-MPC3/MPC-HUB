@@ -529,12 +529,25 @@ function BuildUI()
         end
     })
 
+    -- BẢNG HIỂN THỊ KẾT QUẢ SỰ KIỆN TRỰC TIẾP TRÊN GIAO DIỆN (NẰM NGAY DƯỚI TOGGLE)
+    local EventLogParagraph = EventTab:AddParagraph({
+        Title = "Bảng Hiển Thị Sự Kiện (Live Log)",
+        Content = "Chưa có sự kiện nào được bắt. Hãy bật Toggle phía trên và tương tác với NPC!"
+    })
+    table.insert(eventCreatedElements, EventLogParagraph)
+
     EventTab:AddButton({
         Title = "Xóa Lịch Sử Sự Kiện",
         Callback = function()
-            for _, element in ipairs(eventCreatedElements) do pcall(function() element:Destroy() end) end
-            eventCreatedElements = {}
+            for _, element in ipairs(eventCreatedElements) do 
+                if element ~= EventLogParagraph then
+                    pcall(function() element:Destroy() end) 
+                end
+            end
+            eventCreatedElements = {EventLogParagraph}
             eventCount = 0
+            EventLogParagraph:SetDesc("Đã dọn sạch bảng sự kiện!")
+            EventLogParagraph:SetTitle("Bảng Hiển Thị Sự Kiện (Live Log)")
             Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
         end
     })
@@ -544,7 +557,7 @@ function BuildUI()
         eventCount = eventCount + 1
         local currentId = eventCount
         
-        -- Tạo đoạn mã Lua mẫu để gọi lại Remote đó (Ví dụ: ReplicatedStorage.Remotes.CommF_:InvokeServer(...))
+        -- Tạo đoạn mã Lua mẫu để gọi lại Remote đó
         local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..remoteName..'"):InvokeServer('
         for i, v in ipairs(argsTable) do
             if type(v) == "string" then
@@ -558,16 +571,20 @@ function BuildUI()
         end
         luaCallCode = luaCallCode .. ")"
 
+        -- Cập nhật trực tiếp nội dung lên Paragraph Live Log chính
+        EventLogParagraph:SetTitle("Sự Kiện Mới Nhất #" .. currentId .. " (" .. remoteName .. ")")
+        EventLogParagraph:SetDesc(contentStr)
+
         -- Thêm Paragraph hiển thị chi tiết trong UI
         local paragraph = EventTab:AddParagraph({
-            Title = "Sự Kiện #" .. currentId .. " (" .. remoteName .. ")",
+            Title = "Lịch Sử #" .. currentId .. " (" .. remoteName .. ")",
             Content = contentStr
         })
         table.insert(eventCreatedElements, paragraph)
 
         -- Nút sao chép dòng lệnh tái tạo sự kiện
         local copyBtn = EventTab:AddButton({
-            Title = "Sao chép mã lệnh gọi lại (Args)",
+            Title = "Sao chép mã lệnh gọi lại (Args) #" .. currentId,
             Callback = function()
                 if setclipboard then
                     setclipboard(luaCallCode)
