@@ -88,7 +88,7 @@ local MainFrame = CreateObject("Frame", {
 AddUICorner(12, MainFrame)
 
 local UserImage = CreateObject("ImageLabel", {
-    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://133523104940150", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
+    Name = "UserImage", Parent = MainFrame, BackgroundTransparency = 1, Image = "rbxassetid://13717478897", Position = UDim2.new(0, 15, 0, 10), Size = UDim2.new(0, 50, 0, 50)
 })
 AddUICorner(25, UserImage)
 
@@ -179,7 +179,7 @@ FatCatButton.BorderSizePixel=0
 FatCatButton.Position=UDim2.fromOffset(45,85)
 FatCatButton.AnchorPoint=Vector2.new(.5,.5)
 FatCatButton.Size=UDim2.fromOffset(50,50)
-FatCatButton.Image="rbxassetid://133523104940150"
+FatCatButton.Image="rbxassetid://13717478897"
 FatCatButton.AutoButtonColor=false
 FatCatButton.Parent=FatCatGui
 
@@ -272,18 +272,19 @@ end)
 -- CÁC TABS CHÍNH
 ---------------------
 local TabDefinitions={
-    {"Info","Thông Tin","info"},
+    {"Info","Info","info"},
     {"Farm","Farm","sword"},
     {"StackFarming","Stack Farming","layers"},
-    {"Item","Vật Phẩm","package"},
-    {"ServerHop","Server & Hop Farm","server"},
-    {"ESPStats","ESP & Chỉ Số","eye"},
-    {"FruitRaid","Trái & Tập Kích","apple"},
-    {"TeleportPvP","Dịch Chuyển & PvP","map-pin"},
-    {"Race","Tộc","shield"},
-    {"SeaEvent","Sự Kiện Biển","waves"},
-    {"Setting","Cài Đặt","settings"},
-    {"Discord","Discord Webhook","message-circle"}
+    {"Item","Item","package"},
+    {"ServerHopFarm","Server & Hop Farm","server"},
+    {"ESPStats","ESP & Stats","eye"},
+    {"FruitRaid","Fruits & Raid","apple"},
+    {"TeleportPvP","Teleport & PvP","map-pin"},
+    {"Race","Race","shield"},
+    {"SeaEvent","Sea Events","waves"},
+    {"Shop","Shop","shopping-bag"},
+    {"Setting","Settings","settings"},
+    {"DiscordWebhook","Discord Webhook","message-circle"}
 }
 
 local Tabs={}
