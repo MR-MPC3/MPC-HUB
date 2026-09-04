@@ -215,62 +215,28 @@ for _, tab in ipairs(TabDefinitions) do
 end
 
 -------------------------------------------------------
--- SPY LOGIC & HOOK SYSTEM
+-- HOOK NAMECALL SYSTEM (CHẠY TOÀN CỤC BẰNG CỜ BIẾN)
 -------------------------------------------------------
-local isSpyActive = false
-local addSpyLogToUI = nil
-
-local function parseToLua(v)
-    local t = typeof(v)
-    if t == "string" then 
-        return string.format("%q", v)
-    elseif t == "number" or t == "boolean" then 
-        return tostring(v)
-    elseif t == "Instance" then 
-        return "game." .. v:GetFullName()
-    elseif t == "Vector3" then 
-        return string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z)
-    elseif t == "CFrame" then 
-        local p = v.Position
-        return string.format("CFrame.new(%.2f, %.2f, %.2f)", p.X, p.Y, p.Z)
-    elseif t == "table" then
-        local ok, json = pcall(function() return HttpService:JSONEncode(v) end)
-        if ok then return json end
-        return "{...}"
-    end
-    return "nil"
-end
-
--- HOOK METAMETHOD
+local isHookActive = false
 local oldNamecall
+
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
     local method = getnamecallmethod()
-    
-    if isSpyActive and (method == "InvokeServer" or method == "FireServer" or method == "invokeServer" or method == "fireServer") then
-        local selfName = tostring(self)
-        
-        -- Nhận diện các Remote phổ biến của Blox Fruits (CommF_, CommE, v.v.)
-        if string.find(selfName, "CommF") or string.find(selfName, "CommE") or self.ClassName == "RemoteFunction" or self.ClassName == "RemoteEvent" then
-            local args = {...}
-            local selfObj = self
-            
-            task.spawn(function()
-                pcall(function()
-                    local formattedArgs = {}
-                    for _, arg in ipairs(args) do
-                        table.insert(formattedArgs, parseToLua(arg))
-                    end
-                    
-                    local argsStr = table.concat(formattedArgs, ", ")
-                    local fullPath = "game." .. selfObj:GetFullName()
-                    local correctMethod = (string.lower(method) == "invokeserver" and "InvokeServer") or "FireServer"
-                    local luaCode = string.format("%s:%s(%s)", fullPath, correctMethod, argsStr)
+    local methodLower = string.lower(tostring(method))
 
-                    if addSpyLogToUI then
-                        addSpyLogToUI(selfName, luaCode)
-                    end
-                end)
-            end)
+    -- Kiểm tra cờ bật/tắt và loại method
+    if isHookActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
+        -- Lọc đúng Remote của Blox Fruits
+        if self.Name == "CommF_" or self.Name == "CommE" then
+            local args = {...}
+            
+            -- In thẳng ra F9 Console với định dạng rõ ràng
+            warn("----------------------------------------")
+            warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
+            for i, arg in ipairs(args) do
+                print(string.format("   👉 Tham số [%d] (%s) = %s", i, typeof(arg), tostring(arg)))
+            end
+            warn("----------------------------------------")
         end
     end
 
@@ -528,62 +494,33 @@ function BuildUI()
     -- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY INTEGRATED)
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
-    local spyElements = {}
-    local spyLogCount = 0
 
-    EventTab:AddToggle("SpyToggle", {
-        Title = "Bật / Tắt Bắt Sự Kiện NPC",
+    EventTab:AddToggle("HookToggle", {
+        Title = "Bật Hook Namecall (CommF_ / CommE)",
+        Description = "In toàn bộ arguments khi tương tác NPC/Gacha ra F9 Console",
         Default = false,
         Callback = function(state)
-            isSpyActive = state
-            if isSpyActive then
-                Fluent:Notify({ Title = "Bắt Sự Kiện", Content = "Đã BẬT! Hãy tương tác với NPC ngay.", Duration = 3 })
+            isHookActive = state
+            if isHookActive then
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã BẬT! Mở F9 Console để xem log khi bấm NPC.",
+                    Duration = 3
+                })
             else
-                Fluent:Notify({ Title = "Bắt Sự Kiện", Content = "Đã TẮT!", Duration = 2 })
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã TẮT bắt sự kiện!",
+                    Duration = 3
+                })
             end
         end
     })
 
-    EventTab:AddButton({
-        Title = "Xóa Danh Sách Sự Kiện",
-        Description = "Xóa toàn bộ log sự kiện đã bắt",
-        Callback = function()
-            for _, elem in ipairs(spyElements) do
-                pcall(function() elem:Destroy() end)
-            end
-            spyElements = {}
-            spyLogCount = 0
-            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa sạch các sự kiện!", Duration = 2 })
-        end
+    EventTab:AddParagraph({
+        Title = "Hướng dẫn sử dụng",
+        Content = "1. Bật công tắc bên trên.\n2. Mở bảng F9 (DevConsole) trong game.\n3. Đến nói chuyện với NPC hoặc thực hiện Gacha/Nhận Quest.\n4. Toàn bộ Remote và Tham số truyền vào sẽ hiển thị chi tiết ở F9."
     })
-
-    addSpyLogToUI = function(remoteName, luaCode)
-        spyLogCount = spyLogCount + 1
-        local currentNum = spyLogCount
-
-        local pBox = EventTab:AddParagraph({
-            Title = string.format("🎯 Sự Kiện [%d] - %s", currentNum, remoteName),
-            Content = luaCode
-        })
-        table.insert(spyElements, pBox)
-
-        local copyBtn = EventTab:AddButton({
-            Title = "Sao chép mã Lua [" .. currentNum .. "]",
-            Callback = function()
-                if setclipboard then
-                    setclipboard(luaCode)
-                    Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép mã!", Duration = 2 })
-                end
-            end
-        })
-        table.insert(spyElements, copyBtn)
-
-        Fluent:Notify({
-            Title = "Đã Bắt Được Sự Kiện!",
-            Content = string.format("[%d] %s", currentNum, remoteName),
-            Duration = 2
-        })
-    end
 end
 
 BuildUI()
