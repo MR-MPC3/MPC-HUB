@@ -321,7 +321,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI (LẤY TẤT CẢ CÁC CON TRÙNG TÊN)
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -333,7 +333,7 @@ function BuildUI()
     MobTab:AddInput("MobNameInput", {
         Title = "Nhập Tên Quái",
         Default = "",
-        Placeholder = "Nhập tên quái cần tìm...",
+        Placeholder = "Nhập tên quái cần tìm (VD: Bandit)...",
         Numeric = false,
         Finished = false,
         Callback = function(value)
@@ -341,10 +341,10 @@ function BuildUI()
         end
     })
 
-    -- Nút lấy tọa độ quái
+    -- Nút lấy tọa độ quái (Quét toàn bộ danh sách)
     MobTab:AddButton({
         Title = "Lấy Tọa Độ Quái",
-        Description = "Tìm quái theo tên và lấy tọa độ CFrame hiện tại",
+        Description = "Tìm tất cả quái khớp tên và lấy tọa độ CFrame.new(x, y, z)",
         Callback = function()
             if targetMobName == "" then
                 Fluent:Notify({
@@ -355,88 +355,79 @@ function BuildUI()
                 return
             end
 
-            local foundPart = nil
-            local foundName = ""
+            local foundMobs = {}
 
-            local function searchFolder(parent)
+            local function scanFolder(parent)
                 for _, obj in ipairs(parent:GetChildren()) do
                     if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetMobName)) then
                         local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
                         local hum = obj:FindFirstChildOfClass("Humanoid")
                         if hrp and hum and hum.Health > 0 then
-                            foundPart = hrp
-                            foundName = obj.Name
-                            return true
+                            table.insert(foundMobs, {
+                                Name = obj.Name,
+                                Part = hrp
+                            })
                         end
                     end
                 end
-                return false
             end
 
-            -- Tìm ưu tiên trong thư mục Enemies (chuẩn Blox Fruits)
+            -- Quét trong thư mục Enemies trước (Đặc trưng của Blox Fruits)
             local enemiesFolder = workspace:FindFirstChild("Enemies")
             if enemiesFolder then
-                searchFolder(enemiesFolder)
+                scanFolder(enemiesFolder)
             end
+            -- Quét rộng toàn bộ Workspace để chắc chắn không bỏ sót
+            scanFolder(workspace)
 
-            -- Nếu chưa tìm thấy thì quét rộng toàn bộ Workspace
-            if not foundPart then
-                searchFolder(workspace)
-            end
-
-            if not foundPart then
+            if #foundMobs == 0 then
                 Fluent:Notify({
                     Title = "Không Tìm Thấy",
-                    Content = "Không tìm thấy quái khớp với tên: " .. targetMobName,
+                    Content = "Không tìm thấy con quái nào khớp với tên: " .. targetMobName,
                     Duration = 3
                 })
                 return
             end
 
-            mobPosCount = mobPosCount + 1
-            local cf = foundPart.CFrame
-            local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
-            
-            local fullCFrameStr = string.format(
-                "CFrame.new(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                tostring(x), tostring(y), tostring(z),
-                tostring(r00), tostring(r01), tostring(r02),
-                tostring(r10), tostring(r11), tostring(r12),
-                tostring(r20), tostring(r21), tostring(r22)
-            )
+            -- Vòng lặp tạo bảng thông tin và nút copy cho TẤT CẢ các con tìm được
+            for _, mob in ipairs(foundMobs) do
+                mobPosCount = mobPosCount + 1
+                local pos = mob.Part.Position
+                local posStr = string.format("CFrame.new(%s, %s, %s)", tostring(pos.X), tostring(pos.Y), tostring(pos.Z))
 
-            local paragraphBox = MobTab:AddParagraph({
-                Title = "Quái: " .. foundName .. " (" .. mobPosCount .. ")",
-                Content = fullCFrameStr
-            })
-            table.insert(mobCreatedElements, paragraphBox)
+                local paragraphBox = MobTab:AddParagraph({
+                    Title = mob.Name .. " [" .. mobPosCount .. "]",
+                    Content = posStr
+                })
+                table.insert(mobCreatedElements, paragraphBox)
 
-            local copyButton = MobTab:AddButton({
-                Title = "Sao Chép Tọa Độ Quái",
-                Description = "Sao chép CFrame của " .. foundName,
-                Callback = function()
-                    if setclipboard then
-                        setclipboard(fullCFrameStr)
-                        Fluent:Notify({
-                            Title = "Thành công",
-                            Content = "Đã sao chép tọa độ quái!",
-                            Duration = 3
-                        })
-                    else
-                        Fluent:Notify({
-                            Title = "Lỗi",
-                            Content = "Executor không hỗ trợ setclipboard!",
-                            Duration = 3
-                        })
+                local copyButton = MobTab:AddButton({
+                    Title = "Sao Chép: " .. mob.Name .. " [" .. mobPosCount .. "]",
+                    Description = posStr,
+                    Callback = function()
+                        if setclipboard then
+                            setclipboard(posStr)
+                            Fluent:Notify({
+                                Title = "Thành công",
+                                Content = "Đã sao chép tọa độ: " .. posStr,
+                                Duration = 3
+                            })
+                        else
+                            Fluent:Notify({
+                                Title = "Lỗi",
+                                Content = "Executor không hỗ trợ setclipboard!",
+                                Duration = 3
+                            })
+                        end
                     end
-                end
-            })
-            table.insert(mobCreatedElements, copyButton)
+                })
+                table.insert(mobCreatedElements, copyButton)
+            end
 
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã lấy tọa độ quái: " .. foundName,
-                Duration = 2
+                Content = "Đã tìm thấy và lấy tọa độ của " .. #foundMobs .. " con quái!",
+                Duration = 3
             })
         end
     })
@@ -478,6 +469,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã thêm tính năng lấy tọa độ quái!",
+    Content = "Tải Xong - Đã cập nhật lấy tất cả quái & gọn tọa độ!",
     Duration = 5
 })
