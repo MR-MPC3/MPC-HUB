@@ -687,7 +687,7 @@ function BuildUI()
     })
 
 -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN NÓI CHUYỆN NPC
+    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
 
@@ -696,106 +696,130 @@ function BuildUI()
     local EventCount = 0
     local MaxEventLogs = 100
     local EventParagraph
+    local HttpService = game:GetService("HttpService")
 
     local function UpdateEventDisplay()
         if not EventParagraph then return end
         if #EventLogs == 0 then
-            EventParagraph:SetDesc("Chưa có sự kiện NPC nào...")
+            EventParagraph:SetDesc("Chưa có dữ liệu Remote/NPC nào...")
             return
         end
-        EventParagraph:SetDesc(table.concat(EventLogs, "\n\n"))
+        EventParagraph:SetDesc(table.concat(EventLogs, "\n\n-------------------------\n\n"))
     end
 
-    local function AddEventLog(eventName, eventData)
+    local function AddEventLog(title, eventData)
         if not EventLoggerEnabled then return end
 
         EventCount = EventCount + 1
         local timeText = os.date("%H:%M:%S")
-        local text = "[" .. EventCount .. "] [" .. timeText .. "] " .. tostring(eventName)
+        local text = "[" .. EventCount .. "] [" .. timeText .. "] " .. tostring(title)
 
         if eventData ~= nil and tostring(eventData) ~= "" then
             text = text .. "\n" .. tostring(eventData)
         end
 
-        table.insert(EventLogs, text)
+        table.insert(EventLogs, 1, text) -- Đưa dữ liệu mới nhất lên đầu
         if #EventLogs > MaxEventLogs then
-            table.remove(EventLogs, 1)
+            table.remove(EventLogs)
         end
 
         UpdateEventDisplay()
     end
 
+    -- Hàm chuyển đổi dữ liệu Arguments gửi lên Server thành chuỗi dễ đọc
+    local function FormatArguments(args)
+        local formatted = {}
+        for i, v in ipairs(args) do
+            if type(v) == "table" then
+                local ok, json = pcall(function() return HttpService:JSONEncode(v) end)
+                if ok then
+                    table.insert(formatted, string.format("Arg[%d] (Table): %s", i, json))
+                else
+                    table.insert(formatted, string.format("Arg[%d] (Table): [Unserializable]", i))
+                end
+            elseif typeof(v) == "Instance" then
+                table.insert(formatted, string.format("Arg[%d] (%s): %s", i, v.ClassName, v:GetFullName()))
+            else
+                table.insert(formatted, string.format("Arg[%d] (%s): %s", i, type(v), tostring(v)))
+            end
+        end
+        return table.concat(formatted, "\n")
+    end
+
     EventTab:AddToggle("EventLoggerToggle", {
-        Title = "Bắt Sự Kiện Nói Chuyện NPC",
-        Description = "Bật để bắt các sự kiện khi tương tác hoặc đối thoại với NPC",
+        Title = "Bắt Dữ Liệu Gửi Lên Server",
+        Description = "Bật để bắt tất cả Arguments gửi qua Remote (CommF_, CommE...) khi nói chuyện NPC",
         Default = false,
         Callback = function(value)
             EventLoggerEnabled = value
             if value then
-                Fluent:Notify({ Title = "Bắt Sự Kiện NPC", Content = "Đã bật bắt sự kiện NPC!", Duration = 2 })
-                AddEventLog("LOGGER", "Đã bắt đầu theo dõi sự kiện NPC.")
+                Fluent:Notify({ Title = "Hook Remote", Content = "Đã bắt đầu theo dõi dữ liệu gửi Server!", Duration = 2 })
+                AddEventLog("LOGGER", "Đã kích hoạt Hook __namecall.")
             else
-                Fluent:Notify({ Title = "Bắt Sự Kiện NPC", Content = "Đã tắt bắt sự kiện!", Duration = 2 })
+                Fluent:Notify({ Title = "Hook Remote", Content = "Đã tắt theo dõi!", Duration = 2 })
             end
         end
     })
 
     EventTab:AddButton({
-        Title = "Xóa Sự Kiện",
-        Description = "Xóa toàn bộ lịch sử sự kiện hiển thị",
+        Title = "Sao Chép Lịch Sử Log",
+        Description = "Copy toàn bộ dữ liệu Remote bắt được vào Clipboard",
+        Callback = function()
+            if setclipboard and #EventLogs > 0 then
+                setclipboard(table.concat(EventLogs, "\n\n-------------------------\n\n"))
+                Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép toàn bộ Log!", Duration = 2 })
+            end
+        end
+    })
+
+    EventTab:AddButton({
+        Title = "Xóa Lịch Sử",
         Callback = function()
             table.clear(EventLogs)
             EventCount = 0
             UpdateEventDisplay()
-            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa toàn bộ sự kiện!", Duration = 2 })
+            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa toàn bộ log!", Duration = 2 })
         end
     })
 
     EventParagraph = EventTab:AddParagraph({
-        Title = "Danh Sách Tương Tác NPC",
-        Content = "Chưa có sự kiện NPC nào..."
+        Title = "Dữ Liệu Gửi Lên Server (Remote Calls)",
+        Content = "Chưa có dữ liệu..."
     })
 
     -------------------------------------------------------
-    -- HOOK SỰ KIỆN NÓI CHUYỆN / TƯƠNG TÁC NPC
+    -- HOOK METAMETHOD __NAMECALL (BẮT KHÔNG SÓT REMOTE NÀO)
     -------------------------------------------------------
-    
-    -- 1. Bắt tương tác qua ProximityPrompt (Nút ấn E trên NPC/Vật thể)
-    ProximityPromptService.PromptTriggered:Connect(function(prompt, playerWhoTriggered)
-        if playerWhoTriggered == plr then
-            local parentObj = prompt.Parent
-            local npcName = (parentObj and parentObj.Parent and parentObj.Parent.Name) or (parentObj and parentObj.Name) or "Không xác định"
-            local actText = prompt.ActionText ~= "" and prompt.ActionText or "Tương tác"
-            local objText = prompt.ObjectText ~= "" and prompt.ObjectText or npcName
+    local rawNamecall
+    rawNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-            AddEventLog("Tương tác ProximityPrompt", "NPC/Vật thể: " .. tostring(objText) .. "\nHành động: " .. tostring(actText))
-        end
-    end)
-
-    -- 2. Theo dõi Dialogue UI / Khung thoại xuất hiện trên màn hình
-    local playerGui = plr:WaitForChild("PlayerGui", 5)
-    if playerGui then
-        local function checkAndHookGui(gui)
-            if not gui:IsA("ScreenGui") then return end
+        if EventLoggerEnabled and (method == "InvokeServer" or method == "FireServer") then
+            -- Lọc bỏ các Remote rác (Ping, Movement, v.v. nếu có)
+            local remoteName = tostring(self.Name)
             
-            local lowerName = string.lower(gui.Name)
-            if string.find(lowerName, "dialog") or string.find(lowerName, "npc") or string.find(lowerName, "talk") or string.find(lowerName, "speak") then
-                gui:GetPropertyChangedSignal("Enabled"):Connect(function()
-                    if gui.Enabled then
-                        AddEventLog("Mở Khung Thoại NPC", "Tên UI Hội Thoại: " .. gui.Name)
+            if remoteName ~= "SetCFrame" and remoteName ~= "UpdateMouse" then
+                local formattedArgs = FormatArguments(args)
+                
+                -- Đoạn code ví dụ tạo chuỗi gọi nhanh để bạn copy chạy script
+                local codeSnippet = "game:GetService(\"ReplicatedStorage\"):FindFirstChild(\"" .. remoteName .. "\", true):" .. method .. "("
+                local rawArgsStr = {}
+                for _, a in ipairs(args) do
+                    if type(a) == "string" then
+                        table.insert(rawArgsStr, "\"" .. a .. "\"")
+                    else
+                        table.insert(rawArgsStr, tostring(a))
                     end
-                end)
+                end
+                codeSnippet = codeSnippet .. table.concat(rawArgsStr, ", ") .. ")"
+
+                AddEventLog("Remote: " .. remoteName .. " | Method: " .. method, formattedArgs .. "\n\n Code Gọi Nhanh:\n" .. codeSnippet)
             end
         end
 
-        for _, gui in ipairs(playerGui:GetChildren()) do
-            checkAndHookGui(gui)
-        end
-
-        playerGui.ChildAdded:Connect(function(gui)
-            checkAndHookGui(gui)
-        end)
-    end
+        return rawNamecall(self, ...)
+    end)
 end
 
 BuildUI()
