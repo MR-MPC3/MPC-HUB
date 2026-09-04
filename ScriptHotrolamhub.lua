@@ -7,7 +7,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
@@ -47,7 +46,7 @@ end
 
 local Window = Fluent:CreateWindow({
     Title = "Fat Cat Hub - Tool Dev", 
-    SubTitle = "Lấy Tọa Độ & Bắt Sự Kiện", 
+    SubTitle = "Lấy Tọa Độ", 
     TabWidth = 180, 
     Theme = "Dark",
     Acrylic = false,
@@ -169,8 +168,7 @@ end)
 local TabDefinitions = {
     {"PlayerPos", "Lấy Tọa Độ Nhân Vật", "user"},
     {"MobPos", "Lấy Tọa Độ Quái", "swords"},
-    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"},
-    {"EventListener", "Bắt Sự Kiện", "activity"}
+    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"}
 }
 
 local Tabs = {}
@@ -274,7 +272,7 @@ function BuildUI()
             table.insert(createdElements, paragraphBox)
 
             local copyButton = PlayerTab:AddButton({
-                Title = "Sao chép",
+                Title = "Sao Chép",
                 Callback = function()
                     if setclipboard then
                         setclipboard(fullCFrameStr)
@@ -342,7 +340,7 @@ function BuildUI()
 
     MobTab:AddButton({
         Title = "Lấy Tọa Độ Quái",
-        Description = "Tìm tất cả quái khớp tên, lấy tọa độ từng con và tính tọa độ tâm (MonCF)",
+        Description = "Tìm tất cả quái khớp tên và lấy tọa độ CFrame.new(x, y, z)",
         Callback = function()
             if targetMobName == "" then
                 Fluent:Notify({
@@ -397,7 +395,7 @@ function BuildUI()
                 table.insert(mobCreatedElements, paragraphBox)
 
                 local copyButton = MobTab:AddButton({
-                    Title = "Sao chép",
+                    Title = "Sao Chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
@@ -418,43 +416,9 @@ function BuildUI()
                 table.insert(mobCreatedElements, copyButton)
             end
 
-            local sumPos = Vector3.new(0, 0, 0)
-            for _, mob in ipairs(foundMobs) do
-                sumPos = sumPos + mob.Part.Position
-            end
-            local centerPos = sumPos / #foundMobs
-            local monCfStr = string.format("MonCF = CFrame.new(%s, %s, %s)", tostring(centerPos.X), tostring(centerPos.Y), tostring(centerPos.Z))
-
-            local centerParagraph = MobTab:AddParagraph({
-                Title = "Tọa Độ Trung Tâm Bãi (MonCF)",
-                Content = monCfStr
-            })
-            table.insert(mobCreatedElements, centerParagraph)
-
-            local copyCenterBtn = MobTab:AddButton({
-                Title = "Sao chép",
-                Callback = function()
-                    if setclipboard then
-                        setclipboard(monCfStr)
-                        Fluent:Notify({
-                            Title = "Thành công",
-                            Content = "Đã sao chép MonCF của bãi!",
-                            Duration = 3
-                        })
-                    else
-                        Fluent:Notify({
-                            Title = "Lỗi",
-                            Content = "Executor không hỗ trợ setclipboard!",
-                            Duration = 3
-                        })
-                    end
-                end
-            })
-            table.insert(mobCreatedElements, copyCenterBtn)
-
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã tìm thấy " .. #foundMobs .. " con quái và tính tọa độ tâm!",
+                Content = "Đã tìm thấy và lấy tọa độ của " .. #foundMobs .. " con quái!",
                 Duration = 3
             })
         end
@@ -554,7 +518,7 @@ function BuildUI()
                 table.insert(npcCreatedElements, paragraphBox)
 
                 local copyButton = NpcTab:AddButton({
-                    Title = "Sao chép",
+                    Title = "Sao Chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
@@ -596,127 +560,6 @@ function BuildUI()
             Fluent:Notify({
                 Title = "Thông báo",
                 Content = "Đã xóa toàn bộ danh sách tọa độ NPC!",
-                Duration = 2
-            })
-        end
-    })
-
-    -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN (REMOTE & NPC INTERACTION LOGGER) - ĐÃ FIX
-    -------------------------------------------------------
-    local EventTab = Tabs["EventListener"]
-    local eventElements = {}
-    local isListening = false
-    local remoteNameFilter = ""
-    local remoteLogCount = 0
-
-    EventTab:AddInput("RemoteFilterInput", {
-        Title = "Lọc Tên Sự Kiện / Remote",
-        Default = "",
-        Placeholder = "Nhập từ khóa tên...",
-        Numeric = false,
-        Finished = false,
-        Callback = function(value)
-            remoteNameFilter = value
-        end
-    })
-
-    EventTab:AddToggle("ListenRemoteToggle", {
-        Title = "Bật/Tắt Lắng Nghe Sự Kiện & Tương Tác NPC",
-        Default = false,
-        Callback = function(state)
-            isListening = state
-            if isListening then
-                Fluent:Notify({
-                    Title = "Đang Bắt Sự Kiện",
-                    Content = "Đã bật theo dõi Remote và Giao tiếp NPC (Prompt)!",
-                    Duration = 2
-                })
-            else
-                Fluent:Notify({
-                    Title = "Đã Dừng",
-                    Content = "Đã tắt theo dõi sự kiện.",
-                    Duration = 2
-                })
-            end
-        end
-    })
-
-    -- 1. Bắt sự kiện RemoteEvent / RemoteFunction (Dùng task.spawn để chống lỗi luồng UI)
-    pcall(function()
-        local oldNamecall
-        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-            local method = getnamecallmethod()
-            if isListening and (method == "FireServer" or method == "InvokeServer") and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-                local name = self.Name
-                if remoteNameFilter == "" or string.find(string.lower(name), string.lower(remoteNameFilter)) then
-                    local args = {...}
-                    local argString = ""
-                    pcall(function()
-                        for i, v in ipairs(args) do
-                            argString = argString .. "[" .. i .. "]: " .. tostring(v) .. " "
-                        end
-                    end)
-                    
-                    remoteLogCount = remoteLogCount + 1
-                    local currentCount = remoteLogCount
-                    local currentMethod = method
-                    local currentName = name
-                    
-                    -- Đưa việc tạo UI vào task.spawn để chạy an toàn
-                    task.spawn(function()
-                        if currentCount <= 25 then
-                            local pBox = EventTab:AddParagraph({
-                                Title = "Log #" .. currentCount .. " (" .. currentMethod .. ")",
-                                Content = "Tên: " .. currentName .. "\nTham số: " .. argString
-                            })
-                            table.insert(eventElements, pBox)
-                        end
-                    end)
-                end
-            end
-            return oldNamecall(self, ...)
-        end)
-    end)
-
-    -- 2. Bắt sự kiện bấm tương tác / giao tiếp NPC qua ProximityPrompt
-    ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
-        if player == plr and isListening then
-            local promptName = prompt.Name
-            local parentObj = prompt.Parent
-            local parentName = parentObj and parentObj.Name or "Unknown"
-            
-            if remoteNameFilter == "" or string.find(string.lower(parentName), string.lower(remoteNameFilter)) or string.find(string.lower(promptName), string.lower(remoteNameFilter)) then
-                remoteLogCount = remoteLogCount + 1
-                local currentCount = remoteLogCount
-                local logTitle = "Log #" .. currentCount .. " (Giao Tiếp NPC / Prompt)"
-                local logContent = "Đối tượng/NPC: " .. parentName .. "\nTên Prompt: " .. promptName
-                
-                task.spawn(function()
-                    if currentCount <= 25 then
-                        local pBox = EventTab:AddParagraph({
-                            Title = logTitle,
-                            Content = logContent
-                        })
-                        table.insert(eventElements, pBox)
-                    end
-                end)
-            end
-        end
-    end)
-
-    EventTab:AddButton({
-        Title = "Xóa Log Sự Kiện",
-        Description = "Xóa danh sách các sự kiện đã bắt được",
-        Callback = function()
-            for _, el in ipairs(eventElements) do
-                pcall(function() el:Destroy() end)
-            end
-            eventElements = {}
-            remoteLogCount = 0
-            Fluent:Notify({
-                Title = "Thông báo",
-                Content = "Đã dọn sạch bảng log sự kiện!",
                 Duration = 2
             })
         end
