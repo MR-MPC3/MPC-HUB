@@ -272,7 +272,7 @@ function BuildUI()
             table.insert(createdElements, paragraphBox)
 
             local copyButton = PlayerTab:AddButton({
-                Title = "Sao Chép",
+                Title = "Sao chép",
                 Callback = function()
                     if setclipboard then
                         setclipboard(fullCFrameStr)
@@ -319,7 +319,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI (ĐÃ CẬP NHẬT THÊM MONCF & TÊN NÚT SAO CHÉP)
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -340,7 +340,7 @@ function BuildUI()
 
     MobTab:AddButton({
         Title = "Lấy Tọa Độ Quái",
-        Description = "Tìm tất cả quái khớp tên và lấy tọa độ CFrame.new(x, y, z)",
+        Description = "Tìm tất cả quái khớp tên, lấy tọa độ từng con và tính tọa độ tâm (MonCF)",
         Callback = function()
             if targetMobName == "" then
                 Fluent:Notify({
@@ -383,6 +383,7 @@ function BuildUI()
                 return
             end
 
+            -- Hiển thị từng con quái
             for _, mob in ipairs(foundMobs) do
                 mobPosCount = mobPosCount + 1
                 local pos = mob.Part.Position
@@ -395,7 +396,7 @@ function BuildUI()
                 table.insert(mobCreatedElements, paragraphBox)
 
                 local copyButton = MobTab:AddButton({
-                    Title = "Sao Chép",
+                    Title = "Sao chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
@@ -416,9 +417,44 @@ function BuildUI()
                 table.insert(mobCreatedElements, copyButton)
             end
 
+            -- TÍNH TOÁN VÀ HIỂN THỊ TỌA ĐỘ TÂM (MonCF)
+            local sumPos = Vector3.new(0, 0, 0)
+            for _, mob in ipairs(foundMobs) do
+                sumPos = sumPos + mob.Part.Position
+            end
+            local centerPos = sumPos / #foundMobs
+            local monCfStr = string.format("MonCF = CFrame.new(%s, %s, %s)", tostring(centerPos.X), tostring(centerPos.Y), tostring(centerPos.Z))
+
+            local centerParagraph = MobTab:AddParagraph({
+                Title = "Tọa Độ Trung Tâm Bãi (MonCF)",
+                Content = monCfStr
+            })
+            table.insert(mobCreatedElements, centerParagraph)
+
+            local copyCenterBtn = MobTab:AddButton({
+                Title = "Sao chép",
+                Callback = function()
+                    if setclipboard then
+                        setclipboard(monCfStr)
+                        Fluent:Notify({
+                            Title = "Thành công",
+                            Content = "Đã sao chép MonCF của bãi!",
+                            Duration = 3
+                        })
+                    else
+                        Fluent:Notify({
+                            Title = "Lỗi",
+                            Content = "Executor không hỗ trợ setclipboard!",
+                            Duration = 3
+                        })
+                    end
+                end
+            })
+            table.insert(mobCreatedElements, copyCenterBtn)
+
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã tìm thấy và lấy tọa độ của " .. #foundMobs .. " con quái!",
+                Content = "Đã tìm thấy " .. #foundMobs .. " con quái và tính tọa độ tâm!",
                 Duration = 3
             })
         end
@@ -518,7 +554,7 @@ function BuildUI()
                 table.insert(npcCreatedElements, paragraphBox)
 
                 local copyButton = NpcTab:AddButton({
-                    Title = "Sao Chép",
+                    Title = "Sao chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
