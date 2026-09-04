@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
@@ -320,7 +321,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI (ĐÃ CẬP NHẬT THÊM MONCF & TÊN NÚT SAO CHÉP)
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -384,7 +385,6 @@ function BuildUI()
                 return
             end
 
-            -- Hiển thị từng con quái
             for _, mob in ipairs(foundMobs) do
                 mobPosCount = mobPosCount + 1
                 local pos = mob.Part.Position
@@ -418,7 +418,6 @@ function BuildUI()
                 table.insert(mobCreatedElements, copyButton)
             end
 
-            -- TÍNH TOÁN VÀ HIỂN THỊ TỌA ĐỘ TÂM (MonCF)
             local sumPos = Vector3.new(0, 0, 0)
             for _, mob in ipairs(foundMobs) do
                 sumPos = sumPos + mob.Part.Position
@@ -603,7 +602,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER)
+    -- TAB 4: BẮT SỰ KIỆN (REMOTE & NPC INTERACTION LOGGER) - ĐÃ FIX
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
     local eventElements = {}
@@ -612,9 +611,9 @@ function BuildUI()
     local remoteLogCount = 0
 
     EventTab:AddInput("RemoteFilterInput", {
-        Title = "Lọc Tên Remote (Tùy chọn)",
+        Title = "Lọc Tên Sự Kiện / Remote",
         Default = "",
-        Placeholder = "Nhập từ khóa tên Remote...",
+        Placeholder = "Nhập từ khóa tên...",
         Numeric = false,
         Finished = false,
         Callback = function(value)
@@ -623,26 +622,27 @@ function BuildUI()
     })
 
     EventTab:AddToggle("ListenRemoteToggle", {
-        Title = "Bật/Tắt Lắng Nghe RemoteEvent",
+        Title = "Bật/Tắt Lắng Nghe Sự Kiện & Tương Tác NPC",
         Default = false,
         Callback = function(state)
             isListening = state
             if isListening then
                 Fluent:Notify({
                     Title = "Đang Bắt Sự Kiện",
-                    Content = "Đã bật theo dõi các RemoteEvent được gọi!",
+                    Content = "Đã bật theo dõi Remote và Giao tiếp NPC (Prompt)!",
                     Duration = 2
                 })
             else
                 Fluent:Notify({
                     Title = "Đã Dừng",
-                    Content = "Đã tắt theo dõi RemoteEvent.",
+                    Content = "Đã tắt theo dõi sự kiện.",
                     Duration = 2
                 })
             end
         end
     })
 
+    -- 1. Bắt sự kiện RemoteEvent / RemoteFunction (Dùng task.spawn để chống lỗi luồng UI)
     pcall(function()
         local oldNamecall
         oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
@@ -650,7 +650,6 @@ function BuildUI()
             if isListening and (method == "FireServer" or method == "InvokeServer") and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
                 local name = self.Name
                 if remoteNameFilter == "" or string.find(string.lower(name), string.lower(remoteNameFilter)) then
-                    remoteLogCount = remoteLogCount + 1
                     local args = {...}
                     local argString = ""
                     pcall(function()
@@ -659,22 +658,56 @@ function BuildUI()
                         end
                     end)
                     
-                    if remoteLogCount <= 25 then
-                        local pBox = EventTab:AddParagraph({
-                            Title = "Log #" .. remoteLogCount .. " (" .. method .. ")",
-                            Content = "Tên: " .. name .. "\nTham số: " .. argString
-                        })
-                        table.insert(eventElements, pBox)
-                    end
+                    remoteLogCount = remoteLogCount + 1
+                    local currentCount = remoteLogCount
+                    local currentMethod = method
+                    local currentName = name
+                    
+                    -- Đưa việc tạo UI vào task.spawn để chạy an toàn
+                    task.spawn(function()
+                        if currentCount <= 25 then
+                            local pBox = EventTab:AddParagraph({
+                                Title = "Log #" .. currentCount .. " (" .. currentMethod .. ")",
+                                Content = "Tên: " .. currentName .. "\nTham số: " .. argString
+                            })
+                            table.insert(eventElements, pBox)
+                        end
+                    end)
                 end
             end
             return oldNamecall(self, ...)
         end)
     end)
 
+    -- 2. Bắt sự kiện bấm tương tác / giao tiếp NPC qua ProximityPrompt
+    ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
+        if player == plr and isListening then
+            local promptName = prompt.Name
+            local parentObj = prompt.Parent
+            local parentName = parentObj and parentObj.Name or "Unknown"
+            
+            if remoteNameFilter == "" or string.find(string.lower(parentName), string.lower(remoteNameFilter)) or string.find(string.lower(promptName), string.lower(remoteNameFilter)) then
+                remoteLogCount = remoteLogCount + 1
+                local currentCount = remoteLogCount
+                local logTitle = "Log #" .. currentCount .. " (Giao Tiếp NPC / Prompt)"
+                local logContent = "Đối tượng/NPC: " .. parentName .. "\nTên Prompt: " .. promptName
+                
+                task.spawn(function()
+                    if currentCount <= 25 then
+                        local pBox = EventTab:AddParagraph({
+                            Title = logTitle,
+                            Content = logContent
+                        })
+                        table.insert(eventElements, pBox)
+                    end
+                end)
+            end
+        end
+    end)
+
     EventTab:AddButton({
         Title = "Xóa Log Sự Kiện",
-        Description = "Xóa danh sách các Remote đã bắt được",
+        Description = "Xóa danh sách các sự kiện đã bắt được",
         Callback = function()
             for _, el in ipairs(eventElements) do
                 pcall(function() el:Destroy() end)
