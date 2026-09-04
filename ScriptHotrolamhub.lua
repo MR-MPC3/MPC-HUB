@@ -320,7 +320,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI (ĐÃ CẬP NHẬT THÊM MONCF & TÊN NÚT SAO CHÉP)
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -384,7 +384,6 @@ function BuildUI()
                 return
             end
 
-            -- Hiển thị từng con quái
             for _, mob in ipairs(foundMobs) do
                 mobPosCount = mobPosCount + 1
                 local pos = mob.Part.Position
@@ -418,7 +417,6 @@ function BuildUI()
                 table.insert(mobCreatedElements, copyButton)
             end
 
-            -- TÍNH TOÁN VÀ HIỂN THỊ TỌA ĐỘ TÂM (MonCF)
             local sumPos = Vector3.new(0, 0, 0)
             for _, mob in ipairs(foundMobs) do
                 sumPos = sumPos + mob.Part.Position
@@ -603,8 +601,16 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER) chư phát triển
+    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER)
     -------------------------------------------------------
+    local EventTab = Tabs["EventListener"]
+    EventTab:AddParagraph({
+        Title = "Trạng Thái",
+        Content = "Tính năng Bắt Sự Kiện đang được phát triển..."
+    })
+
+end -- Đóng hàm BuildUI() hoàn chỉnh ở đây
+
 BuildUI()
 
 ---------------------------------------
