@@ -219,7 +219,6 @@ end
 -------------------------------------------------------
 local isHookActive = false
 local oldNamecall
-local eventCallbackUI = nil
 
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
     local method = getnamecallmethod()
@@ -231,20 +230,12 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
             
             warn("----------------------------------------")
             warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
-            local formattedText = "Remote: " .. self.Name .. " | Method: " .. method .. "\nArgs: "
             
             for i, arg in ipairs(args) do
                 local argStr = tostring(arg)
                 print(string.format("    👉 Tham số [%d] (%s) = %s", i, typeof(arg), argStr))
-                formattedText = formattedText .. "\n[" .. i .. "] (" .. typeof(arg) .. ") = " .. argStr
             end
             warn("----------------------------------------")
-
-            if eventCallbackUI then
-                task.spawn(function()
-                    eventCallbackUI(self.Name, formattedText, args)
-                end)
-            end
         end
     end
 
@@ -255,6 +246,9 @@ end))
 -- BUILD UI 
 ----------------------------
 function BuildUI()
+    -------------------------------------------------------
+    -- TAB 1: LẤY TỌA ĐỘ NHÂN VẬT
+    -------------------------------------------------------
     local PlayerTab = Tabs["PlayerPos"]
     local createdElements = {} 
     local posCount = 0
@@ -331,7 +325,9 @@ function BuildUI()
         end
     })
 
-    -- MOB TAB
+    -------------------------------------------------------
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI
+    -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
     local mobCreatedElements = {}
     local mobPosCount = 0
@@ -389,6 +385,26 @@ function BuildUI()
                 })
                 table.insert(mobCreatedElements, flyButton)
             end
+
+            local sumPos = Vector3.new(0, 0, 0)
+            for _, mob in ipairs(foundMobs) do sumPos = sumPos + mob.Part.Position end
+            local centerPos = sumPos / #foundMobs
+            local monCfStr = string.format("MonCF = CFrame.new(%s, %s, %s)", tostring(centerPos.X), tostring(centerPos.Y), tostring(centerPos.Z))
+
+            local centerParagraph = MobTab:AddParagraph({ Title = "Tọa Độ Trung Tâm Bãi (MonCF)", Content = monCfStr })
+            table.insert(mobCreatedElements, centerParagraph)
+
+            local copyCenterBtn = MobTab:AddButton({
+                Title = "Sao chép MonCF",
+                Callback = function() if setclipboard then setclipboard(monCfStr) end end
+            })
+            table.insert(mobCreatedElements, copyCenterBtn)
+
+            local flyCenterBtn = MobTab:AddButton({
+                Title = "Bay đến tâm bãi",
+                Callback = function() TweenTo(CFrame.new(centerPos)) end
+            })
+            table.insert(mobCreatedElements, flyCenterBtn)
         end
     })
 
@@ -401,7 +417,9 @@ function BuildUI()
         end
     })
 
-    -- NPC TAB
+    -------------------------------------------------------
+    -- TAB 3: LẤY TỌA ĐỘ NPC
+    -------------------------------------------------------
     local NpcTab = Tabs["NPCPos"]
     local npcCreatedElements = {}
     local npcPosCount = 0
@@ -471,69 +489,32 @@ function BuildUI()
         end
     })
 
-    -- EVENT TAB
+    -------------------------------------------------------
+    -- TAB 4: BẮT SỰ KIỆN NPC (CHỈ LOG RA CONSOLE F9)
+    -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
-    local eventCreatedElements = {}
-    local eventCount = 0
 
     EventTab:AddToggle("HookToggle", {
         Title = "Bật Hook Namecall (CommF_ / CommE)",
-        Description = "Vừa in Console vừa hiển thị bảng trực tiếp trên UI khi tương tác NPC",
+        Description = "In toàn bộ kết quả tương tác NPC ra Console (F9)",
         Default = false,
         Callback = function(state)
             isHookActive = state
             if isHookActive then
-                Fluent:Notify({ Title = "Hook Namecall", Content = "Đã BẬT! Tương tác NPC sẽ hiển thị kết quả ở dưới.", Duration = 3 })
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã BẬT! Mở Console (F9) để xem log sự kiện.",
+                    Duration = 3
+                })
             else
-                Fluent:Notify({ Title = "Hook Namecall", Content = "Đã TẮT bắt sự kiện!", Duration = 3 })
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã TẮT bắt sự kiện!",
+                    Duration = 3
+                })
             end
         end
     })
-
-    EventTab:AddButton({
-        Title = "Xóa Lịch Sử Sự Kiện",
-        Callback = function()
-            for _, element in ipairs(eventCreatedElements) do pcall(function() element:Destroy() end) end
-            eventCreatedElements = {}
-            eventCount = 0
-            Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
-        end
-    })
-
-    eventCallbackUI = function(remoteName, contentStr, argsTable)
-        eventCount = eventCount + 1
-        local currentId = eventCount
-        
-        local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..remoteName..'"):InvokeServer('
-        for i, v in ipairs(argsTable) do
-            if type(v) == "string" then
-                luaCallCode = luaCallCode .. '"' .. tostring(v) .. '"'
-            else
-                luaCallCode = luaCallCode .. tostring(v)
-            end
-            if i < #argsTable then
-                luaCallCode = luaCallCode .. ", "
-            end
-        end
-        luaCallCode = luaCallCode .. ")"
-
-        local paragraph = EventTab:AddParagraph({
-            Title = "Sự Kiện #" .. currentId .. " (" .. remoteName .. ")",
-            Content = contentStr
-        })
-        table.insert(eventCreatedElements, paragraph)
-
-        local copyBtn = EventTab:AddButton({
-            Title = "Sao chép mã lệnh gọi lại (Args)",
-            Callback = function()
-                if setclipboard then
-                    setclipboard(luaCallCode)
-                    Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép lệnh sự kiện #" .. currentId, Duration = 2 })
-                end
-            end
-        })
-        table.insert(eventCreatedElements, copyBtn)
-    end
 end
 
 BuildUI()
