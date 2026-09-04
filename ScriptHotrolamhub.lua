@@ -190,7 +190,7 @@ function BuildUI()
     -------------------------------------------------------
     local PlayerTab = Tabs["PlayerPos"]
 
-    local createdElements = {} -- Lưu trữ các bảng và nút để sau này bấm Xóa có thể dọn sạch
+    local createdElements = {} 
     local posCount = 0
 
     -- Biến quản lý trạng thái đóng băng
@@ -198,10 +198,9 @@ function BuildUI()
     local freezeConnection = nil
     local frozenCFrame = nil
 
-    -- Nút Gạt Đóng Băng Nhân Vật
+    -- Nút Gạt Đóng Băng Nhân Vật & Góc Quay (Đã sửa lại cú pháp chuẩn không bị lỗi ẩn)
     PlayerTab:AddToggle("FreezeToggle", {
         Title = "Đóng Băng Nhân Vật & Góc Quay",
-        Description = "Giữ nguyên vị trí và hướng nhìn cố định, không thể di chuyển",
         Default = false,
         Callback = function(state)
             isFrozen = state
@@ -218,7 +217,7 @@ function BuildUI()
                     humanoid.PlatformStand = true
                 end
 
-                -- Chạy ngầm liên tục để ép chặt vị trí và góc quay nếu có lực tác động đẩy đi
+                -- Ghim chặt vị trí và góc quay liên tục bằng RenderStepped
                 freezeConnection = RunService.RenderStepped:Connect(function()
                     if isFrozen and hrp and frozenCFrame then
                         hrp.CFrame = frozenCFrame
@@ -231,7 +230,6 @@ function BuildUI()
                     Duration = 2
                 })
             else
-                -- Hủy đóng băng, trả lại trạng thái bình thường
                 if freezeConnection then
                     freezeConnection:Disconnect()
                     freezeConnection = nil
@@ -253,7 +251,7 @@ function BuildUI()
         end
     })
 
-    -- 1. Nút lấy tọa độ nhân vật và góc quay (nằm trên cùng)
+    -- Nút lấy tọa độ nhân vật và góc quay
     PlayerTab:AddButton({
         Title = "Lấy Tọa Độ Nhân Vật Và Góc Quay",
         Description = "Tạo một bảng lưu CFrame chuẩn xác không làm tròn",
@@ -273,7 +271,6 @@ function BuildUI()
             local cf = hrp.CFrame
             local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
             
-            -- Chuỗi CFrame đầy đủ, chính xác tuyệt đối không làm tròn
             local fullCFrameStr = string.format(
                 "CFrame.new(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 tostring(x), tostring(y), tostring(z),
@@ -282,14 +279,12 @@ function BuildUI()
                 tostring(r20), tostring(r21), tostring(r22)
             )
 
-            -- Tạo Bảng (Paragraph) hiển thị đúng định dạng bạn muốn
             local paragraphBox = PlayerTab:AddParagraph({
                 Title = "Tọa Độ : " .. posCount,
                 Content = fullCFrameStr
             })
             table.insert(createdElements, paragraphBox)
 
-            -- Tạo Nút Sao Chép ngay dưới bảng đó
             local copyButton = PlayerTab:AddButton({
                 Title = "Sao Chép Tọa Độ",
                 Description = "Sao chép CFrame của Tọa Độ : " .. posCount,
@@ -320,7 +315,7 @@ function BuildUI()
         end
     })
 
-    -- 2. Nút Xóa Tọa Độ (dùng để dọn sạch toàn bộ các bảng đã tạo)
+    -- Nút Xóa Tọa Độ
     PlayerTab:AddButton({
         Title = "Xóa Tọa Độ",
         Description = "Xóa toàn bộ các bảng tọa độ đã tạo bên dưới",
@@ -362,6 +357,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã Thêm Nút Đóng Băng Thành Công!",
+    Content = "Tải Xong - Nút Đóng Băng Đã Hiển Thị Chuẩn!",
     Duration = 5
 })
