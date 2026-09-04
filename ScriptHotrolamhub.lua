@@ -273,8 +273,7 @@ function BuildUI()
             table.insert(createdElements, paragraphBox)
 
             local copyButton = PlayerTab:AddButton({
-                Title = "Sao Chép Tọa Độ",
-                Description = "Sao chép CFrame của Tọa Độ : " .. posCount,
+                Title = "Sao Chép",
                 Callback = function()
                     if setclipboard then
                         setclipboard(fullCFrameStr)
@@ -321,7 +320,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI (LẤY TẤT CẢ & GỌN CFRAME.NEW(X,Y,Z))
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -397,8 +396,7 @@ function BuildUI()
                 table.insert(mobCreatedElements, paragraphBox)
 
                 local copyButton = MobTab:AddButton({
-                    Title = "Sao Chép: " .. mob.Name .. " [" .. mobPosCount .. "]",
-                    Description = posStr,
+                    Title = "Sao Chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
@@ -521,8 +519,7 @@ function BuildUI()
                 table.insert(npcCreatedElements, paragraphBox)
 
                 local copyButton = NpcTab:AddButton({
-                    Title = "Sao Chép: " .. npc.Name .. " [" .. npcPosCount .. "]",
-                    Description = posStr,
+                    Title = "Sao Chép",
                     Callback = function()
                         if setclipboard then
                             setclipboard(posStr)
