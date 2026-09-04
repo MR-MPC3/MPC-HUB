@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
 
 local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
@@ -192,6 +193,66 @@ function BuildUI()
     local createdElements = {} -- Lưu trữ các bảng và nút để sau này bấm Xóa có thể dọn sạch
     local posCount = 0
 
+    -- Biến quản lý trạng thái đóng băng
+    local isFrozen = false
+    local freezeConnection = nil
+    local frozenCFrame = nil
+
+    -- Nút Gạt Đóng Băng Nhân Vật
+    PlayerTab:AddToggle("FreezeToggle", {
+        Title = "Đóng Băng Nhân Vật & Góc Quay",
+        Description = "Giữ nguyên vị trí và hướng nhìn cố định, không thể di chuyển",
+        Default = false,
+        Callback = function(state)
+            isFrozen = state
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+            if isFrozen then
+                if hrp then
+                    frozenCFrame = hrp.CFrame
+                    hrp.Anchored = true
+                end
+                if humanoid then
+                    humanoid.PlatformStand = true
+                end
+
+                -- Chạy ngầm liên tục để ép chặt vị trí và góc quay nếu có lực tác động đẩy đi
+                freezeConnection = RunService.RenderStepped:Connect(function()
+                    if isFrozen and hrp and frozenCFrame then
+                        hrp.CFrame = frozenCFrame
+                    end
+                end)
+
+                Fluent:Notify({
+                    Title = "Đã Đóng Băng",
+                    Content = "Nhân vật và góc quay đã được khóa cố định!",
+                    Duration = 2
+                })
+            else
+                -- Hủy đóng băng, trả lại trạng thái bình thường
+                if freezeConnection then
+                    freezeConnection:Disconnect()
+                    freezeConnection = nil
+                end
+                if hrp then
+                    hrp.Anchored = false
+                end
+                if humanoid then
+                    humanoid.PlatformStand = false
+                end
+                frozenCFrame = nil
+
+                Fluent:Notify({
+                    Title = "Đã Mở Khóa",
+                    Content = "Nhân vật đã hoạt động bình thường trở lại!",
+                    Duration = 2
+                })
+            end
+        end
+    })
+
     -- 1. Nút lấy tọa độ nhân vật và góc quay (nằm trên cùng)
     PlayerTab:AddButton({
         Title = "Lấy Tọa Độ Nhân Vật Và Góc Quay",
@@ -301,6 +362,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Giao Diện Đã Chuẩn Khớp 100%!",
+    Content = "Tải Xong - Đã Thêm Nút Đóng Băng Thành Công!",
     Duration = 5
 })
