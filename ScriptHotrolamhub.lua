@@ -687,8 +687,191 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN (ACTION & REMOTE LOGGER) chưa phát triển 
+    -- TAB 4: BẮT SỰ KIỆN
     -------------------------------------------------------
+    local EventTab = Tabs["EventListener"]
+
+    local EventLoggerEnabled = false
+    local EventLogs = {}
+    local EventCount = 0
+    local MaxEventLogs = 100
+
+    -------------------------------------------------------
+    -- HÀM CẬP NHẬT BẢNG HIỂN THỊ
+    -------------------------------------------------------
+    local EventParagraph
+
+    local function UpdateEventDisplay()
+        if not EventParagraph then
+            return
+        end
+
+        if #EventLogs == 0 then
+            EventParagraph:SetDesc("Chưa có sự kiện nào...")
+            return
+        end
+
+        EventParagraph:SetDesc(
+            table.concat(EventLogs, "\n\n")
+        )
+    end
+
+    -------------------------------------------------------
+    -- HÀM GHI SỰ KIỆN
+    -------------------------------------------------------
+    local function AddEventLog(eventName, eventData)
+        if not EventLoggerEnabled then
+            return
+        end
+
+        EventCount = EventCount + 1
+
+        local timeText = os.date("%H:%M:%S")
+
+        local text =
+            "[" .. EventCount .. "] " ..
+            "[" .. timeText .. "] " ..
+            tostring(eventName)
+
+        if eventData ~= nil and tostring(eventData) ~= "" then
+            text = text .. "\n" .. tostring(eventData)
+        end
+
+        table.insert(EventLogs, text)
+
+        -------------------------------------------------------
+        -- GIỚI HẠN TỐI ĐA 100 SỰ KIỆN
+        -------------------------------------------------------
+        if #EventLogs > MaxEventLogs then
+            table.remove(EventLogs, 1)
+        end
+
+        UpdateEventDisplay()
+    end
+
+    -------------------------------------------------------
+    -- 1. TOGGLE BẬT / TẮT BẮT SỰ KIỆN
+    -------------------------------------------------------
+    EventTab:AddToggle("EventLoggerToggle", {
+        Title = "Bắt Sự Kiện",
+        Description = "Bật để bắt và ghi lại các sự kiện",
+        Default = false,
+
+        Callback = function(value)
+            EventLoggerEnabled = value
+
+            if value then
+                Fluent:Notify({
+                    Title = "Bắt Sự Kiện",
+                    Content = "Đã bật bắt sự kiện!",
+                    Duration = 2
+                })
+
+                AddEventLog(
+                    "LOGGER",
+                    "Đã bắt đầu theo dõi sự kiện."
+                )
+            else
+                Fluent:Notify({
+                    Title = "Bắt Sự Kiện",
+                    Content = "Đã tắt bắt sự kiện!",
+                    Duration = 2
+                })
+            end
+        end
+    })
+
+    -------------------------------------------------------
+    -- 2. NÚT XÓA SỰ KIỆN
+    -------------------------------------------------------
+    EventTab:AddButton({
+        Title = "Xóa Sự Kiện",
+        Description = "Xóa toàn bộ sự kiện đang hiển thị",
+
+        Callback = function()
+            table.clear(EventLogs)
+            EventCount = 0
+
+            UpdateEventDisplay()
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ sự kiện!",
+                Duration = 2
+            })
+        end
+    })
+
+    -------------------------------------------------------
+    -- 3. BẢNG HIỂN THỊ SỰ KIỆN
+    -------------------------------------------------------
+    EventParagraph = EventTab:AddParagraph({
+        Title = "Danh Sách Sự Kiện",
+        Content = "Chưa có sự kiện nào..."
+    })
+
+    -------------------------------------------------------
+    -- CÁC SỰ KIỆN CLIENT CƠ BẢN
+    -------------------------------------------------------
+
+    -- Nhân vật spawn / respawn
+    plr.CharacterAdded:Connect(function(character)
+        AddEventLog(
+            "CharacterAdded",
+            "Character: " .. character.Name
+        )
+    end)
+
+    -------------------------------------------------------
+    -- TOOL ĐƯỢC THÊM / XÓA
+    -------------------------------------------------------
+    local function HookBackpack()
+        local backpack = plr:FindFirstChild("Backpack")
+
+        if not backpack then
+            return
+        end
+
+        backpack.ChildAdded:Connect(function(child)
+            AddEventLog(
+                "Backpack.ChildAdded",
+                "Tên: " .. child.Name ..
+                "\nClass: " .. child.ClassName
+            )
+        end)
+
+        backpack.ChildRemoved:Connect(function(child)
+            AddEventLog(
+                "Backpack.ChildRemoved",
+                "Tên: " .. child.Name ..
+                "\nClass: " .. child.ClassName
+            )
+        end)
+    end
+
+    HookBackpack()
+
+    -------------------------------------------------------
+    -- QUÁI SPAWN / BIẾN MẤT
+    -------------------------------------------------------
+    local EnemiesFolder = workspace:FindFirstChild("Enemies")
+
+    if EnemiesFolder then
+        EnemiesFolder.ChildAdded:Connect(function(enemy)
+            AddEventLog(
+                "Enemy Spawn",
+                "Tên: " .. enemy.Name
+            )
+        end)
+
+        EnemiesFolder.ChildRemoved:Connect(function(enemy)
+            AddEventLog(
+                "Enemy Removed",
+                "Tên: " .. enemy.Name
+            )
+        end)
+    end
+    
 end
 
 BuildUI()
