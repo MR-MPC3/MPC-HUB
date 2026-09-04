@@ -275,14 +275,13 @@ local TabDefinitions={
     {"Info","Info","info"},
     {"Farm","Farm","sword"},
     {"StackFarming","Stack Farming","layers"},
-    {"Item","Item","package"},
+    {"ItemShop","Item & Shop","package"},
     {"ServerHopFarm","Server & Hop Farm","server"},
     {"ESPStats","ESP & Stats","eye"},
     {"FruitRaid","Fruits & Raid","apple"},
     {"TeleportPvP","Teleport & PvP","map-pin"},
     {"Race","Race","shield"},
     {"SeaEvent","Sea Events","waves"},
-    {"Shop","Shop","shopping-bag"},
     {"Setting","Settings","settings"},
     {"DiscordWebhook","Discord Webhook","message-circle"}
 }
