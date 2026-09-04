@@ -321,7 +321,7 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 2: LẤY TỌA ĐỘ QUÁI (LẤY TẤT CẢ CÁC CON TRÙNG TÊN)
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI (LẤY TẤT CẢ & GỌN CFRAME.NEW(X,Y,Z))
     -------------------------------------------------------
     local MobTab = Tabs["MobPos"]
 
@@ -329,7 +329,6 @@ function BuildUI()
     local mobPosCount = 0
     local targetMobName = ""
 
-    -- Ô nhập tên quái
     MobTab:AddInput("MobNameInput", {
         Title = "Nhập Tên Quái",
         Default = "",
@@ -341,7 +340,6 @@ function BuildUI()
         end
     })
 
-    -- Nút lấy tọa độ quái (Quét toàn bộ danh sách)
     MobTab:AddButton({
         Title = "Lấy Tọa Độ Quái",
         Description = "Tìm tất cả quái khớp tên và lấy tọa độ CFrame.new(x, y, z)",
@@ -372,12 +370,10 @@ function BuildUI()
                 end
             end
 
-            -- Quét trong thư mục Enemies trước (Đặc trưng của Blox Fruits)
             local enemiesFolder = workspace:FindFirstChild("Enemies")
             if enemiesFolder then
                 scanFolder(enemiesFolder)
             end
-            -- Quét rộng toàn bộ Workspace để chắc chắn không bỏ sót
             scanFolder(workspace)
 
             if #foundMobs == 0 then
@@ -389,7 +385,6 @@ function BuildUI()
                 return
             end
 
-            -- Vòng lặp tạo bảng thông tin và nút copy cho TẤT CẢ các con tìm được
             for _, mob in ipairs(foundMobs) do
                 mobPosCount = mobPosCount + 1
                 local pos = mob.Part.Position
@@ -432,7 +427,6 @@ function BuildUI()
         end
     })
 
-    -- Nút Xóa Tọa Độ Quái
     MobTab:AddButton({
         Title = "Xóa Tọa Độ Quái",
         Description = "Xóa toàn bộ các bảng tọa độ quái đã tạo bên dưới",
@@ -454,12 +448,213 @@ function BuildUI()
     -------------------------------------------------------
     -- TAB 3: LẤY TỌA ĐỘ NPC
     -------------------------------------------------------
+    local NpcTab = Tabs["NPCPos"]
 
+    local npcCreatedElements = {}
+    local npcPosCount = 0
+    local targetNpcName = ""
+
+    NpcTab:AddInput("NpcNameInput", {
+        Title = "Nhập Tên NPC",
+        Default = "",
+        Placeholder = "Nhập tên NPC cần tìm (VD: Adventurer)...",
+        Numeric = false,
+        Finished = false,
+        Callback = function(value)
+            targetNpcName = value
+        end
+    })
+
+    NpcTab:AddButton({
+        Title = "Lấy Tọa Độ NPC",
+        Description = "Tìm tất cả NPC khớp tên và lấy tọa độ CFrame.new(x, y, z)",
+        Callback = function()
+            if targetNpcName == "" then
+                Fluent:Notify({
+                    Title = "Lỗi",
+                    Content = "Vui lòng nhập tên NPC trước!",
+                    Duration = 3
+                })
+                return
+            end
+
+            local foundNpcs = {}
+
+            local function scanNpcFolder(parent)
+                for _, obj in ipairs(parent:GetChildren()) do
+                    if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
+                        local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
+                        if hrp then
+                            table.insert(foundNpcs, {
+                                Name = obj.Name,
+                                Part = hrp
+                            })
+                        end
+                    end
+                end
+            end
+
+            local npcFolder = workspace:FindFirstChild("NPCs") or workspace:FindFirstChild("NPC")
+            if npcFolder then
+                scanNpcFolder(npcFolder)
+            end
+            scanNpcFolder(workspace)
+
+            if #foundNpcs == 0 then
+                Fluent:Notify({
+                    Title = "Không Tìm Thấy",
+                    Content = "Không tìm thấy NPC nào khớp với tên: " .. targetNpcName,
+                    Duration = 3
+                })
+                return
+            end
+
+            for _, npc in ipairs(foundNpcs) do
+                npcPosCount = npcPosCount + 1
+                local pos = npc.Part.Position
+                local posStr = string.format("CFrame.new(%s, %s, %s)", tostring(pos.X), tostring(pos.Y), tostring(pos.Z))
+
+                local paragraphBox = NpcTab:AddParagraph({
+                    Title = npc.Name .. " [" .. npcPosCount .. "]",
+                    Content = posStr
+                })
+                table.insert(npcCreatedElements, paragraphBox)
+
+                local copyButton = NpcTab:AddButton({
+                    Title = "Sao Chép: " .. npc.Name .. " [" .. npcPosCount .. "]",
+                    Description = posStr,
+                    Callback = function()
+                        if setclipboard then
+                            setclipboard(posStr)
+                            Fluent:Notify({
+                                Title = "Thành công",
+                                Content = "Đã sao chép tọa độ NPC: " .. posStr,
+                                Duration = 3
+                            })
+                        else
+                            Fluent:Notify({
+                                Title = "Lỗi",
+                                Content = "Executor không hỗ trợ setclipboard!",
+                                Duration = 3
+                            })
+                        end
+                    end
+                })
+                table.insert(npcCreatedElements, copyButton)
+            end
+
+            Fluent:Notify({
+                Title = "Thành công",
+                Content = "Đã tìm thấy và lấy tọa độ của " .. #foundNpcs .. " NPC!",
+                Duration = 3
+            })
+        end
+    })
+
+    NpcTab:AddButton({
+        Title = "Xóa Tọa Độ NPC",
+        Description = "Xóa toàn bộ các bảng tọa độ NPC đã tạo bên dưới",
+        Callback = function()
+            for _, element in ipairs(npcCreatedElements) do
+                pcall(function() element:Destroy() end)
+            end
+            npcCreatedElements = {}
+            npcPosCount = 0
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ danh sách tọa độ NPC!",
+                Duration = 2
+            })
+        end
+    })
 
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN
+    -- TAB 4: BẮT SỰ KIỆN (REMOTE LOGGER)
     -------------------------------------------------------
+    local EventTab = Tabs["EventListener"]
+    local eventElements = {}
+    local isListening = false
+    local remoteNameFilter = ""
+    local remoteLogCount = 0
 
+    EventTab:AddInput("RemoteFilterInput", {
+        Title = "Lọc Tên Remote (Tùy chọn)",
+        Default = "",
+        Placeholder = "Nhập từ khóa tên Remote...",
+        Numeric = false,
+        Finished = false,
+        Callback = function(value)
+            remoteNameFilter = value
+        end
+    })
+
+    EventTab:AddToggle("ListenRemoteToggle", {
+        Title = "Bật/Tắt Lắng Nghe RemoteEvent",
+        Default = false,
+        Callback = function(state)
+            isListening = state
+            if isListening then
+                Fluent:Notify({
+                    Title = "Đang Bắt Sự Kiện",
+                    Content = "Đã bật theo dõi các RemoteEvent được gọi!",
+                    Duration = 2
+                })
+            else
+                Fluent:Notify({
+                    Title = "Đã Dừng",
+                    Content = "Đã tắt theo dõi RemoteEvent.",
+                    Duration = 2
+                })
+            end
+        end
+    })
+
+    pcall(function()
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            if isListening and (method == "FireServer" or method == "InvokeServer") and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+                local name = self.Name
+                if remoteNameFilter == "" or string.find(string.lower(name), string.lower(remoteNameFilter)) then
+                    remoteLogCount = remoteLogCount + 1
+                    local args = {...}
+                    local argString = ""
+                    pcall(function()
+                        for i, v in ipairs(args) do
+                            argString = argString .. "[" .. i .. "]: " .. tostring(v) .. " "
+                        end
+                    end)
+                    
+                    if remoteLogCount <= 25 then
+                        local pBox = EventTab:AddParagraph({
+                            Title = "Log #" .. remoteLogCount .. " (" .. method .. ")",
+                            Content = "Tên: " .. name .. "\nTham số: " .. argString
+                        })
+                        table.insert(eventElements, pBox)
+                    end
+                end
+            end
+            return oldNamecall(self, ...)
+        end)
+    end)
+
+    EventTab:AddButton({
+        Title = "Xóa Log Sự Kiện",
+        Description = "Xóa danh sách các Remote đã bắt được",
+        Callback = function()
+            for _, el in ipairs(eventElements) do
+                pcall(function() el:Destroy() end)
+            end
+            eventElements = {}
+            remoteLogCount = 0
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã dọn sạch bảng log sự kiện!",
+                Duration = 2
+            })
+        end
+    })
 end
 
 BuildUI()
@@ -469,6 +664,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã cập nhật lấy tất cả quái & gọn tọa độ!",
+    Content = "Tải Xong - Tool Dev đã sẵn sàng!",
     Duration = 5
 })
