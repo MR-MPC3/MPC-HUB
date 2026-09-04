@@ -12,6 +12,38 @@ local ParentGui = (gethui and gethui()) or CoreGui
 local plr = Players.LocalPlayer
 
 ---------------------------
+-- HÀM HỖ TRỢ BAY ĐẾN TỌA ĐỘ (TWEEN)
+---------------------------
+local activeTween = nil
+local function TweenTo(targetCFrame)
+    local char = plr.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+    
+    if activeTween then 
+        pcall(function() activeTween:Cancel() end) 
+    end
+    
+    hum.PlatformStand = true
+    hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    
+    local distance = (hrp.Position - targetCFrame.Position).Magnitude
+    local speed = 300 -- Tốc độ bay (studs/s) - có thể tăng giảm tùy ý
+    local duration = distance / speed
+    if duration < 0.2 then duration = 0.2 end
+    
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    activeTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+    activeTween:Play()
+    
+    activeTween.Completed:Connect(function()
+        hum.PlatformStand = false
+        activeTween = nil
+    end)
+end
+
+---------------------------
 -- KIỂM TRA MAP
 ---------------------------
 local MAP_SEAS = {
@@ -415,6 +447,20 @@ function BuildUI()
                     end
                 })
                 table.insert(mobCreatedElements, copyButton)
+
+                -- THÊM NÚT BAY ĐẾN ĐÂY NẰM DƯỚI NÚT SAO CHÉP
+                local flyButton = MobTab:AddButton({
+                    Title = "Bay đến đây",
+                    Callback = function()
+                        Fluent:Notify({
+                            Title = "Đang di chuyển",
+                            Content = "Đang bay đến " .. mob.Name,
+                            Duration = 2
+                        })
+                        TweenTo(CFrame.new(pos))
+                    end
+                })
+                table.insert(mobCreatedElements, flyButton)
             end
 
             local sumPos = Vector3.new(0, 0, 0)
@@ -451,6 +497,20 @@ function BuildUI()
             })
             table.insert(mobCreatedElements, copyCenterBtn)
 
+            -- NÚT BAY ĐẾN TÂM BÃI CHO MONCF
+            local flyCenterBtn = MobTab:AddButton({
+                Title = "Bay đến tâm bãi",
+                Callback = function()
+                    Fluent:Notify({
+                        Title = "Đang di chuyển",
+                        Content = "Đang bay đến tâm bãi quái",
+                        Duration = 2
+                    })
+                    TweenTo(CFrame.new(centerPos))
+                end
+            })
+            table.insert(mobCreatedElements, flyCenterBtn)
+
             Fluent:Notify({
                 Title = "Thành công",
                 Content = "Đã tìm thấy " .. #foundMobs .. " con quái và tính tọa độ tâm!",
@@ -478,9 +538,6 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 3: LẤY TỌA ĐỘ NPC
-    -------------------------------------------------------
--------------------------------------------------------
     -- TAB 3: LẤY TỌA ĐỘ NPC & VẬT THỂ
     -------------------------------------------------------
     local NpcTab = Tabs["NPCPos"]
@@ -516,12 +573,10 @@ function BuildUI()
             local foundNpcs = {}
             local checkedPositions = {}
 
-            -- Quét toàn bộ Workspace (tìm cả Model lẫn BasePart/MeshPart)
             for _, obj in ipairs(workspace:GetDescendants()) do
                 if string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
                     local pos = nil
 
-                    -- Lấy tọa độ tùy thuộc vào kiểu đối tượng
                     if obj:IsA("Model") then
                         local successPivot, pivotPos = pcall(function()
                             return obj:GetPivot().Position
@@ -537,7 +592,6 @@ function BuildUI()
                     end
 
                     if pos then
-                        -- Gom nhóm các phần tử trùng tọa độ gần nhau (tránh lấy trùng lặp các part trong cùng 1 mô hình)
                         local posKey = math.floor(pos.X / 5) .. "," .. math.floor(pos.Y / 5) .. "," .. math.floor(pos.Z / 5)
                         if not checkedPositions[posKey] then
                             checkedPositions[posKey] = true
@@ -590,6 +644,20 @@ function BuildUI()
                     end
                 })
                 table.insert(npcCreatedElements, copyButton)
+
+                -- THÊM NÚT BAY ĐẾN ĐÂY NẰM DƯỚI NÚT SAO CHÉP Ở TAB NPC
+                local flyButton = NpcTab:AddButton({
+                    Title = "Bay đến đây",
+                    Callback = function()
+                        Fluent:Notify({
+                            Title = "Đang di chuyển",
+                            Content = "Đang bay đến " .. npc.Name,
+                            Duration = 2
+                        })
+                        TweenTo(CFrame.new(pos))
+                    end
+                })
+                table.insert(npcCreatedElements, flyButton)
             end
 
             Fluent:Notify({
