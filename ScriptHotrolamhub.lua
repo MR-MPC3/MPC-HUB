@@ -689,6 +689,122 @@ function BuildUI()
 -------------------------------------------------------
     -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC
     -------------------------------------------------------
+    local EventTab = Tabs["EventListener"]
+
+    local isListening = false
+    local eventCreatedElements = {}
+    local eventCount = 0
+
+    -- Hàm chuyển đổi các tham số (Arguments) thành chuỗi Code Lua
+    local function serializeArgs(args)
+        local formatted = {}
+        for _, v in ipairs(args) do
+            local t = typeof(v)
+            if t == "string" then
+                table.insert(formatted, string.format("%q", v))
+            elseif t == "number" or t == "boolean" then
+                table.insert(formatted, tostring(v))
+            elseif t == "Instance" then
+                table.insert(formatted, "game." .. v:GetFullName())
+            elseif t == "CFrame" then
+                local p = v.Position
+                table.insert(formatted, string.format("CFrame.new(%.2f, %.2f, %.2f)", p.X, p.Y, p.Z))
+            elseif t == "Vector3" then
+                table.insert(formatted, string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z))
+            elseif t == "table" then
+                table.insert(formatted, "{...}")
+            else
+                table.insert(formatted, "nil")
+            end
+        end
+        return table.concat(formatted, ", ")
+    end
+
+    -- Hook __namecall để bắt các tín hiệu Remote gửi lên Server
+    local oldNamecall
+    local function setupHook()
+        if hookmetamethod then
+            oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+                local method = getnamecallmethod()
+                
+                if isListening and (method == "InvokeServer" or method == "FireServer") then
+                    local args = {...}
+                    local remotePath = "game." .. self:GetFullName()
+                    local argsStr = serializeArgs(args)
+                    local fullCode = string.format("%s:%s(%s)", remotePath, method, argsStr)
+
+                    task.spawn(function()
+                        eventCount = eventCount + 1
+                        
+                        -- 3. Phần bảng hiển thị kết quả bắt được
+                        local paragraphBox = EventTab:AddParagraph({
+                            Title = string.format("Sự Kiện [%d]: %s (%s)", eventCount, self.Name, method),
+                            Content = fullCode
+                        })
+                        table.insert(eventCreatedElements, paragraphBox)
+
+                        local copyBtn = EventTab:AddButton({
+                            Title = "Sao chép Code Remote",
+                            Callback = function()
+                                if setclipboard then
+                                    setclipboard(fullCode)
+                                    Fluent:Notify({
+                                        Title = "Thành công",
+                                        Content = "Đã sao chép lệnh Remote vào bộ nhớ tạm!",
+                                        Duration = 2
+                                    })
+                                else
+                                    Fluent:Notify({
+                                        Title = "Lỗi",
+                                        Content = "Executor không hỗ trợ setclipboard!",
+                                        Duration = 2
+                                    })
+                                end
+                            end
+                        })
+                        table.insert(eventCreatedElements, copyBtn)
+                    end)
+                end
+                
+                return oldNamecall(self, ...)
+            end))
+        end
+    end
+
+    pcall(setupHook)
+
+    -- 1. Nút Toggle Bật/Tắt bắt sự kiện
+    EventTab:AddToggle("EventListenerToggle", {
+        Title = "Bật / Tắt Bắt Sự Kiện Remote",
+        Default = false,
+        Callback = function(state)
+            isListening = state
+            Fluent:Notify({
+                Title = isListening and "Đã Bật Lắng Nghe" or "Đã Tắt Lắng Nghe",
+                Content = isListening and "Hãy đi bấm nói chuyện với NPC để ghi lại tín hiệu!" or "Đã tạm dừng bắt tín hiệu.",
+                Duration = 25
+            })
+        end
+    })
+
+    -- 2. Nút Xóa danh sách
+    EventTab:AddButton({
+        Title = "Xóa Bảng Lịch Sử Sự Kiện",
+        Description = "Xóa toàn bộ các sự kiện đã bắt được ở bên dưới",
+        Callback = function()
+            for _, element in ipairs(eventCreatedElements) do
+                pcall(function() element:Destroy() end)
+            end
+            eventCreatedElements = {}
+            eventCount = 0
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa sạch danh sách sự kiện!",
+                Duration = 2
+            })
+        end
+    })
 end
 
 BuildUI()
