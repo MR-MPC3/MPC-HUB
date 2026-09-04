@@ -49,10 +49,10 @@ local LoaderConfig = {
     LoaderData = {
         Name = shared.LoaderTitle or "Fat Cat Hub",
         Colors = shared.LoaderColors or {
-            Main = Color3.fromRGB(0, 0, 0),
-            Title = Color3.fromRGB(255, 255, 255),
-            LoaderBackground = Color3.fromRGB(40, 40, 40),
-            LoaderSplash = Color3.fromRGB(3, 252, 3)
+            Main = Color3.fromRGB(245,245,245),
+            Title = Color3.fromRGB(25,25,25),
+            LoaderBackground = Color3.fromRGB(220,220,220),
+            LoaderSplash = Color3.fromRGB(3,200,3)
         }
     }
 }
@@ -184,7 +184,7 @@ FatCatButton.AutoButtonColor=false
 FatCatButton.Parent=FatCatGui
 
 local Corner=Instance.new("UICorner",FatCatButton)
-Corner.CornerRadius=UDim.new(0,14)
+Corner.CornerRadius=UDim.new(1,0)
 
 local Scale=Instance.new("UIScale",FatCatButton)
 local ButtonTween=nil
