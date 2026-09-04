@@ -193,40 +193,37 @@ function BuildUI()
     local createdElements = {} 
     local posCount = 0
 
-    -- Biến quản lý trạng thái đóng băng
+    -- Biến quản lý trạng thái đóng băng vị trí
     local isFrozen = false
     local freezeConnection = nil
-    local frozenCFrame = nil
+    local frozenPosition = nil
 
-    -- Nút Gạt Đóng Băng Nhân Vật & Góc Quay (Đã sửa lại cú pháp chuẩn không bị lỗi ẩn)
+    -- Nút Gạt Đóng Băng Vị Trí Nhân Vật (Góc quay vẫn xoay tự do)
     PlayerTab:AddToggle("FreezeToggle", {
-        Title = "Đóng Băng Nhân Vật & Góc Quay",
+        Title = "Đóng Băng Vị Trí Nhân Vật",
         Default = false,
         Callback = function(state)
             isFrozen = state
             local char = plr.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 
             if isFrozen then
                 if hrp then
-                    frozenCFrame = hrp.CFrame
-                    hrp.Anchored = true
-                end
-                if humanoid then
-                    humanoid.PlatformStand = true
+                    frozenPosition = hrp.Position
                 end
 
-                -- Ghim chặt vị trí và góc quay liên tục bằng RenderStepped
+                -- Ghim chặt vị trí X, Y, Z nhưng cho phép camera và góc nhìn xoay tự do
                 freezeConnection = RunService.RenderStepped:Connect(function()
-                    if isFrozen and hrp and frozenCFrame then
-                        hrp.CFrame = frozenCFrame
+                    if isFrozen and hrp and frozenPosition then
+                        local currentRot = hrp.CFrame - hrp.Position
+                        hrp.CFrame = CFrame.new(frozenPosition) * currentRot
+                        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                     end
                 end)
 
                 Fluent:Notify({
-                    Title = "Đã Đóng Băng",
-                    Content = "Nhân vật và góc quay đã được khóa cố định!",
+                    Title = "Đã Đóng Băng Vị Trí",
+                    Content = "Nhân vật đứng yên, góc quay xoay tự do!",
                     Duration = 2
                 })
             else
@@ -234,17 +231,11 @@ function BuildUI()
                     freezeConnection:Disconnect()
                     freezeConnection = nil
                 end
-                if hrp then
-                    hrp.Anchored = false
-                end
-                if humanoid then
-                    humanoid.PlatformStand = false
-                end
-                frozenCFrame = nil
+                frozenPosition = nil
 
                 Fluent:Notify({
                     Title = "Đã Mở Khóa",
-                    Content = "Nhân vật đã hoạt động bình thường trở lại!",
+                    Content = "Nhân vật di chuyển bình thường!",
                     Duration = 2
                 })
             end
@@ -357,6 +348,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Nút Đóng Băng Đã Hiển Thị Chuẩn!",
+    Content = "Tải Xong - Đã bỏ khóa góc quay!",
     Duration = 5
 })
