@@ -194,6 +194,7 @@ FatCatButton.Activated:Connect(function()
     end)
 end)
 
+
 ---------------------
 -- CÁC TABS CHÍNH
 ---------------------
@@ -212,6 +213,34 @@ for _, tab in ipairs(TabDefinitions) do
     end
     Tabs[tab[1]] = result
 end
+
+-------------------------------------------------------
+
+-- HOOK NAMECALL SYSTEM (CHẠY TOÀN CỤC BẰNG CỜ BIẾN)
+
+-------------------------------------------------------
+
+local isHookActive = false
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local methodLower = string.lower(tostring(method))
+    -- Kiểm tra cờ bật/tắt và loại method
+    if isHookActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
+        -- Lọc đúng Remote của Blox Fruits
+        if self.Name == "CommF_" or self.Name == "CommE" then
+            local args = {...}
+            -- In thẳng ra F9 Console với định dạng rõ ràng
+            warn("----------------------------------------")
+            warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
+            for i, arg in ipairs(args) do
+                print(string.format("   👉 Tham số [%d] (%s) = %s", i, typeof(arg), tostring(arg)))
+            end
+            warn("----------------------------------------")
+        end
+    end
+    return oldNamecall(self, ...)
+end))
 
 ----------------------------
 -- BUILD UI 
@@ -686,9 +715,32 @@ function BuildUI()
         end
     })
 
--------------------------------------------------------
-    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC
     -------------------------------------------------------
+    -- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY INTEGRATED)
+    -------------------------------------------------------
+
+    local EventTab = Tabs["EventListener"]
+    EventTab:AddToggle("HookToggle", {
+        Title = "Bật Hook Namecall (CommF_ / CommE)",
+        Description = "In toàn bộ arguments khi tương tác NPC/Gacha ra F9 Console",
+        Default = false,
+        Callback = function(state)
+            isHookActive = state
+            if isHookActive then
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã BẬT! Mở F9 Console để xem log khi bấm NPC.",
+                    Duration = 3
+                })
+            else
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã TẮT bắt sự kiện!",
+                    Duration = 3
+                })
+            end
+        end
+    })
 end
 
 BuildUI()
