@@ -1,6 +1,6 @@
------------------------------------------------------------
+-------------------------------------------------------
 -- SERVICES KHAI BÁO 1 LẦN DƯỚI CHỈ VIỆC GỌI SÀI
------------------------------------------------------------
+-------------------------------------------------------
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -219,39 +219,6 @@ end
 -------------------------------------------------------
 local isHookActive = false
 local oldNamecall
-local eventCallbackUI = nil -- Hàm dùng để đẩy dữ liệu lên Tab UI
-
-oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local methodLower = string.lower(tostring(method))
-
-    if isHookActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
-        if self.Name == "CommF_" or self.Name == "CommE" then
-            local args = {...}
-            
-            -- 1. In ra Console F9 như cũ
-            warn("----------------------------------------")
-            warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
-            local formattedText = "Remote: " .. self.Name .. " | Method: " .. method .. "\nArgs: "
-            
-            for i, arg in ipairs(args) do
-                local argStr = tostring(arg)
-                print(string.format("    👉 Tham số [%d] (%s) = %s", i, typeof(arg), argStr))
-                formattedText = formattedText .. "\n[" .. i .. "] (" .. typeof(arg) .. ") = " .. argStr
-            end
-            warn("----------------------------------------")
-
-            -- 2. Đẩy trực tiếp lên UI nếu có callback
-            if eventCallbackUI then
-                task.spawn(function()
-                    eventCallbackUI(self.Name, formattedText, args)
-                end)
-            end
-        end
-    end
-
-    return oldNamecall(self, ...)
-end))
 
 ----------------------------
 -- BUILD UI 
@@ -500,60 +467,123 @@ function BuildUI()
         end
     })
 
--------------------------------------------------------
--- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY UI + CONSOLE)
--------------------------------------------------------
-local EventTab = Tabs["EventListener"]
-local eventCreatedElements = {}
-local eventCount = 0
+    -------------------------------------------------------
+    -- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY UI + CONSOLE)
+    -------------------------------------------------------
+    local EventTab = Tabs["EventListener"]
+    local eventCreatedElements = {}
+    local eventCount = 0
 
-EventTab:AddToggle("HookToggle", {
-    Title = "Bật Hook Namecall (CommF_ / CommE)",
-    Description = "Vừa in Console vừa hiển thị bảng trực tiếp trên UI khi tương tác NPC",
-    Default = false,
-    Callback = function(state)
-        isHookActive = state
-        if isHookActive then
-            Fluent:Notify({
-                Title = "Hook Namecall",
-                Content = "Đã BẬT! Tương tác NPC sẽ hiển thị kết quả ở dưới.",
-                Duration = 3
-            })
-        else
-            Fluent:Notify({
-                Title = "Hook Namecall",
-                Content = "Đã TẮT bắt sự kiện!",
-                Duration = 3
-            })
+    EventTab:AddToggle("HookToggle", {
+        Title = "Bật Hook Namecall (CommF_ / CommE)",
+        Description = "Vừa in Console vừa hiển thị bảng trực tiếp trên UI khi tương tác NPC",
+        Default = false,
+        Callback = function(state)
+            isHookActive = state
+            if isHookActive then
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã BẬT! Tương tác NPC sẽ hiển thị kết quả ở dưới.",
+                    Duration = 3
+                })
+            else
+                Fluent:Notify({
+                    Title = "Hook Namecall",
+                    Content = "Đã TẮT bắt sự kiện!",
+                    Duration = 3
+                })
+            end
         end
-    end
-})
+    })
 
--- HƯỚNG DẪN / TRẠNG THÁI BAN ĐẦU
-local EventLogParagraph = EventTab:AddParagraph({
-    Title = "Hướng Dẫn Sử Dụng",
-    Content = "Hãy bật Toggle phía trên và tương tác với NPC để bắt sự kiện!"
-})
-table.insert(eventCreatedElements, EventLogParagraph)
+    -- HƯỚNG DẪN / TRẠNG THÁI BAN ĐẦU
+    local EventLogParagraph = EventTab:AddParagraph({
+        Title = "Hướng Dẫn Sử Dụng",
+        Content = "Hãy bật Toggle phía trên và tương tác với NPC để bắt sự kiện!"
+    })
+    table.insert(eventCreatedElements, EventLogParagraph)
 
-EventTab:AddButton({
-    Title = "Xóa Lịch Sử Sự Kiện",
-    Callback = function()
-        for _, element in ipairs(eventCreatedElements) do 
-            pcall(function() element:Destroy() end) 
+    EventTab:AddButton({
+        Title = "Xóa Lịch Sử Sự Kiện",
+        Callback = function()
+            for _, element in ipairs(eventCreatedElements) do 
+                pcall(function() element:Destroy() end) 
+            end
+            eventCreatedElements = {}
+            
+            EventLogParagraph = EventTab:AddParagraph({
+                Title = "Hướng Dẫn Sử Dụng",
+                Content = "Đã dọn sạch bảng sự kiện! Hãy tương tác tiếp với NPC."
+            })
+            table.insert(eventCreatedElements, EventLogParagraph)
+            eventCount = 0
+            Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
         end
-        eventCreatedElements = {}
-        
-        EventLogParagraph = EventTab:AddParagraph({
-            Title = "Hướng Dẫn Sử Dụng",
-            Content = "Đã dọn sạch bảng sự kiện! Hãy tương tác tiếp với NPC."
-        })
-        table.insert(eventCreatedElements, EventLogParagraph)
-        eventCount = 0
-        Fluent:Notify({ Title = "Thông báo", Content = "Đã dọn sạch bảng sự kiện!", Duration = 2 })
-    end
-})
-    
+    })
+
+    -- Khởi tạo Hook Namecall trực tiếp đẩy dữ liệu an toàn vào Tab 4 UI
+    oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local methodLower = string.lower(tostring(method))
+
+        if isHookActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
+            if self.Name == "CommF_" or self.Name == "CommE" then
+                local args = {...}
+                
+                -- 1. In ra Console F9
+                warn("----------------------------------------")
+                warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
+                local formattedText = "Remote: " .. self.Name .. " | Method: " .. method .. "\nArgs: "
+                
+                for i, arg in ipairs(args) do
+                    local argStr = tostring(arg)
+                    print(string.format("    👉 Tham số [%d] (%s) = %s", i, typeof(arg), argStr))
+                    formattedText = formattedText .. "\n[" .. i .. "] (" .. typeof(arg) .. ") = " .. argStr
+                end
+                warn("----------------------------------------")
+
+                -- 2. Đẩy trực tiếp lên UI Tab 4 an toàn bằng task.spawn
+                task.spawn(function()
+                    eventCount = eventCount + 1
+                    local currentId = eventCount
+                    
+                    local luaCallCode = 'game:GetService("ReplicatedStorage"):GetService("Remotes"):FindFirstChild("'..self.Name..'"):InvokeServer('
+                    for i, v in ipairs(args) do
+                        if type(v) == "string" then
+                            luaCallCode = luaCallCode .. '"' .. tostring(v) .. '"'
+                        else
+                            luaCallCode = luaCallCode .. tostring(v)
+                        end
+                        if i < #args then
+                            luaCallCode = luaCallCode .. ", "
+                        end
+                    end
+                    luaCallCode = luaCallCode .. ")"
+
+                    pcall(function()
+                        local paragraph = EventTab:AddParagraph({
+                            Title = "🔥 Sự Kiện Mới #" .. currentId .. " (" .. self.Name .. ")",
+                            Content = formattedText
+                        })
+                        table.insert(eventCreatedElements, paragraph)
+
+                        local copyBtn = EventTab:AddButton({
+                            Title = "📋 Sao chép mã lệnh gọi lại (Args) #" .. currentId,
+                            Callback = function()
+                                if setclipboard then
+                                    setclipboard(luaCallCode)
+                                    Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép lệnh sự kiện #" .. currentId, Duration = 2 })
+                                end
+                            end
+                        })
+                        table.insert(eventCreatedElements, copyBtn)
+                    end)
+                end)
+            end
+        end
+
+        return oldNamecall(self, ...)
+    end))
 end
 
 BuildUI()
