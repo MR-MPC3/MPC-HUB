@@ -30,7 +30,7 @@ local function TweenTo(targetCFrame)
     hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     
     local distance = (hrp.Position - targetCFrame.Position).Magnitude
-    local speed = 300 -- Tốc độ bay (studs/s)
+    local speed = 300
     local duration = distance / speed
     if duration < 0.2 then duration = 0.2 end
     
@@ -74,7 +74,7 @@ local success, Fluent = pcall(function()
 end)
 
 if not success or not Fluent then
-    error("[Fat Cat Hub] Không thể tải Fluent UI! Hãy kiểm tra lại kết nối mạng hoặc Executor")
+    error("[Fat Cat Hub] Không thể tải Fluent UI!")
 end
 
 local Window = Fluent:CreateWindow({
@@ -215,7 +215,7 @@ for _, tab in ipairs(TabDefinitions) do
 end
 
 -------------------------------------------------------
--- HEAVY HOOK LOGIC (TAB 4 SPY SYSTEM)
+-- SPY LOGIC & HOOK SYSTEM
 -------------------------------------------------------
 local isSpyActive = false
 local addSpyLogToUI = nil
@@ -241,14 +241,16 @@ local function parseToLua(v)
     return "nil"
 end
 
+-- HOOK METAMETHOD
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
     local method = getnamecallmethod()
-    local methodLower = string.lower(tostring(method))
-
-    if isSpyActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
+    
+    if isSpyActive and (method == "InvokeServer" or method == "FireServer" or method == "invokeServer" or method == "fireServer") then
         local selfName = tostring(self)
-        if selfName == "CommF_" or selfName == "CommE" then
+        
+        -- Nhận diện các Remote phổ biến của Blox Fruits (CommF_, CommE, v.v.)
+        if string.find(selfName, "CommF") or string.find(selfName, "CommE") or self.ClassName == "RemoteFunction" or self.ClassName == "RemoteEvent" then
             local args = {...}
             local selfObj = self
             
@@ -261,7 +263,7 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
                     
                     local argsStr = table.concat(formattedArgs, ", ")
                     local fullPath = "game." .. selfObj:GetFullName()
-                    local correctMethod = (methodLower == "invokeserver" and "InvokeServer") or "FireServer"
+                    local correctMethod = (string.lower(method) == "invokeserver" and "InvokeServer") or "FireServer"
                     local luaCode = string.format("%s:%s(%s)", fullPath, correctMethod, argsStr)
 
                     if addSpyLogToUI then
@@ -529,88 +531,59 @@ function BuildUI()
     local spyElements = {}
     local spyLogCount = 0
 
-    -- Nút 1: Toggle Bật/Tắt Bắt Sự Kiện
     EventTab:AddToggle("SpyToggle", {
         Title = "Bật / Tắt Bắt Sự Kiện NPC",
         Default = false,
         Callback = function(state)
             isSpyActive = state
             if isSpyActive then
-                Fluent:Notify({
-                    Title = "Bắt Sự Kiện",
-                    Content = "Đã BẬT! Hãy nói chuyện và bấm nút ở NPC.",
-                    Duration = 3
-                })
+                Fluent:Notify({ Title = "Bắt Sự Kiện", Content = "Đã BẬT! Hãy tương tác với NPC ngay.", Duration = 3 })
             else
-                Fluent:Notify({
-                    Title = "Bắt Sự Kiện",
-                    Content = "Đã TẮT Bắt Sự Kiện NPC!",
-                    Duration = 2
-                })
+                Fluent:Notify({ Title = "Bắt Sự Kiện", Content = "Đã TẮT!", Duration = 2 })
             end
         end
     })
 
-    -- Nút 2: Nút Xóa Toàn Bộ Log Sự Kiện
     EventTab:AddButton({
         Title = "Xóa Danh Sách Sự Kiện",
-        Description = "Xóa toàn bộ các bảng log mã NPC đã bắt bên dưới",
+        Description = "Xóa toàn bộ log sự kiện đã bắt",
         Callback = function()
             for _, elem in ipairs(spyElements) do
                 pcall(function() elem:Destroy() end)
             end
             spyElements = {}
             spyLogCount = 0
-            Fluent:Notify({
-                Title = "Thông báo",
-                Content = "Đã xóa sạch các sự kiện đã bắt!",
-                Duration = 2
-            })
+            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa sạch các sự kiện!", Duration = 2 })
         end
     })
 
-    -- Phần 3: Hàm thêm Log trực tiếp vào bảng UI + Nút Sao Chép bên dưới
     addSpyLogToUI = function(remoteName, luaCode)
         spyLogCount = spyLogCount + 1
         local currentNum = spyLogCount
 
-        -- 1. Bảng UI hiện đoạn mã Lua
         local pBox = EventTab:AddParagraph({
             Title = string.format("🎯 Sự Kiện [%d] - %s", currentNum, remoteName),
             Content = luaCode
         })
         table.insert(spyElements, pBox)
 
-        -- 2. Nút Sao Chép mã Lua tương ứng nằm ngay bên dưới
         local copyBtn = EventTab:AddButton({
             Title = "Sao chép mã Lua [" .. currentNum .. "]",
             Callback = function()
                 if setclipboard then
                     setclipboard(luaCode)
-                    Fluent:Notify({
-                        Title = "Thành công",
-                        Content = "Đã sao chép mã sự kiện [" .. currentNum .. "] vào bộ nhớ tạm!",
-                        Duration = 3
-                    })
-                else
-                    Fluent:Notify({
-                        Title = "Lỗi",
-                        Content = "Executor không hỗ trợ setclipboard!",
-                        Duration = 3
-                    })
+                    Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép mã!", Duration = 2 })
                 end
             end
         })
         table.insert(spyElements, copyBtn)
 
-        -- Thông báo đẩy trên màn hình khi bắt thành công
         Fluent:Notify({
-            Title = "Đã Bắt Được NPC!",
-            Content = string.format("[%d] %s -> Đã thêm mã vào Tab 4", currentNum, remoteName),
+            Title = "Đã Bắt Được Sự Kiện!",
+            Content = string.format("[%d] %s", currentNum, remoteName),
             Duration = 2
         })
     end
-
 end
 
 BuildUI()
