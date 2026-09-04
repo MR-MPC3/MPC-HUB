@@ -687,7 +687,7 @@ function BuildUI()
     })
 
 -------------------------------------------------------
-    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC
+    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC (FIXED)
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
 
@@ -720,25 +720,33 @@ function BuildUI()
         return table.concat(formatted, ", ")
     end
 
-    -- Hook __namecall để bắt các tín hiệu Remote gửi lên Server
+    -- Hook __namecall chuẩn hóa chữ thường và xử lý luồng an toàn
     local oldNamecall
-    local function setupHook()
-        if hookmetamethod then
+    local hookSuccess = false
+
+    if hookmetamethod and getnamecallmethod then
+        local success, _ = pcall(function()
             oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
                 local method = getnamecallmethod()
+                local lowerMethod = string.lower(tostring(method))
                 
-                if isListening and (method == "InvokeServer" or method == "FireServer") then
+                -- So sánh chữ thường để tránh lỗi Executor
+                if isListening and (lowerMethod == "invokeserver" or lowerMethod == "fireserver") then
                     local args = {...}
                     local remotePath = "game." .. self:GetFullName()
                     local argsStr = serializeArgs(args)
-                    local fullCode = string.format("%s:%s(%s)", remotePath, method, argsStr)
+                    local correctMethod = (lowerMethod == "invokeserver" and "InvokeServer") or "FireServer"
+                    local fullCode = string.format("%s:%s(%s)", remotePath, correctMethod, argsStr)
 
-                    task.spawn(function()
+                    -- In ra DevConsole (Bấm F9 để xem dự phòng nếu UI không kịp hiện)
+                    print("[FatCat Spy]: " .. fullCode)
+
+                    -- Trì hoãn nhẹ việc tạo UI để không ngắt luồng gửi gói tin của Game
+                    task.defer(function()
                         eventCount = eventCount + 1
                         
-                        -- 3. Phần bảng hiển thị kết quả bắt được
                         local paragraphBox = EventTab:AddParagraph({
-                            Title = string.format("Sự Kiện [%d]: %s (%s)", eventCount, self.Name, method),
+                            Title = string.format("Sự Kiện [%d]: %s (%s)", eventCount, self.Name, correctMethod),
                             Content = fullCode
                         })
                         table.insert(eventCreatedElements, paragraphBox)
@@ -768,21 +776,29 @@ function BuildUI()
                 
                 return oldNamecall(self, ...)
             end))
-        end
+        end)
+        if success then hookSuccess = true end
     end
-
-    pcall(setupHook)
 
     -- 1. Nút Toggle Bật/Tắt bắt sự kiện
     EventTab:AddToggle("EventListenerToggle", {
         Title = "Bật / Tắt Bắt Sự Kiện Remote",
         Default = false,
         Callback = function(state)
+            if not hookSuccess then
+                Fluent:Notify({
+                    Title = "Cảnh Báo Executor",
+                    Content = "Executor của bạn không hỗ trợ hookmetamethod!",
+                    Duration = 4
+                })
+                return
+            end
+
             isListening = state
             Fluent:Notify({
                 Title = isListening and "Đã Bật Lắng Nghe" or "Đã Tắt Lắng Nghe",
-                Content = isListening and "Hãy đi bấm nói chuyện với NPC để ghi lại tín hiệu!" or "Đã tạm dừng bắt tín hiệu.",
-                Duration = 25
+                Content = isListening and "Hãy tương tác với NPC. (Có thể mở F9 để kiểm tra log!)" or "Đã tạm dừng bắt tín hiệu.",
+                Duration = 3
             })
         end
     })
@@ -805,7 +821,6 @@ function BuildUI()
             })
         end
     })
-end
 
 BuildUI()
 
