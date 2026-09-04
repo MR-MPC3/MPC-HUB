@@ -7,11 +7,8 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
--- Ưu tiên gethui() nếu executor hỗ trợ (an toàn hơn CoreGui)
 local ParentGui = (gethui and gethui()) or CoreGui
-
 local plr = Players.LocalPlayer
-local RS = ReplicatedStorage
 
 ---------------------------
 -- KIỂM TRA MAP
@@ -27,10 +24,6 @@ if not currentSea then
     plr:Kick("PlaceId không hợp lệ!")
     return
 end
-
-local Sea1 = currentSea == 1
-local Sea2 = currentSea == 2
-local Sea3 = currentSea == 3
 
 -------------------------
 -- CLEANUP OLD GUI
@@ -51,12 +44,12 @@ if not success or not Fluent then
 end
 
 local Window = Fluent:CreateWindow({
-    Title = "Fat Cat Hub", 
-    SubTitle = "", 
-    TabWidth = 160, 
-    Theme = "Light",
+    Title = "Fat Cat Hub - Tool Dev", 
+    SubTitle = "Lấy Tọa Độ & Bắt Sự Kiện", 
+    TabWidth = 180, 
+    Theme = "Dark",
     Acrylic = false,
-    Size = UDim2.fromOffset(500, 320), 
+    Size = UDim2.fromOffset(560, 360), 
 })
 
 pcall(function()
@@ -85,8 +78,7 @@ FatCatButton.Image = "rbxassetid://13717478897"
 FatCatButton.AutoButtonColor = false
 FatCatButton.Parent = FatCatGui
 
-local Corner = Instance.new("UICorner", FatCatButton)
-Corner.CornerRadius = UDim.new(1,0)
+Instance.new("UICorner", FatCatButton).CornerRadius = UDim.new(1,0)
 
 local Scale = Instance.new("UIScale", FatCatButton)
 local ButtonTween = nil
@@ -157,7 +149,6 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 local MenuVisible = false
-
 FatCatButton.Activated:Connect(function()
     if IsDragged then
         IsDragged = false
@@ -174,18 +165,10 @@ end)
 -- CÁC TABS CHÍNH
 ---------------------
 local TabDefinitions = {
-    {"Info", "Info", "info"},
-    {"Farm", "Farm", "sword"},
-    {"StackFarming", "Stack Farming", "layers"},
-    {"ItemShop", "Item & Shop", "package"},
-    {"ServerHopFarm", "Server & Hop Farm", "server"},
-    {"ESPStats", "ESP & Stats", "eye"},
-    {"FruitRaid", "Fruits & Raid", "apple"},
-    {"TeleportPvP", "Teleport & PvP", "map-pin"},
-    {"Race", "Race", "shield"},
-    {"SeaEvent", "Sea Events", "waves"},
-    {"Setting", "Settings", "settings"},
-    {"DiscordWebhook", "Discord Webhook", "message-circle"}
+    {"PlayerPos", "Lấy Tọa Độ Nhân Vật", "user"},
+    {"MobPos", "Lấy Tọa Độ Quái", "swords"},
+    {"NPCPos", "Lấy Tọa Độ NPC", "map-pin"},
+    {"EventListener", "Bắt Sự Kiện", "activity"}
 }
 
 local Tabs = {}
@@ -201,7 +184,29 @@ end
 -- BUILD UI 
 ----------------------------
 function BuildUI()
-    -- Thêm các tính năng UI của bạn vào đây
+    -------------------------------------------------------
+    -- TAB 1: LẤY TỌA ĐỘ NHÂN VẬT
+    -------------------------------------------------------
+    -- Thêm các nút / tính năng cho Tab Nhân Vật tại đây
+
+
+    -------------------------------------------------------
+    -- TAB 2: LẤY TỌA ĐỘ QUÁI
+    -------------------------------------------------------
+    -- Thêm các nút / tính năng cho Tab Quái tại đây
+
+
+    -------------------------------------------------------
+    -- TAB 3: LẤY TỌA ĐỘ NPC
+    -------------------------------------------------------
+    -- Thêm các nút / tính năng cho Tab NPC tại đây
+
+
+    -------------------------------------------------------
+    -- TAB 4: BẮT SỰ KIỆN
+    -------------------------------------------------------
+    -- Thêm các nút / tính năng cho Tab Bắt Sự Kiện tại đây
+
 end
 
 BuildUI()
@@ -211,6 +216,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Anh Em Chơi Vui Vẻ",
-    Duration = 10
+    Content = "Tải Xong - Đã Khởi Tạo 4 Tab Trống!",
+    Duration = 5
 })
