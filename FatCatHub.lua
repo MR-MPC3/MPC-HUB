@@ -271,31 +271,29 @@ end)
 ---------------------
 -- CÁC TABS CHÍNH
 ---------------------
-local TabDefinitions = {
-    {"Home", "Thông Tin", "info"},
-    {"Main", "Cày", "sword"},
-    {"Sea", "Sự Kiện", "waves"},
-    {"ITM", "Vật Phẩm", "package"},
-    {"Setting", "Cài Đặt", "settings"},
-    {"Status", "Máy Chủ", "server"},
-    {"Stats", "Chỉ Số", "bar-chart-2"},
-    {"Player", "Người Chơi", "user"},
-    {"Teleport", "Dịch Chuyển", "map-pin"},
-    {"Fruit", "Trái", "apple"},
-    {"Raid", "Tập Kích", "swords"},
-    {"Race", "Tộc", "shield"},
-    {"Shop", "Cửa Hàng", "shopping-cart"},
-    {"Misc", "Khác", "layers"}
+local TabDefinitions={
+    {"Info","Thông Tin","info"},
+    {"Farm","Farm","sword"},
+    {"StackFarming","Stack Farming","layers"},
+    {"Item","Vật Phẩm","package"},
+    {"ServerHop","Server & Hop Farm","server"},
+    {"ESPStats","ESP & Chỉ Số","eye"},
+    {"FruitRaid","Trái & Tập Kích","apple"},
+    {"TeleportPvP","Dịch Chuyển & PvP","map-pin"},
+    {"Race","Tộc","shield"},
+    {"SeaEvent","Sự Kiện Biển","waves"},
+    {"Setting","Cài Đặt","settings"},
+    {"Discord","Discord Webhook","message-circle"}
 }
 
-local Tabs = {}
-for i, tab in ipairs(TabDefinitions) do
-    local ok, result = pcall(Window.AddTab, Window, {Title = tab[2], Icon = tab[3]})
+local Tabs={}
+for i,tab in ipairs(TabDefinitions) do
+    local ok,result=pcall(Window.AddTab,Window,{Title=tab[2],Icon=tab[3]})
     if not ok or not result then
-        result = Window:AddTab({Title = tab[2]})
+        result=Window:AddTab({Title=tab[2]})
     end
-    Tabs[tab[1]] = result
-    SetLoaderProgress(30 + ((i / #TabDefinitions) * 20))
+    Tabs[tab[1]]=result
+    SetLoaderProgress(30+((i/#TabDefinitions)*20))
     task.wait()
 end
 SetLoaderProgress(50)
