@@ -552,7 +552,7 @@ function BuildUI()
         end
     })
 
-    -- Gán hàm callback để nhận dữ liệu từ hook truyền lên UI
+-- Gán hàm callback để nhận dữ liệu từ hook truyền lên UI
     eventCallbackUI = function(remoteName, contentStr, argsTable)
         eventCount = eventCount + 1
         local currentId = eventCount
@@ -571,28 +571,33 @@ function BuildUI()
         end
         luaCallCode = luaCallCode .. ")"
 
-        -- Cập nhật trực tiếp nội dung lên Paragraph Live Log chính
-        EventLogParagraph:SetTitle("Sự Kiện Mới Nhất #" .. currentId .. " (" .. remoteName .. ")")
-        EventLogParagraph:SetDesc(contentStr)
+        -- Dùng task.defer để an toàn luồng khi tương tác với UI
+        task.defer(function()
+            pcall(function()
+                -- Cập nhật trực tiếp nội dung lên Paragraph Live Log chính
+                EventLogParagraph:SetTitle("Sự Kiện Mới Nhất #" .. currentId .. " (" .. remoteName .. ")")
+                EventLogParagraph:SetDesc(contentStr)
+            end)
 
-        -- Thêm Paragraph hiển thị chi tiết trong UI
-        local paragraph = EventTab:AddParagraph({
-            Title = "Lịch Sử #" .. currentId .. " (" .. remoteName .. ")",
-            Content = contentStr
-        })
-        table.insert(eventCreatedElements, paragraph)
+            -- Thêm Paragraph hiển thị chi tiết trong UI
+            local paragraph = EventTab:AddParagraph({
+                Title = "Lịch Sử #" .. currentId .. " (" .. remoteName .. ")",
+                Content = contentStr
+            })
+            table.insert(eventCreatedElements, paragraph)
 
-        -- Nút sao chép dòng lệnh tái tạo sự kiện
-        local copyBtn = EventTab:AddButton({
-            Title = "Sao chép mã lệnh gọi lại (Args) #" .. currentId,
-            Callback = function()
-                if setclipboard then
-                    setclipboard(luaCallCode)
-                    Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép lệnh sự kiện #" .. currentId, Duration = 2 })
+            -- Nút sao chép dòng lệnh tái tạo sự kiện
+            local copyBtn = EventTab:AddButton({
+                Title = "Sao chép mã lệnh gọi lại (Args) #" .. currentId,
+                Callback = function()
+                    if setclipboard then
+                        setclipboard(luaCallCode)
+                        Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép lệnh sự kiện #" .. currentId, Duration = 2 })
+                    end
                 end
-            end
-        })
-        table.insert(eventCreatedElements, copyBtn)
+            })
+            table.insert(eventCreatedElements, copyBtn)
+        end)
     end
 end
 
