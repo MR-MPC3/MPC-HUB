@@ -215,28 +215,76 @@ for _, tab in ipairs(TabDefinitions) do
 end
 
 -------------------------------------------------------
--- HOOK NAMECALL SYSTEM (CHẠY TOÀN CỤC BẰNG CỜ BIẾN)
+-- HOOK NAMECALL SYSTEM & QUẢN LÝ LOG TRÊN UI
 -------------------------------------------------------
 local isHookActive = false
 local oldNamecall
+local eventLogElements = {}
+local eventLogCount = 0
+
+local function AddEventLogToUI(remoteName, method, args)
+    if not Tabs["EventListener"] then return end
+    
+    eventLogCount = eventLogCount + 1
+    local logTitle = string.format("[%d] Remote: %s (%s)", eventLogCount, remoteName, method)
+    
+    local logText = ""
+    for i, arg in ipairs(args) do
+        logText = logText .. string.format("Arg [%d] (%s) = %s\n", i, typeof(arg), tostring(arg))
+    end
+    if logText == "" then logText = "Không có tham số" end
+
+    -- Tạo Paragraph hiển thị log
+    local logParagraph = Tabs["EventListener"]:AddParagraph({
+        Title = logTitle,
+        Content = logText
+    })
+    table.insert(eventLogElements, logParagraph)
+
+    -- Tạo nút Copy chuỗi Lua code tương ứng
+    local luaCode = string.format("game:GetService(\"ReplicatedStorage\").%s:%s(", remoteName, method)
+    for i, arg in ipairs(args) do
+        if type(arg) == "string" then
+            luaCode = luaCode .. string.format("\"%s\"", arg)
+        else
+            luaCode = luaCode .. tostring(arg)
+        end
+        if i < #args then luaCode = luaCode .. ", " end
+    end
+    luaCode = luaCode .. ")"
+
+    local copyBtn = Tabs["EventListener"]:AddButton({
+        Title = "Sao chép Code Lua Log " .. eventLogCount,
+        Callback = function()
+            if setclipboard then
+                setclipboard(luaCode)
+                Fluent:Notify({ Title = "Thành công", Content = "Đã sao chép Code Lua Log " .. eventLogCount, Duration = 2 })
+            end
+        end
+    })
+    table.insert(eventLogElements, copyBtn)
+end
 
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
     local method = getnamecallmethod()
     local methodLower = string.lower(tostring(method))
 
-    -- Kiểm tra cờ bật/tắt và loại method
     if isHookActive and (methodLower == "invokeserver" or methodLower == "fireserver") then
-        -- Lọc đúng Remote của Blox Fruits
         if self.Name == "CommF_" or self.Name == "CommE" then
             local args = {...}
             
-            -- In thẳng ra F9 Console với định dạng rõ ràng
+            -- Console Log
             warn("----------------------------------------")
             warn("🎯 [BẮT ĐƯỢC NPC]: " .. self.Name .. " | Method: " .. method)
             for i, arg in ipairs(args) do
-                print(string.format("   👉 Tham số [%d] (%s) = %s", i, typeof(arg), tostring(arg)))
+                print(string.format("    👉 Tham số [%d] (%s) = %s", i, typeof(arg), tostring(arg)))
             end
             warn("----------------------------------------")
+
+            -- UI Log
+            task.spawn(function()
+                AddEventLogToUI(self.Name, method, args)
+            end)
         end
     end
 
@@ -491,20 +539,20 @@ function BuildUI()
     })
 
     -------------------------------------------------------
-    -- TAB 4: BẮT SỰ KIỆN NPC (REMOTE SPY INTEGRATED)
+    -- TAB 4: BẮT SỰ KIỆN NPC (HIỂN THỊ TRỰC TIẾP TRÊN UI)
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
 
     EventTab:AddToggle("HookToggle", {
         Title = "Bật Hook Namecall (CommF_ / CommE)",
-        Description = "In toàn bộ arguments khi tương tác NPC/Gacha ra F9 Console",
+        Description = "In toàn bộ arguments khi tương tác NPC/Gacha ra UI và Console",
         Default = false,
         Callback = function(state)
             isHookActive = state
             if isHookActive then
                 Fluent:Notify({
                     Title = "Hook Namecall",
-                    Content = "Đã BẬT! Mở F9 Console để xem log khi bấm NPC.",
+                    Content = "Đã BẬT! Các sự kiện sẽ hiển thị ngay bên dưới.",
                     Duration = 3
                 })
             else
@@ -517,9 +565,17 @@ function BuildUI()
         end
     })
 
-    EventTab:AddParagraph({
-        Title = "Hướng dẫn sử dụng",
-        Content = "1. Bật công tắc bên trên.\n2. Mở bảng F9 (DevConsole) trong game.\n3. Đến nói chuyện với NPC hoặc thực hiện Gacha/Nhận Quest.\n4. Toàn bộ Remote và Tham số truyền vào sẽ hiển thị chi tiết ở F9."
+    EventTab:AddButton({
+        Title = "Xóa Log Sự Kiện",
+        Description = "Xóa toàn bộ danh sách các sự kiện đã bắt bên dưới",
+        Callback = function()
+            for _, element in ipairs(eventLogElements) do 
+                pcall(function() element:Destroy() end) 
+            end
+            eventLogElements = {}
+            eventLogCount = 0
+            Fluent:Notify({ Title = "Thông báo", Content = "Đã xóa toàn bộ Log sự kiện!", Duration = 2 })
+        end
     })
 end
 
