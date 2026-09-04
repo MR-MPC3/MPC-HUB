@@ -187,8 +187,92 @@ function BuildUI()
     -------------------------------------------------------
     -- TAB 1: LẤY TỌA ĐỘ NHÂN VẬT
     -------------------------------------------------------
-    -- Thêm các nút / tính năng cho Tab Nhân Vật tại đây
+    local PlayerTab = Tabs["PlayerPos"]
+    local createdElements = {}
+    local posCount = 0
 
+    -- Nút lấy tọa độ & góc quay đầy đủ
+    PlayerTab:AddButton({
+        Title = "Lấy Tọa Độ Nhân Vật",
+        Description = "Lấy toàn bộ Tọa Độ (X,Y,Z) và Ma Trận Góc Quay của nhân vật",
+        Callback = function()
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then
+                Fluent:Notify({
+                    Title = "Lỗi",
+                    Content = "Không tìm thấy HumanoidRootPart của nhân vật!",
+                    Duration = 3
+                })
+                return
+            end
+
+            posCount = posCount + 1
+            local cf = hrp.CFrame
+            local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
+            
+            -- Chuỗi CFrame đầy đủ chứa cả vị trí lẫn góc quay
+            local fullCFrameStr = string.format(
+                "CFrame.new(%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f)",
+                x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22
+            )
+
+            -- Hiển thị Bảng thông tin Tọa độ & Góc quay
+            local p = PlayerTab:AddParagraph({
+                Title = "Bảng Tọa Độ #" .. posCount,
+                Content = fullCFrameStr
+            })
+            table.insert(createdElements, p)
+
+            -- Nút sao chép đi kèm bảng
+            local btnCopy = PlayerTab:AddButton({
+                Title = "Sao Chép Bảng #" .. posCount,
+                Description = "Chép chuỗi CFrame đầy đủ vào Clipboard",
+                Callback = function()
+                    if setclipboard then
+                        setclipboard(fullCFrameStr)
+                        Fluent:Notify({
+                            Title = "Thành công",
+                            Content = "Đã sao chép Bảng #" .. posCount .. " vào Clipboard!",
+                            Duration = 3
+                        })
+                    else
+                        Fluent:Notify({
+                            Title = "Lỗi",
+                            Content = "Executor của bạn không hỗ trợ setclipboard!",
+                            Duration = 3
+                        })
+                    end
+                end
+            })
+            table.insert(createdElements, btnCopy)
+
+            Fluent:Notify({
+                Title = "Đã lấy tọa độ!",
+                Content = "Đã tạo Bảng Tọa Độ #" .. posCount,
+                Duration = 3
+            })
+        end
+    })
+
+    -- Nút xóa tất cả bảng tọa độ đã lấy
+    PlayerTab:AddButton({
+        Title = "Xóa Danh Sách Tọa Độ",
+        Description = "Xóa toàn bộ các bảng tọa độ & nút sao chép ở bên dưới",
+        Callback = function()
+            for _, element in ipairs(createdElements) do
+                pcall(function() element:Destroy() end)
+            end
+            createdElements = {}
+            posCount = 0
+
+            Fluent:Notify({
+                Title = "Thông báo",
+                Content = "Đã xóa toàn bộ các bảng tọa độ!",
+                Duration = 3
+            })
+        end
+    })
 
     -------------------------------------------------------
     -- TAB 2: LẤY TỌA ĐỘ QUÁI
@@ -216,6 +300,6 @@ BuildUI()
 ---------------------------------------
 Fluent:Notify({
     Title = "Fat Cat Hub",
-    Content = "Tải Xong - Đã Khởi Tạo 4 Tab Trống!",
+    Content = "Tải Xong - Đã Cập Nhật Tab Nhân Vật!",
     Duration = 5
 })
