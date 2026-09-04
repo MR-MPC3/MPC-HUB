@@ -480,6 +480,9 @@ function BuildUI()
     -------------------------------------------------------
     -- TAB 3: LẤY TỌA ĐỘ NPC
     -------------------------------------------------------
+-------------------------------------------------------
+    -- TAB 3: LẤY TỌA ĐỘ NPC & VẬT THỂ
+    -------------------------------------------------------
     local NpcTab = Tabs["NPCPos"]
 
     local npcCreatedElements = {}
@@ -487,9 +490,9 @@ function BuildUI()
     local targetNpcName = ""
 
     NpcTab:AddInput("NpcNameInput", {
-        Title = "Nhập Tên NPC",
+        Title = "Nhập Tên NPC / Vật Thể",
         Default = "",
-        Placeholder = "Nhập tên NPC cần tìm (VD: Adventurer)...",
+        Placeholder = "Nhập tên cần tìm (VD: Set Home Point)...",
         Numeric = false,
         Finished = false,
         Callback = function(value)
@@ -497,32 +500,52 @@ function BuildUI()
         end
     })
 
-NpcTab:AddButton({
+    NpcTab:AddButton({
         Title = "Lấy Tọa Độ NPC",
-        Description = "Tìm tất cả NPC khớp tên trên toàn bộ bản đồ và lấy tọa độ",
+        Description = "Tìm tất cả NPC/Vật thể khớp tên trên toàn bản đồ (Hỗ trợ cả Model và Part)",
         Callback = function()
             if targetNpcName == "" then
                 Fluent:Notify({
                     Title = "Lỗi",
-                    Content = "Vui lòng nhập tên NPC trước!",
+                    Content = "Vui lòng nhập tên cần tìm trước!",
                     Duration = 3
                 })
                 return
             end
 
             local foundNpcs = {}
-            local checkedParts = {}
+            local checkedPositions = {}
 
-            -- Quét toàn bộ Workspace thay vì chỉ lấy thư mục ngoài
+            -- Quét toàn bộ Workspace (tìm cả Model lẫn BasePart/MeshPart)
             for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("Model") and string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
-                    local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart
-                    if hrp and not checkedParts[hrp] then
-                        checkedParts[hrp] = true
-                        table.insert(foundNpcs, {
-                            Name = obj.Name,
-                            Part = hrp
-                        })
+                if string.find(string.lower(obj.Name), string.lower(targetNpcName)) then
+                    local pos = nil
+
+                    -- Lấy tọa độ tùy thuộc vào kiểu đối tượng
+                    if obj:IsA("Model") then
+                        local successPivot, pivotPos = pcall(function()
+                            return obj:GetPivot().Position
+                        end)
+                        if successPivot and pivotPos then
+                            pos = pivotPos
+                        else
+                            local part = obj:FindFirstChildWhichIsA("BasePart")
+                            if part then pos = part.Position end
+                        end
+                    elseif obj:IsA("BasePart") then
+                        pos = obj.Position
+                    end
+
+                    if pos then
+                        -- Gom nhóm các phần tử trùng tọa độ gần nhau (tránh lấy trùng lặp các part trong cùng 1 mô hình)
+                        local posKey = math.floor(pos.X / 5) .. "," .. math.floor(pos.Y / 5) .. "," .. math.floor(pos.Z / 5)
+                        if not checkedPositions[posKey] then
+                            checkedPositions[posKey] = true
+                            table.insert(foundNpcs, {
+                                Name = obj.Name,
+                                Position = pos
+                            })
+                        end
                     end
                 end
             end
@@ -530,7 +553,7 @@ NpcTab:AddButton({
             if #foundNpcs == 0 then
                 Fluent:Notify({
                     Title = "Không Tìm Thấy",
-                    Content = "Không tìm thấy NPC nào khớp với tên: " .. targetNpcName,
+                    Content = "Không tìm thấy đối tượng nào khớp với tên: " .. targetNpcName,
                     Duration = 3
                 })
                 return
@@ -538,7 +561,7 @@ NpcTab:AddButton({
 
             for _, npc in ipairs(foundNpcs) do
                 npcPosCount = npcPosCount + 1
-                local pos = npc.Part.Position
+                local pos = npc.Position
                 local posStr = string.format("CFrame.new(%s, %s, %s)", tostring(pos.X), tostring(pos.Y), tostring(pos.Z))
 
                 local paragraphBox = NpcTab:AddParagraph({
@@ -554,7 +577,7 @@ NpcTab:AddButton({
                             setclipboard(posStr)
                             Fluent:Notify({
                                 Title = "Thành công",
-                                Content = "Đã sao chép tọa độ NPC: " .. posStr,
+                                Content = "Đã sao chép tọa độ: " .. posStr,
                                 Duration = 3
                             })
                         else
@@ -571,7 +594,7 @@ NpcTab:AddButton({
 
             Fluent:Notify({
                 Title = "Thành công",
-                Content = "Đã quét và tìm thấy " .. #foundNpcs .. " NPC trên toàn bản đồ!",
+                Content = "Đã quét và tìm thấy " .. #foundNpcs .. " kết quả trên toàn bản đồ!",
                 Duration = 3
             })
         end
@@ -579,7 +602,7 @@ NpcTab:AddButton({
 
     NpcTab:AddButton({
         Title = "Xóa Tọa Độ NPC",
-        Description = "Xóa toàn bộ các bảng tọa độ NPC đã tạo bên dưới",
+        Description = "Xóa toàn bộ các bảng tọa độ đã tạo bên dưới",
         Callback = function()
             for _, element in ipairs(npcCreatedElements) do
                 pcall(function() element:Destroy() end)
@@ -589,7 +612,7 @@ NpcTab:AddButton({
 
             Fluent:Notify({
                 Title = "Thông báo",
-                Content = "Đã xóa toàn bộ danh sách tọa độ NPC!",
+                Content = "Đã xóa toàn bộ danh sách tọa độ!",
                 Duration = 2
             })
         end
