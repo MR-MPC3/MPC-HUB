@@ -687,54 +687,36 @@ function BuildUI()
     })
 
 -------------------------------------------------------
-    -- TAB 4: BẮT DỮ LIỆU CÂU THOẠI & REMOTE CỦA NPC (FIXED FULL)
+    -- TAB 4: BẮT SỰ KIỆN NPC (CHỐNG TREO GIAO DIỆN 100%)
     -------------------------------------------------------
     local EventTab = Tabs["EventListener"]
-    local HttpService = game:GetService("HttpService")
 
     local isListening = false
     local eventCreatedElements = {}
     local eventCount = 0
 
-    -- Hàm đọc sâu dữ liệu table/tham số NPC gửi lên Server
-    local function serializeValue(v)
-        local t = typeof(v)
-        if t == "string" then
-            return string.format("%q", v)
-        elseif t == "number" or t == "boolean" then
-            return tostring(v)
-        elseif t == "Instance" then
-            return "game." .. v:GetFullName()
-        elseif t == "CFrame" then
-            local p = v.Position
+    -- Hàm đọc tham số an toàn, không ngắt luồng game
+    local function safeSerialize(val)
+        local t = typeof(val)
+        if t == "string" then return string.format("%q", val)
+        elseif t == "number" or t == "boolean" then return tostring(val)
+        elseif t == "Instance" then return "game." .. val:GetFullName()
+        elseif t == "CFrame" then 
+            local p = val.Position
             return string.format("CFrame.new(%.2f, %.2f, %.2f)", p.X, p.Y, p.Z)
-        elseif t == "Vector3" then
-            return string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z)
+        elseif t == "Vector3" then 
+            return string.format("Vector3.new(%.2f, %.2f, %.2f)", val.X, val.Y, val.Z)
         elseif t == "table" then
-            local ok, json = pcall(function() return HttpService:JSONEncode(v) end)
-            if ok then 
-                return json 
-            else
-                local str = "{"
-                for k, val in pairs(v) do
-                    str = str .. tostring(k) .. "=" .. serializeValue(val) .. ", "
-                end
-                return str .. "}"
+            local str = "{"
+            for k, v in pairs(val) do
+                str = str .. tostring(k) .. "=" .. safeSerialize(v) .. ", "
             end
+            return str .. "}"
         else
             return "nil"
         end
     end
 
-    local function serializeArgs(args)
-        local formatted = {}
-        for _, v in ipairs(args) do
-            table.insert(formatted, serializeValue(v))
-        end
-        return table.concat(formatted, ", ")
-    end
-
-    -- Hook __namecall bắt đúng Remote do Game phát ra
     local oldNamecall
     local hookSuccess = false
 
@@ -743,45 +725,49 @@ function BuildUI()
             oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
                 local method = getnamecallmethod()
                 local lowerMethod = string.lower(tostring(method))
-                
-                -- Chỉ bắt các gói tin do Game gửi (not checkcaller) khi bật công tắc
+
+                -- Bóc tách dữ liệu hoàn toàn trong luồng riêng biệt (task.spawn)
                 if isListening and not checkcaller() and (lowerMethod == "invokeserver" or lowerMethod == "fireserver") then
                     local args = {...}
-                    local remotePath = "game." .. self:GetFullName()
-                    local argsStr = serializeArgs(args)
-                    local correctMethod = (lowerMethod == "invokeserver" and "InvokeServer") or "FireServer"
-                    local fullCode = string.format("%s:%s(%s)", remotePath, correctMethod, argsStr)
-
-                    -- In trực tiếp ra F9 (DevConsole) để tránh tràn bộ nhớ UI
-                    print("[FatCat Spy]: " .. fullCode)
-
-                    task.defer(function()
-                        if eventCount >= 25 then return end -- Giới hạn 25 sự kiện/lần tránh đơ UI
-                        eventCount = eventCount + 1
-                        
-                        local paragraphBox = EventTab:AddParagraph({
-                            Title = string.format("Sự Kiện [%d]: %s", eventCount, self.Name),
-                            Content = fullCode
-                        })
-                        table.insert(eventCreatedElements, paragraphBox)
-
-                        local copyBtn = EventTab:AddButton({
-                            Title = "Sao chép Code [" .. eventCount .. "]",
-                            Callback = function()
-                                if setclipboard then
-                                    setclipboard(fullCode)
-                                    Fluent:Notify({
-                                        Title = "Thành công",
-                                        Content = "Đã copy code Remote NPC!",
-                                        Duration = 2
-                                    })
-                                end
+                    local selfObj = self
+                    
+                    task.spawn(function()
+                        pcall(function()
+                            local formattedArgs = {}
+                            for _, v in ipairs(args) do
+                                table.insert(formattedArgs, safeSerialize(v))
                             end
-                        })
-                        table.insert(eventCreatedElements, copyBtn)
+                            local argsStr = table.concat(formattedArgs, ", ")
+                            local remotePath = "game." .. selfObj:GetFullName()
+                            local correctMethod = (lowerMethod == "invokeserver" and "InvokeServer") or "FireServer"
+                            local fullCode = string.format("%s:%s(%s)", remotePath, correctMethod, argsStr)
+
+                            print("[FatCat Spy]: " .. fullCode)
+
+                            if eventCount < 25 then
+                                eventCount = eventCount + 1
+                                local paragraphBox = EventTab:AddParagraph({
+                                    Title = string.format("Sự Kiện [%d]: %s", eventCount, selfObj.Name),
+                                    Content = fullCode
+                                })
+                                table.insert(eventCreatedElements, paragraphBox)
+
+                                local copyBtn = EventTab:AddButton({
+                                    Title = "Sao chép Code [" .. eventCount .. "]",
+                                    Callback = function()
+                                        if setclipboard then
+                                            setclipboard(fullCode)
+                                            Fluent:Notify({Title = "Thành công", Content = "Đã copy code Remote NPC!", Duration = 2})
+                                        end
+                                    end
+                                })
+                                table.insert(eventCreatedElements, copyBtn)
+                            end
+                        end)
                     end)
                 end
-                
+
+                -- Trả về luồng chính cho game ngay lập tức
                 return oldNamecall(self, ...)
             end))
         end)
@@ -796,7 +782,7 @@ function BuildUI()
             if not hookSuccess then
                 Fluent:Notify({
                     Title = "Lỗi Executor",
-                    Content = "Executor của bạn không hỗ trợ hookmetamethod!",
+                    Content = "Executor không hỗ trợ hookmetamethod!",
                     Duration = 4
                 })
                 return
@@ -805,7 +791,7 @@ function BuildUI()
             isListening = state
             Fluent:Notify({
                 Title = isListening and "Đã Bật Lắng Nghe" or "Đã Tắt Lắng Nghe",
-                Content = isListening and "Bắt đầu nhấn nói chuyện với NPC! (Hoặc mở F9 để xem log)" or "Đã dừng bắt tín hiệu.",
+                Content = isListening and "Lại nói chuyện với NPC bình thường để lấy Remote!" or "Đã dừng bắt tín hiệu.",
                 Duration = 3
             })
         end
