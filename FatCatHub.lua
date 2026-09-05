@@ -150,10 +150,10 @@ local Window = Fluent:CreateWindow({
     Title = "Fat Cat Hub", 
     SubTitle = "", 
     TabWidth = 160, 
-    Theme = "Light",
+    Theme = "Dark",
     Acrylic = false,
     Size = UDim2.fromOffset(500, 320),
-
+    --logo nút ẩn hiện menu chính
     ToggleIcon = "rbxassetid://13717478897",
 })
 
