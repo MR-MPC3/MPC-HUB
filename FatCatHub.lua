@@ -38,7 +38,6 @@ local Sea3 = currentSea == 3
 -----------------------
 pcall(function()
     if ParentGui:FindFirstChild("Core") then ParentGui.Core:Destroy() end
-    if ParentGui:FindFirstChild("FatCatToggle") then ParentGui.FatCatToggle:Destroy() end
 end)
 
 --------------------------------------------------
