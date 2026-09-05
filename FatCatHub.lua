@@ -152,7 +152,7 @@ local Window = Fluent:CreateWindow({
     TabWidth = 160, 
     Theme = "Dark",
     Acrylic = false,
-    Size = UDim2.fromOffset(520, 280),
+    Size = UDim2.fromOffset(510, 290),
     --logo nút ẩn hiện menu chính
     ToggleIcon = "rbxassetid://13717478897",
 })
